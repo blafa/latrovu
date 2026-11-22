@@ -1,0 +1,15 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: latrovu-db
+    environment:
+      POSTGRES_USER: latrovu
+      POSTGRES_PASSWORD: ${LATROVU_DB_PASSWORD:-devonly}
+      POSTGRES_DB: latrovu
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

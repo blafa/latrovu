@@ -3,4 +3,7 @@
   <Folder Name="/src/Api/">
     <Project Path="src/Api/Latrovu.Api.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Latrovu.Api.Tests/Latrovu.Api.Tests.csproj" />
+  </Folder>
 </Solution>
