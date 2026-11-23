@@ -19,6 +19,9 @@
     <PackageReference Include="MailKit" Version="5.0.0" />
     <PackageReference Include="Npgsql" Version="10.0.0" />
     <PackageReference Include="PdfPig" Version="0.1.16" />
+    <PackageReference Include="Rebus" Version="8.10.0" />
+    <PackageReference Include="Rebus.RabbitMq" Version="10.1.2" />
+    <PackageReference Include="Rebus.ServiceProvider" Version="10.8.0" />
   </ItemGroup>
 
   <ItemGroup>
