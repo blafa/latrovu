@@ -7,6 +7,7 @@ public static class DevImportEndpoint
 {
     private const string Route = "/dev/import";
     private const string FolderSettingKey = "DevImport:Folder";
+    private const string SenderSettingKey = "DevImport:Sender";
     private const string DefaultFolder = "../../tests/exposes";
     private const string LoggerCategory = "Latrovu.Api.Dev.DevImport";
     private const string DevSender = "dev-import@latrovu.local";
@@ -35,22 +36,28 @@ public static class DevImportEndpoint
         }
 
         string[] files = Directory.GetFiles(folder, string.IsNullOrWhiteSpace(pattern) ? PdfSearchPattern : pattern);
+        string sender = config[SenderSettingKey] ?? DevSender;
         logger.LogInformation("Importing {FileCount} PDFs from {Folder}", files.Length, folder);
 
         int failed = 0;
         foreach (string file in files)
         {
-            failed += await TryImportFileAsync(file, dispatcher, logger, ct) ? 0 : 1;
+            failed += await TryImportFileAsync(file, sender, dispatcher, logger, ct) ? 0 : 1;
         }
 
         return Results.Ok(new { folder, processed = files.Length, failed });
     }
 
-    private static async Task<bool> TryImportFileAsync(string file, IMailDispatcher dispatcher, ILogger logger, CancellationToken ct)
+    private static async Task<bool> TryImportFileAsync(
+        string file,
+        string sender,
+        IMailDispatcher dispatcher,
+        ILogger logger,
+        CancellationToken ct)
     {
         try
         {
-            await dispatcher.DispatchAsync(await ToMailAsync(file, ct), ct);
+            await dispatcher.DispatchAsync(await ToMailAsync(file, sender, ct), ct);
             return true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -60,11 +67,11 @@ public static class DevImportEndpoint
         }
     }
 
-    private static async Task<InboundMail> ToMailAsync(string file, CancellationToken ct)
+    private static async Task<InboundMail> ToMailAsync(string file, string sender, CancellationToken ct)
     {
         string fileName = Path.GetFileName(file);
         byte[] content = await File.ReadAllBytesAsync(file, ct);
         ReceivedFile attachment = new(fileName, PdfMimeType, content);
-        return new InboundMail($"dev-import:{fileName}", DevSender, fileName, [ListingRecipient], [attachment]);
+        return new InboundMail($"dev-import:{fileName}", sender, fileName, [ListingRecipient], [attachment]);
     }
 }

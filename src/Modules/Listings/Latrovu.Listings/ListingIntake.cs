@@ -8,6 +8,7 @@ public sealed class ListingIntake(
     IDocumentClassifier classifier,
     IListingExtractor extractor,
     IListingStore store,
+    IListingAccessTokenStore accessTokens,
     IListingImageCollector imageCollector,
     ILogger<ListingIntake> logger) : IListingDocumentHandler
 {
@@ -65,7 +66,8 @@ public sealed class ListingIntake(
         ListingExtraction? extraction = await extractor.ExtractAsync(text, ct);
         NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction);
         Guid listingId = await store.AddAsync(listing, ct);
-        logger.LogInformation("Stored listing {ListingId} from {FileName}", listingId, pdf.FileName);
+        string token = await accessTokens.CreateAsync(listingId, ct);
+        logger.LogInformation("Stored listing {ListingId} from {FileName}, review at /review/{Token}", listingId, pdf.FileName, token);
         return listingId;
     }
 }

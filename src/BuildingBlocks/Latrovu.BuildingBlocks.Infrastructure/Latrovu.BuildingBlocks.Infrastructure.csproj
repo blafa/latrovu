@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKit" Version="5.0.0" />
     <PackageReference Include="Npgsql" Version="10.0.0" />
     <PackageReference Include="PdfPig" Version="0.1.16" />
   </ItemGroup>

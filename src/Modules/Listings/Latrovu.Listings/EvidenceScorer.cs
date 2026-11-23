@@ -7,7 +7,6 @@ namespace Latrovu.Listings;
 
 public static partial class EvidenceScorer
 {
-    private const char PathSeparator = '.';
     private const decimal MinMatchableNumber = 100;
     private const int MinMatchableTextLength = 3;
     private const string GroupedNumberFormat = "#,0";
@@ -108,14 +107,10 @@ public static partial class EvidenceScorer
 
     private static JsonNode? FindValue(JsonObject data, string path)
     {
-        JsonNode? node = data;
-        foreach (string segment in path.Split(PathSeparator))
+        JsonNode? node = JsonPaths.Get(data, path);
+        if (node is null)
         {
-            node = node is JsonObject parent ? parent[segment] : null;
-            if (node is null)
-            {
-                return null;
-            }
+            return null;
         }
 
         bool isBlankText = node.GetValueKind() == JsonValueKind.String && string.IsNullOrWhiteSpace(node.GetValue<string>());
