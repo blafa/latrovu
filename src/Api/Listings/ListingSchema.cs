@@ -46,6 +46,7 @@ public static class ListingSchema
                 "bathrooms": { "type": ["number", "null"] },
                 "toilets": { "type": ["number", "null"] },
                 "livingAreaM2": { "type": ["number", "null"] },
+                "grossFloorAreaM2": { "type": ["number", "null"] },
                 "usableAreaM2": { "type": ["number", "null"] },
                 "plotAreaM2": { "type": ["number", "null"] },
                 "balconyAreaM2": { "type": ["number", "null"] },

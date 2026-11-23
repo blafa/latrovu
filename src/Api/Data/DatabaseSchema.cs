@@ -16,6 +16,14 @@ public sealed class DatabaseSchema(NpgsqlDataSource dataSource, ILogger<Database
             data         jsonb
         );
         CREATE INDEX IF NOT EXISTS ix_listings_status ON listings (status);
+        CREATE TABLE IF NOT EXISTS listing_images (
+            listing_id   uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            position     int NOT NULL,
+            storage_key  text NOT NULL,
+            content_type varchar(50) NOT NULL,
+            created_at   timestamptz NOT NULL DEFAULT now(),
+            PRIMARY KEY (listing_id, position)
+        );
         """;
 
     public async Task EnsureCreatedAsync(CancellationToken ct = default)

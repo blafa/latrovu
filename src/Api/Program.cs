@@ -1,41 +1,21 @@
-using System.Net.Http.Headers;
-using Latrovu.Api.Ai;
-using Latrovu.Api.Data;
 using Latrovu.Api.Dev;
-using Latrovu.Api.Listings;
 using Latrovu.Api.Mail;
-using Latrovu.Api.Pdf;
-using Microsoft.Extensions.Options;
-using Npgsql;
-
-const string DatabaseConnectionName = "Db";
-const string BearerScheme = "Bearer";
+using Latrovu.Core;
+using Latrovu.Infrastructure.Ai;
+using Latrovu.Infrastructure.Mail;
+using Latrovu.Infrastructure.Pdf;
+using Latrovu.Infrastructure.Persistence;
+using Latrovu.Infrastructure.Storage;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOptions<MailOptions>()
-    .Bind(builder.Configuration.GetSection(MailOptions.SectionName))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
-builder.Services.AddOptions<AiOptions>()
-    .Bind(builder.Configuration.GetSection(AiOptions.SectionName))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
-
-string connectionString = builder.Configuration.GetConnectionString(DatabaseConnectionName)
-    ?? throw new InvalidOperationException($"ConnectionStrings:{DatabaseConnectionName} is missing");
-
-builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
-builder.Services.AddSingleton<DatabaseSchema>();
-builder.Services.AddSingleton<IListingStore, ListingStore>();
-builder.Services.AddSingleton<IMailInbox, ImapInbox>();
-builder.Services.AddSingleton<IMailRouter, MailRouter>();
-builder.Services.AddSingleton<IPdfTextReader, PdfPigTextReader>();
-builder.Services.AddScoped<IDocumentClassifier, DocumentClassifier>();
-builder.Services.AddScoped<IListingExtractor, ListingExtractor>();
-builder.Services.AddScoped<IListingIntake, ListingIntake>();
-builder.Services.AddScoped<IMailDispatcher, MailDispatcher>();
-builder.Services.AddHttpClient<ILlmClient, InfomaniakLlmClient>(ConfigureLlmHttpClient);
+builder.Services
+    .AddCore()
+    .AddMailInbox(builder.Configuration)
+    .AddAiExtraction(builder.Configuration)
+    .AddObjectStorage(builder.Configuration)
+    .AddPdfReading()
+    .AddPersistence(builder.Configuration);
 builder.Services.AddHostedService<MailPollingService>();
 
 WebApplication app = builder.Build();
@@ -52,10 +32,3 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
-
-static void ConfigureLlmHttpClient(IServiceProvider services, HttpClient http)
-{
-    AiOptions ai = services.GetRequiredService<IOptions<AiOptions>>().Value;
-    http.BaseAddress = new Uri(ai.BaseUrl);
-    http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(BearerScheme, ai.Token);
-}

@@ -22,6 +22,7 @@ public static class ListingExtractionPrompt
         Begriffe:
         - rooms: Zimmerzahl des angebotenen Objekts.
         - livingAreaM2: Wohnfläche bzw. Nettowohnfläche (NWF). usableAreaM2 nur für reine Nutzfläche wie Keller oder Gewerbe.
+        - grossFloorAreaM2: Bruttogeschossfläche (BGF), inklusive Wände. Nie in livingAreaM2 eintragen.
         - plotAreaM2: Grundstück, das allein zum Objekt gehört. Bei Stockwerkeigentum null; die Parzellengrösse dann in otherDetails.
         - ownershipType: "condominium" bei Stockwerkeigentum (StWE, Wertquote, STOWE-Kosten), "freehold" bei Alleineigentum mit eigenem Grundstück, "co_op" bei Genossenschaft.
         - condoFeesChfPerYear: STOWE-Kosten bzw. Nebenkosten des Stockwerkeigentums pro Jahr.
@@ -46,7 +47,7 @@ public static class ListingExtractionPrompt
           },
           "size": {
             "rooms": number, "bedrooms": number, "bathrooms": number, "toilets": number,
-            "livingAreaM2": number, "usableAreaM2": number, "plotAreaM2": number,
+            "livingAreaM2": number, "grossFloorAreaM2": number, "usableAreaM2": number, "plotAreaM2": number,
             "balconyAreaM2": number, "gardenAreaM2": number, "ceilingHeightM": number
           },
           "building": {
