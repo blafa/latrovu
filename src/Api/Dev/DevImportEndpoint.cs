@@ -24,6 +24,7 @@ public static class DevImportEndpoint
         IWebHostEnvironment environment,
         IMailDispatcher dispatcher,
         ILoggerFactory loggerFactory,
+        string? pattern,
         CancellationToken ct)
     {
         ILogger logger = loggerFactory.CreateLogger(LoggerCategory);
@@ -33,7 +34,7 @@ public static class DevImportEndpoint
             return Results.NotFound($"Folder {folder} does not exist");
         }
 
-        string[] files = Directory.GetFiles(folder, PdfSearchPattern);
+        string[] files = Directory.GetFiles(folder, string.IsNullOrWhiteSpace(pattern) ? PdfSearchPattern : pattern);
         logger.LogInformation("Importing {FileCount} PDFs from {Folder}", files.Length, folder);
 
         int failed = 0;
