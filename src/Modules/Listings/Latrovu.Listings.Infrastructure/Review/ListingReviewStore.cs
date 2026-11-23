@@ -8,7 +8,8 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource) : IListingRe
     private const string ApprovedStatus = "approved";
 
     private const string SelectListingSql = """
-        SELECT id, status, source_email, file_name, COALESCE(data, '{}'::jsonb)::text, COALESCE(field_scores, '{}'::jsonb)::text
+        SELECT id, status, source_email, file_name, COALESCE(data, '{}'::jsonb)::text, COALESCE(field_scores, '{}'::jsonb)::text,
+               COALESCE(field_evidence, '{}'::jsonb)::text, publish_contact
         FROM listings WHERE id = $1
         """;
 
@@ -16,6 +17,8 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource) : IListingRe
         "SELECT position, storage_key, content_type FROM listing_images WHERE listing_id = $1 ORDER BY position";
 
     private const string SaveSql = "UPDATE listings SET data = $2::jsonb, field_scores = $3::jsonb WHERE id = $1";
+
+    private const string PublishContactSql = "UPDATE listings SET publish_contact = $2 WHERE id = $1";
 
     private const string ApproveSql = "UPDATE listings SET status = $2 WHERE id = $1 AND status = $3";
 
@@ -37,6 +40,8 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource) : IListingRe
             fileName,
             reader.GetString(4),
             reader.GetString(5),
+            reader.GetString(6),
+            reader.GetBoolean(7),
             []);
         return review with { Images = await GetImagesAsync(listingId, ct) };
     }
@@ -47,6 +52,14 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource) : IListingRe
         command.Parameters.Add(new NpgsqlParameter { Value = listingId });
         command.Parameters.Add(new NpgsqlParameter { Value = dataJson });
         command.Parameters.Add(new NpgsqlParameter { Value = fieldScoresJson });
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
+    public async Task SetPublishContactAsync(Guid listingId, bool publishContact, CancellationToken ct)
+    {
+        await using NpgsqlCommand command = dataSource.CreateCommand(PublishContactSql);
+        command.Parameters.Add(new NpgsqlParameter { Value = listingId });
+        command.Parameters.Add(new NpgsqlParameter { Value = publishContact });
         await command.ExecuteNonQueryAsync(ct);
     }
 

@@ -12,6 +12,8 @@ public sealed class ListingIntake(
     IListingImageCollector imageCollector,
     ILogger<ListingIntake> logger) : IListingSubmissionHandler
 {
+    private const char PageSeparator = '\n';
+
     public async Task HandleAsync(Submission message, IReadOnlyList<SubmittedFile> files, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(message);
@@ -45,8 +47,8 @@ public sealed class ListingIntake(
 
     private async Task<Guid?> ProcessPdfAsync(Submission message, SubmittedFile pdf, CancellationToken ct)
     {
-        string text = pdfReader.ReadText(pdf.Content);
-        DocumentClassification classification = await classifier.ClassifyAsync(text, ct);
+        IReadOnlyList<string> pages = pdfReader.ReadPages(pdf.Content);
+        DocumentClassification classification = await classifier.ClassifyAsync(string.Join(PageSeparator, pages), ct);
         if (!classification.IsListing)
         {
             logger.LogInformation("Skipped {FileName}, it is a {DocumentType}", pdf.FileName, classification.Type);
@@ -58,12 +60,12 @@ public sealed class ListingIntake(
             logger.LogWarning("{FileName} contains several units, extracting it as one listing for now", pdf.FileName);
         }
 
-        return await ExtractAndStoreAsync(message, pdf, text, ct);
+        return await ExtractAndStoreAsync(message, pdf, pages, ct);
     }
 
-    private async Task<Guid> ExtractAndStoreAsync(Submission message, SubmittedFile pdf, string text, CancellationToken ct)
+    private async Task<Guid> ExtractAndStoreAsync(Submission message, SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
     {
-        ListingExtraction? extraction = await extractor.ExtractAsync(text, ct);
+        ListingExtraction? extraction = await extractor.ExtractAsync(pages, ct);
         NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction);
         Guid listingId = await store.AddAsync(listing, ct);
         string token = await accessTokens.CreateAsync(listingId, ct);

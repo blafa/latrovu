@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 
 namespace Latrovu.BuildingBlocks.Ai;
@@ -7,6 +8,7 @@ public static class LlmJsonNormalizer
     public const string RawAnswerProperty = "_raw";
     private const string CodeFence = "```";
     private const char LineBreak = '\n';
+    private const char Quote = '"';
 
     public static string? Normalize(string? answer)
     {
@@ -16,12 +18,14 @@ public static class LlmJsonNormalizer
         }
 
         string candidate = StripCodeFence(answer.Trim());
-        if (IsValidJson(candidate))
+        try
         {
-            return candidate;
+            return RemoveInvalidAndDuplicateProperties(candidate);
         }
-
-        return JsonSerializer.Serialize(new Dictionary<string, string> { [RawAnswerProperty] = answer });
+        catch (JsonException)
+        {
+            return JsonSerializer.Serialize(new Dictionary<string, string> { [RawAnswerProperty] = answer });
+        }
     }
 
     private static string StripCodeFence(string text)
@@ -38,16 +42,56 @@ public static class LlmJsonNormalizer
             : text;
     }
 
-    private static bool IsValidJson(string text)
+    private static string RemoveInvalidAndDuplicateProperties(string json)
     {
-        try
+        using JsonDocument document = JsonDocument.Parse(json);
+        using MemoryStream stream = new();
+        using (Utf8JsonWriter writer = new(stream))
         {
-            using JsonDocument document = JsonDocument.Parse(text);
-            return true;
+            WriteClean(writer, document.RootElement);
         }
-        catch (JsonException)
+
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static void WriteClean(Utf8JsonWriter writer, JsonElement element)
+    {
+        switch (element.ValueKind)
         {
-            return false;
+            case JsonValueKind.Object:
+                WriteCleanObject(writer, element);
+                break;
+            case JsonValueKind.Array:
+                writer.WriteStartArray();
+                foreach (JsonElement item in element.EnumerateArray())
+                {
+                    WriteClean(writer, item);
+                }
+
+                writer.WriteEndArray();
+                break;
+            default:
+                element.WriteTo(writer);
+                break;
         }
     }
+
+    private static void WriteCleanObject(Utf8JsonWriter writer, JsonElement element)
+    {
+        writer.WriteStartObject();
+        HashSet<string> seenNames = [];
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            if (IsValidPropertyName(property.Name) && seenNames.Add(property.Name))
+            {
+                writer.WritePropertyName(property.Name);
+                WriteClean(writer, property.Value);
+            }
+        }
+
+        writer.WriteEndObject();
+    }
+
+    private static bool IsValidPropertyName(string name) =>
+        name.Length > 0 && !name.Contains(Quote) && !name.Any(char.IsControl);
 }

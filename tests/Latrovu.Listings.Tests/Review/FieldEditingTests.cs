@@ -11,9 +11,34 @@ public sealed class FieldEditingTests
         Assert.Equal(FieldKind.Number, ListingFieldCatalog.Find("size.rooms")?.Kind);
         Assert.Equal(FieldKind.Boolean, ListingFieldCatalog.Find("features.balcony")?.Kind);
         Assert.Equal(FieldKind.TextList, ListingFieldCatalog.Find("features.flooring")?.Kind);
-        Assert.Equal(FieldKind.Json, ListingFieldCatalog.Find("parking")?.Kind);
+        Assert.Equal(FieldKind.ObjectList, ListingFieldCatalog.Find("parking")?.Kind);
+        Assert.Equal(FieldKind.ObjectList, ListingFieldCatalog.Find("otherDetails")?.Kind);
         Assert.Contains("condominium", ListingFieldCatalog.Find("sale.ownershipType")!.Choices);
         Assert.Null(ListingFieldCatalog.Find("evidence"));
+    }
+
+    [Fact]
+    public void Catalog_ObjectListHasTypedItemFields()
+    {
+        FieldDefinition parking = ListingFieldCatalog.Find("parking")!;
+
+        Assert.Contains(parking.ItemFields, item => item.Key == "type" && item.Kind == FieldKind.Choice && item.Choices.Contains("carport"));
+        Assert.Contains(parking.ItemFields, item => item.Key == "priceChf" && item.Kind == FieldKind.Number);
+        Assert.Contains(parking.ItemFields, item => item.Key == "included" && item.Kind == FieldKind.Boolean);
+    }
+
+    [Fact]
+    public void Parse_ObjectList_AcceptsListOfEntries()
+    {
+        JsonNode? value = FieldValueParser.Parse(ListingFieldCatalog.Find("parking")!, """[{"type":"carport","count":1}]""");
+
+        Assert.Equal("carport", value![0]!["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Parse_ObjectList_RejectsNonList()
+    {
+        Assert.Throws<FormatException>(() => FieldValueParser.Parse(ListingFieldCatalog.Find("parking")!, """{"type":"carport"}"""));
     }
 
     [Theory]

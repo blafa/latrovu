@@ -5,7 +5,7 @@ namespace Latrovu.Listings.Extraction;
 public static class ListingSchema
 {
     public static readonly JsonResponseSchema Value =
-        new("listing", Json.Replace(EvidencePlaceholder, ListingKeyFields.EvidenceSchemaJson()));
+        new("listing", JsonSchemaSealer.Seal(Json.Replace(EvidencePlaceholder, ListingKeyFields.EvidenceSchemaJson())));
 
     private const string EvidencePlaceholder = "\"__EVIDENCE_SCHEMA__\"";
 

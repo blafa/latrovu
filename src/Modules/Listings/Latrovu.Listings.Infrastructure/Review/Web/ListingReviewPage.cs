@@ -1,159 +1,135 @@
 using System.Net;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace Latrovu.Listings.Infrastructure.Review.Web;
 
 public static class ListingReviewPage
 {
     private const string PageTitle = "Inserat prüfen";
-    private const string ListSeparator = ", ";
-    private const string NoScore = "none";
+    private const string ApprovedStatus = "approved";
 
-    private static readonly Dictionary<string, string> SectionLabels = new()
-    {
-        [ListingFieldCatalog.GeneralSection] = "Allgemein",
-        ["location"] = "Lage",
-        ["size"] = "Grösse",
-        ["building"] = "Gebäude",
-        ["rent"] = "Miete",
-        ["sale"] = "Verkauf",
-        ["parking"] = "Parkplätze",
-        ["features"] = "Ausstattung",
-        ["energy"] = "Energie",
-        ["availability"] = "Verfügbarkeit",
-        ["viewing"] = "Besichtigung",
-        ["application"] = "Bewerbung",
-        ["contact"] = "Kontakt",
-        ["description"] = "Beschreibung",
-        ["documents"] = "Dokumente",
-        ["otherDetails"] = "Weitere Angaben"
-    };
+    private const string PageScript = """
+        <script>
+        function select(id) {
+            const pane = document.getElementById('pane-' + id) || document.getElementById('pane-intro');
+            document.querySelectorAll('.pane').forEach(other => other.hidden = other !== pane);
+            document.querySelectorAll('.spec, .chip').forEach(item => item.classList.toggle('selected', item.dataset.select === id));
+            history.replaceState(null, '', pane.id === 'pane-intro' ? location.pathname : '#' + id);
+            return pane;
+        }
+        const firstSpec = document.querySelector('.spec, .chip');
+        select(location.hash.slice(1) || firstSpec?.dataset.select || 'intro');
+
+        const thumbs = [...document.querySelectorAll('.thumb')];
+        let photoIndex = 0;
+        function showPhoto(index) {
+            if (thumbs.length === 0) { return; }
+            photoIndex = (index + thumbs.length) % thumbs.length;
+            const photo = document.getElementById('hero-photo');
+            photo.src = thumbs[photoIndex].dataset.full;
+            photo.alt = 'Bild ' + (photoIndex + 1) + ' von ' + thumbs.length;
+            document.getElementById('photo-counter').textContent = (photoIndex + 1) + ' / ' + thumbs.length;
+            thumbs.forEach((thumb, position) => thumb.classList.toggle('active', position === photoIndex));
+        }
+
+        function syncList(list) {
+            const items = [...list.querySelectorAll('tbody tr')].map(row => {
+                const item = {};
+                row.querySelectorAll('[data-key]').forEach(input => {
+                    const raw = input.value.trim();
+                    let value = null;
+                    if (raw !== '' && input.dataset.kind === 'number') {
+                        value = Number(raw.replace(/['’\s]/g, '').replace(',', '.'));
+                        if (Number.isNaN(value)) { value = null; }
+                    } else if (raw !== '' && input.dataset.kind === 'boolean') {
+                        value = raw === 'true';
+                    } else if (raw !== '') {
+                        value = raw;
+                    }
+                    item[input.dataset.key] = value;
+                });
+                return item;
+            }).filter(item => Object.values(item).some(value => value !== null));
+            const hidden = list.querySelector('input[type=hidden]');
+            hidden.value = JSON.stringify(items);
+            hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        document.addEventListener('click', event => {
+            const target = event.target.closest('[data-select]');
+            if (target) {
+                const pane = select(target.dataset.select);
+                if (window.matchMedia('(max-width: 960px)').matches) { pane.scrollIntoView({ behavior: 'smooth' }); }
+            }
+            const thumb = event.target.closest('.thumb');
+            if (thumb) { showPhoto(thumbs.indexOf(thumb)); }
+            const step = event.target.closest('[data-step]');
+            if (step) { showPhoto(photoIndex + Number(step.dataset.step)); }
+            const add = event.target.closest('[data-add-row]');
+            if (add) {
+                const list = add.closest('[data-list]');
+                list.querySelector('tbody').append(list.querySelector('template').content.cloneNode(true));
+            }
+            const remove = event.target.closest('[data-remove-row]');
+            if (remove) {
+                const list = remove.closest('[data-list]');
+                remove.closest('tr').remove();
+                syncList(list);
+            }
+        });
+
+        document.addEventListener('change', event => {
+            const list = event.target.closest('[data-list]');
+            if (list && event.target.type !== 'hidden') { syncList(list); }
+        });
+
+        document.addEventListener('keydown', event => {
+            if (event.target.closest('input, select, textarea') || document.getElementById('pane-images')?.hidden !== false) { return; }
+            if (event.key === 'ArrowLeft') { showPhoto(photoIndex - 1); }
+            if (event.key === 'ArrowRight') { showPhoto(photoIndex + 1); }
+        });
+        </script>
+        """;
 
     public static string Render(string token, ListingReview review)
     {
-        ArgumentNullException.ThrowIfNull(review);
+        ReviewModel model = ReviewModel.From(token, review);
 
-        JsonObject data = JsonNode.Parse(review.DataJson) as JsonObject ?? [];
-        JsonObject scores = JsonNode.Parse(review.FieldScoresJson) as JsonObject ?? [];
         StringBuilder html = new();
         ReviewLayout.AppendHead(html, PageTitle);
-        AppendHeader(html, token, review);
-        AppendImages(html, token, review.Images);
-        foreach (IGrouping<string, FieldDefinition> section in ListingFieldCatalog.Fields.GroupBy(field => field.Section))
-        {
-            AppendSection(html, token, section, data, scores);
-        }
-
+        AppendTopBar(html, model);
+        html.Append("<main class=\"workspace\">");
+        ReviewSummary.Append(html, model);
+        ReviewContextPane.Append(html, model);
+        html.Append("</main>").Append(PageScript);
         ReviewLayout.AppendEnd(html);
         return html.ToString();
     }
 
     public static string RenderFieldStatus(FieldUpdateResult result) => result switch
     {
-        FieldUpdateResult.Saved => "gespeichert ✓",
-        FieldUpdateResult.InvalidValue => "ungültiger Wert",
-        FieldUpdateResult.UnknownField => "unbekanntes Feld",
-        _ => "nicht gefunden"
+        FieldUpdateResult.Saved => "Gespeichert",
+        FieldUpdateResult.InvalidValue => "Ungültiger Wert",
+        FieldUpdateResult.UnknownField => "Unbekanntes Feld",
+        _ => "Nicht gefunden"
     };
 
     public static string RenderApproveStatus(bool approved) =>
-        approved ? "Freigegeben ✓" : "Freigabe nicht möglich (bereits freigegeben oder nicht gefunden)";
+        approved ? "Inserat freigegeben" : "Das Inserat ist bereits freigegeben";
 
-    private static void AppendHeader(StringBuilder html, string token, ListingReview review)
+    private static void AppendTopBar(StringBuilder html, ReviewModel model)
     {
-        string fileName = WebUtility.HtmlEncode(review.FileName ?? string.Empty);
-        html.Append("<header><div><h1>Inserat prüfen</h1>")
-            .Append($"<div class=\"muted\">{fileName} · Status: {WebUtility.HtmlEncode(review.Status)}</div></div>")
-            .Append($"<div><button hx-post=\"/review/{Encode(token)}/approve\" hx-target=\"#approve-status\">Freigeben</button>")
-            .Append("<div id=\"approve-status\" class=\"status\"></div></div></header>");
+        bool approved = model.Review.Status == ApprovedStatus;
+        string title = ListingValues.Text(model.Data, "title") ?? model.Review.FileName ?? PageTitle;
+        html.Append("<header class=\"topbar\"><div class=\"topbar-inner\"><span class=\"brand\">latrovu</span>")
+            .Append($"<div class=\"listing-id\"><h1 title=\"{Encode(title)}\">{Encode(title)}</h1>")
+            .Append($"<span class=\"listing-address\">{Encode(ListingValues.Address(model.Data))}</span></div>")
+            .Append("<div class=\"actions\"><span id=\"approve-status\" class=\"status\" aria-live=\"polite\"></span>")
+            .Append("<div class=\"approve\">")
+            .Append($"<button class=\"primary\" hx-post=\"/review/{Encode(model.Token)}/approve\" hx-target=\"#approve-status\">{ReviewIcons.Confirm}Inserat freigeben</button>")
+            .Append($"<span class=\"state{(approved ? " approved" : string.Empty)}\">Status: {(approved ? "freigegeben" : "Entwurf")}</span>")
+            .Append("</div></div></div></header>");
     }
 
-    private static void AppendImages(StringBuilder html, string token, IReadOnlyList<ListingImageRef> images)
-    {
-        if (images.Count == 0)
-        {
-            return;
-        }
-
-        html.Append($"<h2>Bilder ({images.Count})</h2><div class=\"images\">");
-        foreach (ListingImageRef image in images)
-        {
-            html.Append($"<img loading=\"lazy\" alt=\"Bild {image.Position}\" src=\"/review/{Encode(token)}/images/{image.Position}\">");
-        }
-
-        html.Append("</div>");
-    }
-
-    private static void AppendSection(
-        StringBuilder html,
-        string token,
-        IGrouping<string, FieldDefinition> section,
-        JsonObject data,
-        JsonObject scores)
-    {
-        string label = SectionLabels.GetValueOrDefault(section.Key, section.Key);
-        html.Append($"<h2>{WebUtility.HtmlEncode(label)}</h2>");
-        foreach (FieldDefinition field in section)
-        {
-            AppendField(html, token, field, JsonPaths.Get(data, field.Path), ScoreOf(scores, field.Path));
-        }
-    }
-
-    private static void AppendField(StringBuilder html, string token, FieldDefinition field, JsonNode? value, string score)
-    {
-        string statusId = $"status-{field.Path.Replace('.', '-')}";
-        string label = field.Path.Split('.')[^1];
-        string request = $"hx-post=\"/review/{Encode(token)}/fields\" hx-trigger=\"change\" hx-target=\"#{statusId}\" "
-            + $"hx-vals='{{\"path\":\"{Encode(field.Path)}\"}}' name=\"value\"";
-
-        html.Append($"<div class=\"field score-{score}\"><label title=\"{Encode(field.Path)}\">{Encode(label)}</label>")
-            .Append(RenderInput(field, value, request))
-            .Append($"<span id=\"{statusId}\" class=\"status\"></span></div>");
-    }
-
-    private static string RenderInput(FieldDefinition field, JsonNode? value, string request)
-    {
-        string current = Encode(DisplayValue(value, field.Kind));
-        return field.Kind switch
-        {
-            FieldKind.Boolean => RenderSelect(request, current, [("true", "Ja"), ("false", "Nein")]),
-            FieldKind.Choice => RenderSelect(request, current, field.Choices.Select(choice => (choice, choice)).ToList()),
-            FieldKind.Json => $"<textarea rows=\"3\" {request}>{current}</textarea>",
-            _ => $"<input type=\"text\" value=\"{current}\" {request}>"
-        };
-    }
-
-    private static string RenderSelect(string request, string current, IReadOnlyList<(string Value, string Label)> options)
-    {
-        StringBuilder select = new($"<select {request}><option value=\"\">–</option>");
-        foreach ((string optionValue, string optionLabel) in options)
-        {
-            string selected = optionValue == current ? " selected" : string.Empty;
-            select.Append($"<option value=\"{Encode(optionValue)}\"{selected}>{Encode(optionLabel)}</option>");
-        }
-
-        return select.Append("</select>").ToString();
-    }
-
-    private static string DisplayValue(JsonNode? value, FieldKind kind)
-    {
-        if (value is null)
-        {
-            return string.Empty;
-        }
-
-        if (kind == FieldKind.TextList && value is JsonArray items)
-        {
-            return string.Join(ListSeparator, items.Select(item => item?.ToString()));
-        }
-
-        return value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : value.ToJsonString();
-    }
-
-    private static string ScoreOf(JsonObject scores, string path) =>
-        scores[path] is JsonValue score && score.TryGetValue(out string? name) ? name : NoScore;
-
-    private static string Encode(string value) => WebUtility.HtmlEncode(value);
+    private static string Encode(string text) => WebUtility.HtmlEncode(text);
 }

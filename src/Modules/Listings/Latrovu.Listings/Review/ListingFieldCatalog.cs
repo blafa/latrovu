@@ -47,8 +47,23 @@ public static class ListingFieldCatalog
             return;
         }
 
+        if (schema[ItemsKey]?[PropertiesKey] is JsonObject itemProperties)
+        {
+            fields.Add(new FieldDefinition(path, section, FieldKind.ObjectList, []) { ItemFields = ItemFieldsOf(path, section, itemProperties) });
+            return;
+        }
+
         fields.Add(new FieldDefinition(path, section, KindOf(schema), ChoicesOf(schema)));
     }
+
+    private static List<FieldDefinition> ItemFieldsOf(string path, string section, JsonObject itemProperties) =>
+        itemProperties
+            .Select(property => new FieldDefinition(
+                $"{path}.{property.Key}",
+                section,
+                KindOf(property.Value!.AsObject()),
+                ChoicesOf(property.Value!.AsObject())))
+            .ToList();
 
     private static FieldKind KindOf(JsonObject schema)
     {

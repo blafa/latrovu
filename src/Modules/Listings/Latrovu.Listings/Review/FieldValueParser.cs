@@ -26,6 +26,7 @@ public static class FieldValueParser
             FieldKind.Boolean => ParseBoolean(value),
             FieldKind.Choice => ParseChoice(field, value),
             FieldKind.TextList => ParseTextList(value),
+            FieldKind.ObjectList => ParseObjectList(value),
             FieldKind.Json => JsonNode.Parse(value),
             _ => JsonValue.Create(value)
         };
@@ -53,6 +54,11 @@ public static class FieldValueParser
         field.Choices.Contains(value)
             ? JsonValue.Create(value)
             : throw new FormatException($"'{value}' is not an allowed value for {field.Path}");
+
+    private static JsonArray ParseObjectList(string value) =>
+        JsonNode.Parse(value) is JsonArray items && items.All(item => item is JsonObject)
+            ? items
+            : throw new FormatException("Expected a list of entries");
 
     private static JsonArray ParseTextList(string value)
     {

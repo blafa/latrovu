@@ -6,27 +6,34 @@ namespace Latrovu.Listings.Extraction;
 public static class ListingExtractionBuilder
 {
     private const string EvidenceProperty = "evidence";
-    private const string EmptyScores = "{}";
+    private const string EmptyJsonObject = "{}";
+    private const char PageSeparator = '\n';
+    private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
 
-    public static ListingExtraction Build(string extractedJson, string documentText)
+    public static ListingExtraction Build(string extractedJson, IReadOnlyList<string> pages)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(extractedJson);
-        ArgumentNullException.ThrowIfNull(documentText);
+        ArgumentNullException.ThrowIfNull(pages);
 
         if (JsonNode.Parse(extractedJson) is not JsonObject data)
         {
-            return new ListingExtraction(extractedJson, extractedJson, EmptyScores);
+            return new ListingExtraction(extractedJson, extractedJson, EmptyJsonObject, EmptyJsonObject);
         }
 
         IReadOnlyList<FieldEvidence> evidence = ReadEvidence(data[EvidenceProperty]);
         data.Remove(EvidenceProperty);
 
-        IReadOnlyDictionary<string, FieldConfidence> scores = EvidenceScorer.Score(documentText, data, evidence);
+        IReadOnlyDictionary<string, FieldConfidence> scores = EvidenceScorer.Score(string.Join(PageSeparator, pages), data, evidence);
+        IReadOnlyDictionary<string, EvidenceLocation> locations = EvidenceMap.Build(pages, data, evidence);
         Dictionary<string, string> scoreNames = scores.ToDictionary(
             score => score.Key,
             score => score.Value.ToString().ToLowerInvariant());
 
-        return new ListingExtraction(extractedJson, data.ToJsonString(), JsonSerializer.Serialize(scoreNames));
+        return new ListingExtraction(
+            extractedJson,
+            data.ToJsonString(),
+            JsonSerializer.Serialize(scoreNames),
+            JsonSerializer.Serialize(locations, WebJson));
     }
 
     private static List<FieldEvidence> ReadEvidence(JsonNode? node)

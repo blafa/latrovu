@@ -12,11 +12,11 @@ public static class ReviewGatePage
         string encodedToken = WebUtility.HtmlEncode(token);
         StringBuilder html = new();
         ReviewLayout.AppendHead(html, PageTitle);
-        html.Append("<div class=\"gate\"><h1>Inserat öffnen</h1>")
+        html.Append("<main><div class=\"gate\"><h1>Inserat öffnen</h1>")
             .Append("<p>Zum Schutz Ihrer Daten senden wir Ihnen einen Bestätigungscode ")
             .Append("an die E-Mail-Adresse, von der das Inserat eingereicht wurde.</p>")
-            .Append($"<div id=\"gate\"><button hx-post=\"/review/{encodedToken}/code\" hx-target=\"#gate\">Code senden</button></div>")
-            .Append("</div>");
+            .Append($"<div id=\"gate\"><button class=\"primary\" hx-post=\"/review/{encodedToken}/code\" hx-target=\"#gate\">Code senden</button></div>")
+            .Append("</div></main>");
         ReviewLayout.AppendEnd(html);
         return html.ToString();
     }
@@ -45,7 +45,7 @@ public static class ReviewGatePage
             .Append($"<form hx-post=\"/review/{encodedToken}/verify\" hx-target=\"#gate-message\">")
             .Append("<input name=\"code\" inputmode=\"numeric\" autocomplete=\"one-time-code\" maxlength=\"6\" ")
             .Append("pattern=\"[0-9]{6}\" required aria-label=\"Bestätigungscode\">")
-            .Append("<button type=\"submit\">Bestätigen</button></form>")
+            .Append("<button type=\"submit\" class=\"primary\">Bestätigen</button></form>")
             .Append("<div id=\"gate-message\" class=\"status\"></div>")
             .Append($"<button class=\"secondary\" hx-post=\"/review/{encodedToken}/code\" hx-target=\"#gate\">Neuen Code senden</button>")
             .ToString();

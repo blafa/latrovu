@@ -19,6 +19,8 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
         CREATE INDEX IF NOT EXISTS ix_listings_status ON listings (status);
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS extracted_data jsonb;
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS field_scores jsonb;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS field_evidence jsonb;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS publish_contact boolean NOT NULL DEFAULT false;
         CREATE TABLE IF NOT EXISTS listing_images (
             listing_id   uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
             position     int NOT NULL,

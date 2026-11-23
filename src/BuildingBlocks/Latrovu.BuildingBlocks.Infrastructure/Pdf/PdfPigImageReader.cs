@@ -75,6 +75,6 @@ public sealed class PdfPigImageReader(ILogger<PdfPigImageReader> logger) : IPdfI
             return new ImageFile(raw, JpegContentType, JpegExtension);
         }
 
-        return image.TryGetPng(out byte[] png) ? new ImageFile(png, PngContentType, PngExtension) : null;
+        return image.TryGetPng(out byte[]? png) && png is not null ? new ImageFile(png, PngContentType, PngExtension) : null;
     }
 }

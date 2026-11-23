@@ -7,5 +7,6 @@ public enum FieldKind
     Boolean,
     Choice,
     TextList,
+    ObjectList,
     Json
 }

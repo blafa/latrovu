@@ -6,5 +6,7 @@ public interface IListingReviewStore
 
     Task SaveAsync(Guid listingId, string dataJson, string fieldScoresJson, CancellationToken ct);
 
+    Task SetPublishContactAsync(Guid listingId, bool publishContact, CancellationToken ct);
+
     Task<bool> ApproveAsync(Guid listingId, CancellationToken ct);
 }

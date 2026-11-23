@@ -2,5 +2,5 @@ namespace Latrovu.Listings.Extraction;
 
 public interface IListingExtractor
 {
-    Task<ListingExtraction?> ExtractAsync(string exposeText, CancellationToken ct);
+    Task<ListingExtraction?> ExtractAsync(IReadOnlyList<string> pages, CancellationToken ct);
 }

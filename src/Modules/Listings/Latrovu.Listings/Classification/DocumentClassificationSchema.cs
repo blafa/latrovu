@@ -4,7 +4,7 @@ namespace Latrovu.Listings.Classification;
 
 public static class DocumentClassificationSchema
 {
-    public static readonly JsonResponseSchema Value = new("document_classification", Json);
+    public static readonly JsonResponseSchema Value = new("document_classification", JsonSchemaSealer.Seal(Json));
 
     private const string Json = """
         {

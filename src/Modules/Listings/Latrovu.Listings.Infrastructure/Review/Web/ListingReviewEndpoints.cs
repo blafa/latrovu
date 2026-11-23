@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Latrovu.BuildingBlocks.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -12,7 +13,11 @@ public static class ListingReviewEndpoints
     private const string PathFormKey = "path";
     private const string ValueFormKey = "value";
     private const string CodeFormKey = "code";
+    private const string LabelFormKey = "label";
     private const string HtmxRedirectHeader = "HX-Redirect";
+    private const string HtmxRefreshHeader = "HX-Refresh";
+    private const string HtmxTrue = "true";
+    private const string CheckedFormValue = "true";
 
     public static IEndpointRouteBuilder MapListingReview(this IEndpointRouteBuilder app)
     {
@@ -23,6 +28,9 @@ public static class ListingReviewEndpoints
         review.MapPost("/code", RequestCodeAsync);
         review.MapPost("/verify", VerifyCodeAsync);
         review.MapPost("/fields", UpdateFieldAsync);
+        review.MapPost("/confirm", ConfirmFieldAsync);
+        review.MapPost("/details", AddCustomDetailAsync);
+        review.MapPost("/publish-contact", SetPublishContactAsync);
         review.MapPost("/approve", ApproveAsync);
         review.MapGet("/images/{position:int}", ImageAsync);
         return app;
@@ -81,7 +89,112 @@ public static class ListingReviewEndpoints
         }
 
         IFormCollection form = await request.ReadFormAsync(ct);
-        FieldUpdateResult result = await reviews.UpdateFieldAsync(token, form[PathFormKey].ToString(), form[ValueFormKey].ToString(), ct);
+        string path = form[PathFormKey].ToString();
+        FieldUpdateResult result = await reviews.UpdateFieldAsync(token, path, form[ValueFormKey].ToString(), ct);
+        string status = ListingReviewPage.RenderFieldStatus(result);
+        if (result != FieldUpdateResult.Saved)
+        {
+            return Html(status);
+        }
+
+        ListingReview? review = await reviews.GetByTokenAsync(token, ct);
+        return Html(status + SavedValueFragment(review, path));
+    }
+
+    private static string SavedValueFragment(ListingReview? review, string path)
+    {
+        FieldDefinition? field = ListingFieldCatalog.Find(path);
+        if (review is null || field is null || JsonNode.Parse(review.DataJson) is not JsonObject data)
+        {
+            return string.Empty;
+        }
+
+        return ReviewSummary.SavedValueOob(field, JsonPaths.Get(data, path));
+    }
+
+    private static async Task<IResult> ConfirmFieldAsync(
+        string token,
+        HttpContext context,
+        IReviewAccessService access,
+        IListingReviewService reviews,
+        CancellationToken ct)
+    {
+        if (!await HasSessionAsync(token, context.Request, access, ct))
+        {
+            return Results.Unauthorized();
+        }
+
+        IFormCollection form = await context.Request.ReadFormAsync(ct);
+        FieldUpdateResult result = await reviews.ConfirmFieldAsync(token, form[PathFormKey].ToString(), ct);
+        return RefreshOnSuccess(context, result);
+    }
+
+    private static async Task<IResult> AddCustomDetailAsync(
+        string token,
+        HttpContext context,
+        IReviewAccessService access,
+        IListingReviewService reviews,
+        CancellationToken ct)
+    {
+        if (!await HasSessionAsync(token, context.Request, access, ct))
+        {
+            return Results.Unauthorized();
+        }
+
+        IFormCollection form = await context.Request.ReadFormAsync(ct);
+        string label = form[LabelFormKey].ToString();
+        string value = form[ValueFormKey].ToString();
+        FieldUpdateResult result = await TrySetKnownFieldAsync(token, label, value, reviews, ct);
+        if (result != FieldUpdateResult.Saved)
+        {
+            result = await reviews.AddCustomDetailAsync(token, label, value, ct);
+        }
+
+        return RefreshOnSuccess(context, result);
+    }
+
+    private static async Task<FieldUpdateResult> TrySetKnownFieldAsync(
+        string token,
+        string label,
+        string value,
+        IListingReviewService reviews,
+        CancellationToken ct)
+    {
+        string? path = FieldLabels.PathForLabel(label);
+        FieldDefinition? field = path is null ? null : ListingFieldCatalog.Find(path);
+        if (field is null || field.Kind is FieldKind.ObjectList or FieldKind.Json)
+        {
+            return FieldUpdateResult.UnknownField;
+        }
+
+        return await reviews.UpdateFieldAsync(token, field.Path, value, ct);
+    }
+
+    private static async Task<IResult> SetPublishContactAsync(
+        string token,
+        HttpRequest request,
+        IReviewAccessService access,
+        IListingReviewService reviews,
+        CancellationToken ct)
+    {
+        if (!await HasSessionAsync(token, request, access, ct))
+        {
+            return Results.Unauthorized();
+        }
+
+        IFormCollection form = await request.ReadFormAsync(ct);
+        bool publishContact = form[ValueFormKey].ToString() == CheckedFormValue;
+        bool saved = await reviews.SetPublishContactAsync(token, publishContact, ct);
+        return Html(ListingReviewPage.RenderFieldStatus(saved ? FieldUpdateResult.Saved : FieldUpdateResult.NotFound));
+    }
+
+    private static IResult RefreshOnSuccess(HttpContext context, FieldUpdateResult result)
+    {
+        if (result == FieldUpdateResult.Saved)
+        {
+            context.Response.Headers[HtmxRefreshHeader] = HtmxTrue;
+        }
+
         return Html(ListingReviewPage.RenderFieldStatus(result));
     }
 

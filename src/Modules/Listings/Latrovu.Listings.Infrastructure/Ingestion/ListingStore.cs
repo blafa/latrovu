@@ -6,8 +6,8 @@ namespace Latrovu.Listings.Infrastructure.Ingestion;
 public sealed class ListingStore(NpgsqlDataSource dataSource, ILogger<ListingStore> logger) : IListingStore
 {
     private const string InsertSql = """
-        INSERT INTO listings (id, source_email, subject, file_name, data, extracted_data, field_scores)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb)
+        INSERT INTO listings (id, source_email, subject, file_name, data, extracted_data, field_scores, field_evidence)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb, $8::jsonb)
         """;
 
     public async Task<Guid> AddAsync(NewListing listing, CancellationToken ct)
@@ -24,6 +24,7 @@ public sealed class ListingStore(NpgsqlDataSource dataSource, ILogger<ListingSto
         command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(listing.Extraction?.DataJson) });
         command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(listing.Extraction?.ExtractedJson) });
         command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(listing.Extraction?.FieldScoresJson) });
+        command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(listing.Extraction?.FieldEvidenceJson) });
         await command.ExecuteNonQueryAsync(ct);
 
         logger.LogDebug("Inserted listing {ListingId} in {ElapsedMs} ms", listingId, stopwatch.ElapsedMilliseconds);

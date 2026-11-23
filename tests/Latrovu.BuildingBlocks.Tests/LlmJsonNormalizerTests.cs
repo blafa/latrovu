@@ -7,6 +7,7 @@ namespace Latrovu.BuildingBlocks.Tests;
 public sealed class LlmJsonNormalizerTests
 {
     private const string PlainJson = "{\"rooms\":3.5}";
+    private const string PlainJsonWithRooms = "{\"rooms\":2.5}";
 
     [Fact]
     public void Normalize_PlainJson_ReturnsUnchanged()
@@ -46,5 +47,25 @@ public sealed class LlmJsonNormalizerTests
         string? actual = LlmJsonNormalizer.Normalize(answer);
 
         Assert.Null(actual);
+    }
+
+    [Fact]
+    public void Normalize_DuplicateProperties_KeepsFirst()
+    {
+        const string answer = "{\"sale\":{\"priceChf\":422000,\"priceChf\":1}}";
+
+        string? actual = LlmJsonNormalizer.Normalize(answer);
+
+        Assert.Equal("{\"sale\":{\"priceChf\":422000}}", actual);
+    }
+
+    [Fact]
+    public void Normalize_PropertyNameWithQuote_IsDropped()
+    {
+        const string answer = "{\"rooms\":2.5,\"pricePerM2Chf\\\": null, \":null}";
+
+        string? actual = LlmJsonNormalizer.Normalize(answer);
+
+        Assert.Equal(PlainJsonWithRooms, actual);
     }
 }

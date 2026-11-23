@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -7,13 +6,6 @@ namespace Latrovu.Listings.Extraction;
 
 public static partial class EvidenceScorer
 {
-    private const decimal MinMatchableNumber = 100;
-    private const int MinMatchableTextLength = 3;
-    private const string GroupedNumberFormat = "#,0";
-    private const string DecimalNumberFormat = "0.0#";
-    private const string PlainNumberFormat = "0";
-    private static readonly string[] ThousandsSeparators = ["'", " ", "."];
-
     public static IReadOnlyDictionary<string, FieldConfidence> Score(
         string documentText,
         JsonObject data,
@@ -64,46 +56,9 @@ public static partial class EvidenceScorer
         return string.IsNullOrWhiteSpace(quote) ? FieldConfidence.Low : FieldConfidence.Medium;
     }
 
-    private static bool ValueAppearsInText(string normalizedText, string path, JsonNode value)
-    {
-        if (ListingKeyFields.InferredPaths.Contains(path))
-        {
-            return false;
-        }
-
-        return value.GetValueKind() switch
-        {
-            JsonValueKind.Number => NumberVariants(value.GetValue<decimal>())
-                .Any(variant => normalizedText.Contains(variant, StringComparison.Ordinal)),
-            JsonValueKind.String => TextAppears(normalizedText, value.GetValue<string>()),
-            _ => false
-        };
-    }
-
-    private static bool TextAppears(string normalizedText, string text)
-    {
-        string normalized = Normalize(text);
-        return normalized.Length >= MinMatchableTextLength && normalizedText.Contains(normalized, StringComparison.Ordinal);
-    }
-
-    private static IEnumerable<string> NumberVariants(decimal number)
-    {
-        if (number < MinMatchableNumber)
-        {
-            return [];
-        }
-
-        if (number != decimal.Truncate(number))
-        {
-            string withPoint = number.ToString(DecimalNumberFormat, CultureInfo.InvariantCulture);
-            return [withPoint, withPoint.Replace('.', ',')];
-        }
-
-        string grouped = number.ToString(GroupedNumberFormat, CultureInfo.InvariantCulture);
-        return ThousandsSeparators
-            .Select(separator => grouped.Replace(",", separator, StringComparison.Ordinal))
-            .Append(number.ToString(PlainNumberFormat, CultureInfo.InvariantCulture));
-    }
+    private static bool ValueAppearsInText(string normalizedText, string path, JsonNode value) =>
+        !ListingKeyFields.InferredPaths.Contains(path)
+        && EvidenceNeedles.FromValue(value).Any(needle => normalizedText.Contains(Normalize(needle), StringComparison.Ordinal));
 
     private static JsonNode? FindValue(JsonObject data, string path)
     {

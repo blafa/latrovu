@@ -9,6 +9,9 @@ public sealed class ListingReviewService(
     ILogger<ListingReviewService> logger) : IListingReviewService
 {
     public const string ConfirmedScore = "confirmed";
+    public const string OtherDetailsPath = "otherDetails";
+    private const string LabelKey = "label";
+    private const string ValueKey = "value";
 
     public async Task<ListingReview?> GetByTokenAsync(string token, CancellationToken ct)
     {
@@ -29,15 +32,49 @@ public sealed class ListingReviewService(
             return FieldUpdateResult.InvalidValue;
         }
 
-        ListingReview? review = await GetByTokenAsync(token, ct);
-        if (review is null)
+        return await ChangeAsync(token, path, (data, scores) =>
         {
-            return FieldUpdateResult.NotFound;
+            JsonPaths.Set(data, path, value);
+            scores[path] = ConfirmedScore;
+        }, ct);
+    }
+
+    public Task<FieldUpdateResult> ConfirmFieldAsync(string token, string path, CancellationToken ct)
+    {
+        if (ListingFieldCatalog.Find(path) is null)
+        {
+            return Task.FromResult(FieldUpdateResult.UnknownField);
         }
 
-        await SaveFieldAsync(review, path, value, ct);
-        logger.LogInformation("Listing {ListingId}: field {Path} updated by reviewer", review.Id, path);
-        return FieldUpdateResult.Saved;
+        return ChangeAsync(token, path, (_, scores) => scores[path] = ConfirmedScore, ct);
+    }
+
+    public Task<FieldUpdateResult> AddCustomDetailAsync(string token, string label, string value, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(label) || string.IsNullOrWhiteSpace(value))
+        {
+            return Task.FromResult(FieldUpdateResult.InvalidValue);
+        }
+
+        return ChangeAsync(token, OtherDetailsPath, (data, _) =>
+        {
+            JsonArray details = data[OtherDetailsPath] as JsonArray ?? [];
+            details.Add(new JsonObject { [LabelKey] = label.Trim(), [ValueKey] = value.Trim() });
+            data[OtherDetailsPath] = details;
+        }, ct);
+    }
+
+    public async Task<bool> SetPublishContactAsync(string token, bool publishContact, CancellationToken ct)
+    {
+        Guid? listingId = await tokens.FindListingIdAsync(token, ct);
+        if (listingId is null)
+        {
+            return false;
+        }
+
+        await reviews.SetPublishContactAsync(listingId.Value, publishContact, ct);
+        logger.LogInformation("Listing {ListingId}: contact details public set to {PublishContact}", listingId, publishContact);
+        return true;
     }
 
     public async Task<bool> ApproveAsync(string token, CancellationToken ct)
@@ -48,13 +85,24 @@ public sealed class ListingReviewService(
         return approved;
     }
 
-    private async Task SaveFieldAsync(ListingReview review, string path, JsonNode? value, CancellationToken ct)
+    private async Task<FieldUpdateResult> ChangeAsync(
+        string token,
+        string path,
+        Action<JsonObject, JsonObject> change,
+        CancellationToken ct)
     {
+        ListingReview? review = await GetByTokenAsync(token, ct);
+        if (review is null)
+        {
+            return FieldUpdateResult.NotFound;
+        }
+
         JsonObject data = JsonNode.Parse(review.DataJson) as JsonObject ?? [];
         JsonObject scores = JsonNode.Parse(review.FieldScoresJson) as JsonObject ?? [];
-        JsonPaths.Set(data, path, value);
-        scores[path] = ConfirmedScore;
+        change(data, scores);
         await reviews.SaveAsync(review.Id, data.ToJsonString(), scores.ToJsonString(), ct);
+        logger.LogInformation("Listing {ListingId}: {Path} changed by reviewer", review.Id, path);
+        return FieldUpdateResult.Saved;
     }
 
     private static bool TryParse(FieldDefinition field, string? rawValue, out JsonNode? value)

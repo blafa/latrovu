@@ -7,4 +7,6 @@ public sealed record ListingReview(
     string? FileName,
     string DataJson,
     string FieldScoresJson,
+    string FieldEvidenceJson,
+    bool PublishContact,
     IReadOnlyList<ListingImageRef> Images);

@@ -4,8 +4,13 @@ namespace Latrovu.Listings.Extraction;
 
 public sealed class ListingExtractor(ILlmClient llm, ILogger<ListingExtractor> logger) : IListingExtractor
 {
-    public async Task<ListingExtraction?> ExtractAsync(string exposeText, CancellationToken ct)
+    private const char PageSeparator = '\n';
+
+    public async Task<ListingExtraction?> ExtractAsync(IReadOnlyList<string> pages, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(pages);
+
+        string exposeText = string.Join(PageSeparator, pages);
         if (string.IsNullOrWhiteSpace(exposeText))
         {
             logger.LogWarning("Exposé contains no readable text, probably a scanned document");
@@ -25,6 +30,6 @@ public sealed class ListingExtractor(ILlmClient llm, ILogger<ListingExtractor> l
             logger.LogWarning("LLM answer was not valid JSON, keeping the raw answer");
         }
 
-        return ListingExtractionBuilder.Build(json, exposeText);
+        return ListingExtractionBuilder.Build(json, pages);
     }
 }
