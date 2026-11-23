@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Latrovu.Core.Messaging;
+using Latrovu.Core.Submissions;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
@@ -71,7 +71,7 @@ public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> 
 
     private static async Task<InboundMail> ToInboundMailAsync(MimeMessage message, CancellationToken ct)
     {
-        List<ReceivedFile> attachments = [];
+        List<SubmittedFile> attachments = [];
         foreach (MimePart part in message.Attachments.OfType<MimePart>())
         {
             attachments.Add(await ToReceivedFileAsync(part, ct));
@@ -90,16 +90,16 @@ public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> 
             attachments);
     }
 
-    private static async Task<ReceivedFile> ToReceivedFileAsync(MimePart part, CancellationToken ct)
+    private static async Task<SubmittedFile> ToReceivedFileAsync(MimePart part, CancellationToken ct)
     {
         string fileName = part.FileName ?? string.Empty;
         if (part.Content is null)
         {
-            return new ReceivedFile(fileName, part.ContentType.MimeType, []);
+            return new SubmittedFile(fileName, part.ContentType.MimeType, []);
         }
 
         using MemoryStream stream = new();
         await part.Content.DecodeToAsync(stream, ct);
-        return new ReceivedFile(fileName, part.ContentType.MimeType, stream.ToArray());
+        return new SubmittedFile(fileName, part.ContentType.MimeType, stream.ToArray());
     }
 }

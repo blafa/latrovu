@@ -6,7 +6,7 @@ using Latrovu.BuildingBlocks.Infrastructure.Persistence;
 using Latrovu.BuildingBlocks.Infrastructure.Storage;
 using Latrovu.Intake.Infrastructure;
 using Latrovu.Listings.Infrastructure;
-using Latrovu.Listings.Infrastructure.Web;
+using Latrovu.Listings.Infrastructure.Review.Web;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

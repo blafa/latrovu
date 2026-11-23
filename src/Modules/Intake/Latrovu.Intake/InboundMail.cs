@@ -1,4 +1,4 @@
-using Latrovu.Core.Messaging;
+using Latrovu.Core.Submissions;
 
 namespace Latrovu.Intake;
 
@@ -7,7 +7,7 @@ public sealed record InboundMail(
     string Sender,
     string? Subject,
     IReadOnlyList<string> Recipients,
-    IReadOnlyList<ReceivedFile> Attachments)
+    IReadOnlyList<SubmittedFile> Attachments)
 {
-    public ReceivedMessage ToReceivedMessage() => new(MessageId, Sender, Subject);
+    public Submission ToSubmission() => new(MessageId, Sender, Subject);
 }

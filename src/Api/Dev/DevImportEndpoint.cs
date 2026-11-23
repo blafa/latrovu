@@ -1,4 +1,4 @@
-using Latrovu.Core.Messaging;
+using Latrovu.Core.Submissions;
 using Latrovu.Intake;
 
 namespace Latrovu.Api.Dev;
@@ -71,7 +71,7 @@ public static class DevImportEndpoint
     {
         string fileName = Path.GetFileName(file);
         byte[] content = await File.ReadAllBytesAsync(file, ct);
-        ReceivedFile attachment = new(fileName, PdfMimeType, content);
+        SubmittedFile attachment = new(fileName, PdfMimeType, content);
         return new InboundMail($"dev-import:{fileName}", sender, fileName, [ListingRecipient], [attachment]);
     }
 }

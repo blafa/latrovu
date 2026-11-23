@@ -9,6 +9,12 @@
 
   <ItemGroup>
     <Using Include="Microsoft.Extensions.Logging" />
+    <Using Include="Latrovu.Listings.Access" />
+    <Using Include="Latrovu.Listings.Classification" />
+    <Using Include="Latrovu.Listings.Extraction" />
+    <Using Include="Latrovu.Listings.Images" />
+    <Using Include="Latrovu.Listings.Ingestion" />
+    <Using Include="Latrovu.Listings.Review" />
   </ItemGroup>
 
   <ItemGroup>

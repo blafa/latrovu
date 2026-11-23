@@ -1,10 +1,10 @@
-using Latrovu.Core.Messaging;
+using Latrovu.Core.Submissions;
 
 namespace Latrovu.Intake;
 
 public sealed class MailDispatcher(
     IMailRouter router,
-    IListingDocumentHandler listingDocuments,
+    IListingSubmissionHandler listingSubmissions,
     ILogger<MailDispatcher> logger) : IMailDispatcher
 {
     public async Task DispatchAsync(InboundMail mail, CancellationToken ct)
@@ -21,7 +21,7 @@ public sealed class MailDispatcher(
         switch (kind)
         {
             case MailKind.Listing:
-                await listingDocuments.HandleAsync(mail.ToReceivedMessage(), mail.Attachments, ct);
+                await listingSubmissions.HandleAsync(mail.ToSubmission(), mail.Attachments, ct);
                 break;
             case MailKind.Search:
                 logger.LogWarning("Search mail {MessageId} received, search intake is not implemented yet", mail.MessageId);
