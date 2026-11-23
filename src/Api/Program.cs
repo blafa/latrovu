@@ -1,29 +1,25 @@
 using Latrovu.Api.Dev;
-using Latrovu.Api.Mail;
-using Latrovu.Core;
-using Latrovu.Infrastructure.Ai;
-using Latrovu.Infrastructure.Mail;
-using Latrovu.Infrastructure.Pdf;
-using Latrovu.Infrastructure.Persistence;
-using Latrovu.Infrastructure.Storage;
+using Latrovu.BuildingBlocks.Infrastructure.Ai;
+using Latrovu.BuildingBlocks.Infrastructure.Pdf;
+using Latrovu.BuildingBlocks.Infrastructure.Persistence;
+using Latrovu.BuildingBlocks.Infrastructure.Storage;
+using Latrovu.Intake.Infrastructure;
+using Latrovu.Listings.Infrastructure;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services
-    .AddCore()
-    .AddMailInbox(builder.Configuration)
+    .AddPostgres(builder.Configuration)
     .AddAiExtraction(builder.Configuration)
     .AddObjectStorage(builder.Configuration)
     .AddPdfReading()
-    .AddPersistence(builder.Configuration);
-builder.Services.AddHostedService<MailPollingService>();
+    .AddListingsModule()
+    .AddIntakeModule(builder.Configuration);
 
 WebApplication app = builder.Build();
 
 app.Lifetime.ApplicationStarted.Register(() => app.Logger.LogInformation("Latrovu API started"));
 app.Lifetime.ApplicationStopping.Register(() => app.Logger.LogInformation("Latrovu API stopping"));
-
-await app.Services.GetRequiredService<DatabaseSchema>().EnsureCreatedAsync();
 
 app.MapGet("/", () => "Latrovu API");
 if (app.Environment.IsDevelopment())

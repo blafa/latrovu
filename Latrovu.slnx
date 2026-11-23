@@ -3,7 +3,26 @@
   <Folder Name="/src/Api/">
     <Project Path="src/Api/Latrovu.Api.csproj" />
   </Folder>
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/Latrovu.BuildingBlocks.Infrastructure/Latrovu.BuildingBlocks.Infrastructure.csproj" />
+    <Project Path="src/BuildingBlocks/Latrovu.BuildingBlocks/Latrovu.BuildingBlocks.csproj" />
+  </Folder>
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/Latrovu.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Intake/">
+    <Project Path="src/Modules/Intake/Latrovu.Intake.Infrastructure/Latrovu.Intake.Infrastructure.csproj" />
+    <Project Path="src/Modules/Intake/Latrovu.Intake/Latrovu.Intake.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Listings/">
+    <Project Path="src/Modules/Listings/Latrovu.Listings.Infrastructure/Latrovu.Listings.Infrastructure.csproj" />
+    <Project Path="src/Modules/Listings/Latrovu.Listings/Latrovu.Listings.csproj" />
+  </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Latrovu.Api.Tests/Latrovu.Api.Tests.csproj" />
+    <Project Path="tests/Latrovu.BuildingBlocks.Tests/Latrovu.BuildingBlocks.Tests.csproj" />
+    <Project Path="tests/Latrovu.Core.Tests/Latrovu.Core.Tests.csproj" />
+    <Project Path="tests/Latrovu.Intake.Tests/Latrovu.Intake.Tests.csproj" />
+    <Project Path="tests/Latrovu.Listings.Tests/Latrovu.Listings.Tests.csproj" />
   </Folder>
 </Solution>

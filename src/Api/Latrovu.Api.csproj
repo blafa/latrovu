@@ -8,8 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\Latrovu.Core.csproj" />
-    <ProjectReference Include="..\Infrastructure\Latrovu.Infrastructure.csproj" />
+    <ProjectReference Include="..\BuildingBlocks\Latrovu.BuildingBlocks.Infrastructure\Latrovu.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Intake\Latrovu.Intake.Infrastructure\Latrovu.Intake.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Listings\Latrovu.Listings.Infrastructure\Latrovu.Listings.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
