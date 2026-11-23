@@ -62,8 +62,8 @@ public sealed class ListingIntake(
 
     private async Task<Guid> ExtractAndStoreAsync(ReceivedMessage message, ReceivedFile pdf, string text, CancellationToken ct)
     {
-        string? data = await extractor.ExtractAsync(text, ct);
-        NewListing listing = new(message.Sender, message.Subject, pdf.FileName, data);
+        ListingExtraction? extraction = await extractor.ExtractAsync(text, ct);
+        NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction);
         Guid listingId = await store.AddAsync(listing, ct);
         logger.LogInformation("Stored listing {ListingId} from {FileName}", listingId, pdf.FileName);
         return listingId;

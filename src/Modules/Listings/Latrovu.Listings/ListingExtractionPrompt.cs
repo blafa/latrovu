@@ -2,7 +2,11 @@ namespace Latrovu.Listings;
 
 public static class ListingExtractionPrompt
 {
-    public const string Text = """
+    public static readonly string Text = Template.Replace(KeyFieldsPlaceholder, ListingKeyFields.AsBulletList());
+
+    private const string KeyFieldsPlaceholder = "__KEY_FIELDS__";
+
+    private const string Template = """
         Du extrahierst ALLE Informationen aus einem Schweizer Immobilien-Exposé.
         Ziel: Das Inserat muss jede Angabe zum angebotenen Objekt enthalten. Nichts weglassen, nichts erfinden.
 
@@ -18,6 +22,12 @@ public static class ListingExtractionPrompt
         - Datum als YYYY-MM-DD. Verfügbarkeit alternativ "sofort" oder "nach Vereinbarung".
         - "otherDetails" nur für Angaben, die in keinem Feld des Schemas Platz haben. Keine Werte doppelt erfassen.
         - Werte aus Auswahllisten exakt so schreiben wie angegeben.
+        - "evidence": ein Objekt mit genau einem Eintrag pro Feld aus der folgenden Liste. Wert ist der exakte,
+          wörtlich kopierte Textausschnitt aus dem Exposé, aus dem der Wert stammt, höchstens 100 Zeichen,
+          sonst null. Nicht umformulieren, nicht zusammensetzen, nichts wiederholen.
+          Bei abgeleiteten Werten (offerType, objectType, sale.ownershipType) die Textstelle zitieren,
+          aus der du es ableitest, z.B. "Verkaufsdokumentation" oder "Wertquote 149/1000". Felder:
+        __KEY_FIELDS__
 
         Begriffe:
         - rooms: Zimmerzahl des angebotenen Objekts.
@@ -89,7 +99,8 @@ public static class ListingExtractionPrompt
           "contact": { "company": string, "name": string, "role": string, "email": string, "phone": string, "website": string },
           "description": { "summary": string, "original": string (Objektbeschreibung aus dem Exposé, höchstens 1500 Zeichen) },
           "documents": { "hasFloorPlan": boolean, "mentionedAttachments": [string] },
-          "otherDetails": [{ "label": string, "value": string }]
+          "otherDetails": [{ "label": string, "value": string }],
+          "evidence": { "<feld>": string }
         }
         """;
 }

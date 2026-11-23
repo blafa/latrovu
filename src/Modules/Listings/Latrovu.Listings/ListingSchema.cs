@@ -4,7 +4,10 @@ namespace Latrovu.Listings;
 
 public static class ListingSchema
 {
-    public static readonly JsonResponseSchema Value = new("listing", Json);
+    public static readonly JsonResponseSchema Value =
+        new("listing", Json.Replace(EvidencePlaceholder, ListingKeyFields.EvidenceSchemaJson()));
+
+    private const string EvidencePlaceholder = "\"__EVIDENCE_SCHEMA__\"";
 
     private const string Json = """
         {
@@ -201,9 +204,10 @@ public static class ListingSchema
                 },
                 "required": ["label", "value"]
               }
-            }
+            },
+            "evidence": "__EVIDENCE_SCHEMA__"
           },
-          "required": ["offerType", "objectType", "title", "location", "size", "contact", "description"]
+          "required": ["offerType", "objectType", "title", "location", "size", "contact", "description", "evidence"]
         }
         """;
 }
