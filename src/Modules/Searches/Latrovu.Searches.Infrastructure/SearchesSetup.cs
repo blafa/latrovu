@@ -24,8 +24,10 @@ public static class SearchesSetup
         services.AddSingleton<IPlaceResolver, PostgresPlaceResolver>();
         services.AddScoped<ISearchInterpreter, SearchInterpreter>();
         services.AddScoped<ISeekerNotifier, EmailSeekerNotifier>();
+        services.AddScoped<SearchAlerter>();
         services.AddMessageHandler<SearchRequestReceived, SearchRequestHandler>();
         services.AddMessageHandler<ListingReadyForMatching, ListingMatchingHandler>();
+        services.AddMessageHandler<ListingWithdrawn, ListingWithdrawnHandler>();
         return services;
     }
 }

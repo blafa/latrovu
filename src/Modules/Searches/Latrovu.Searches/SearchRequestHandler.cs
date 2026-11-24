@@ -1,4 +1,5 @@
 using Latrovu.BuildingBlocks.Messaging;
+using Latrovu.Core.Listings;
 
 namespace Latrovu.Searches;
 
@@ -7,9 +8,11 @@ public sealed class SearchRequestHandler(
     IPlaceResolver placeResolver,
     ISearchStore searches,
     ISeekerNotifier notifier,
+    SearchAlerter alerter,
     ILogger<SearchRequestHandler> logger) : IMessageHandler<SearchRequestReceived>
 {
     private const string FallbackLanguage = "en";
+    private const int MaxInitialAlerts = 5;
 
     public async Task HandleAsync(SearchRequestReceived message, CancellationToken ct)
     {
@@ -35,7 +38,23 @@ public sealed class SearchRequestHandler(
             changed?.Id,
             places.Places.Count);
         await notifier.SendReplyAsync(BuildReply(message, interpretation, existing, changed, places), ct);
+        await AlertExistingListingsAsync(changed, ct);
         await searches.MarkProcessedAsync(message.SourceMessageId, ct);
+    }
+
+    private async Task AlertExistingListingsAsync(Search? search, CancellationToken ct)
+    {
+        if (search is not { Status: Search.ActiveStatus })
+        {
+            return;
+        }
+
+        IReadOnlyList<ListingReadyForMatching> candidates = await searches.FindCandidatesForSearchAsync(search.Id, MaxInitialAlerts, ct);
+        logger.LogInformation("Search {SearchId} matches {CandidateCount} existing listings", search.Id, candidates.Count);
+        foreach (ListingReadyForMatching candidate in candidates)
+        {
+            await alerter.AlertAsync(search, candidate, ct);
+        }
     }
 
     private async Task<PlaceResolution> SaveAsync(Search? changed, SearchInterpretation? interpretation, CancellationToken ct)

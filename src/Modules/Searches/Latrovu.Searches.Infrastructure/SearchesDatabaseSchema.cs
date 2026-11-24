@@ -29,6 +29,20 @@ public sealed class SearchesDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
             created_at timestamptz NOT NULL DEFAULT now(),
             PRIMARY KEY (search_id, listing_id)
         );
+        CREATE TABLE IF NOT EXISTS matchable_listings (
+            listing_id         uuid PRIMARY KEY,
+            location           geometry(Point, 2056) NOT NULL,
+            location_precision text NOT NULL,
+            offer_type         text,
+            rooms              numeric,
+            price_chf          numeric,
+            living_area_m2     numeric,
+            available_from     text,
+            title              text,
+            city               text,
+            updated_at         timestamptz NOT NULL DEFAULT now()
+        );
+        CREATE INDEX IF NOT EXISTS ix_matchable_listings_location ON matchable_listings USING gist (location);
         CREATE TABLE IF NOT EXISTS processed_search_requests (
             source_id    text PRIMARY KEY,
             processed_at timestamptz NOT NULL DEFAULT now()
