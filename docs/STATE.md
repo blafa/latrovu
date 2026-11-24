@@ -57,7 +57,7 @@ In progress: search side. Step 1 done (Searches module, `SearchRequestReceived` 
 
 ## Next steps (search side)
 1. Done: place resolver (`PostgresPlaceResolver`): AI returns structured places (name, within, kind, nearKm) → exact then trigram lookup in `places`, kind hint retried without filter, ambiguity by municipality → question in refinement box, unknown → question; area = union with buffers (lakes 1 km shore) stored in `searches.area`, refs in `searches.place_refs`.
-2. Geocode listings to a point (swisstopo SearchServer API) on extraction/approval.
+2. Done: geocoding on approval (`ListingApprovedHandler` in Extraction host, `SwisstopoGeocoder` via api3.geo.admin.ch SearchServer, address then postal code fallback) → `listings.location` (Point 2056) + `location_precision`, and `ListingReadyForMatching` (point, offer type, rooms, price, area, availability) via outbox.
 3. Matching on `ListingApproved` with `ST_Covers(search.area, listing.point)` plus rooms/price/type; event carries matchable facts.
 4. Alert mail per match with personal view link (replaces dev view-link endpoint); also check existing listings when a search is created.
 5. Pause/stop by reply (interpretation exists; verify end to end).
@@ -68,3 +68,4 @@ In progress: search side. Step 1 done (Searches module, `SearchRequestReceived` 
 - Deployment: Dockerfiles per host, compose for hosts, optional VS `.dcproj`, Caddy, forwarded headers (cookie `Secure` flag behind proxy), Infomaniak VM.
 - Cleanup: delete bucket `latrovu-public`, RabbitMQ queue `latrovu-listings`, any leftover `src/Api` folder.
 - Business: Einzelfirma registration → Meta business verification for WhatsApp; Swiss lawyer check before launch; trademark check.
+- Other countries (after CH): FR and LU easy (open boundaries, open geocoding), AT easy to medium, DE and IT medium (no open postal code areas, OSM fallback). Prepare: `places.country`, geocoder per country behind `IGeocoder`.

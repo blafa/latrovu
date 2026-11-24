@@ -1,6 +1,9 @@
 using System.Threading.RateLimiting;
 using Latrovu.BuildingBlocks.Infrastructure.Messaging;
+using Latrovu.Core.Listings;
 using Latrovu.Core.Submissions;
+using Latrovu.Listings.Infrastructure.Matching;
+using Latrovu.Listings.Matching;
 using Latrovu.Listings.Infrastructure.Viewing.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -52,7 +55,9 @@ public static class ListingsSetup
         services.AddScoped<IListingImageService, ListingImageService>();
         services.AddScoped<IListingImageCollector, ListingImageCollector>();
         services.AddScoped<IListingIntake, ListingIntake>();
+        services.TryAddSingleton<IListingLocationStore, ListingLocationStore>();
         services.AddMessageHandler<SubmissionReceived, SubmissionReceivedHandler>();
+        services.AddMessageHandler<ListingApproved, ListingApprovedHandler>();
         return services;
     }
 
