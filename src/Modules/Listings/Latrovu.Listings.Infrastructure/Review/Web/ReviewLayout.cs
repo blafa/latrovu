@@ -143,6 +143,8 @@ internal static class ReviewLayout
         .ghost { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:4px; padding:5px 11px; background:var(--paper); white-space:nowrap; }
         .primary .icon, .ghost .icon { width:15px; height:15px; }
         .ghost:hover { border-color:var(--muted); }
+        .ghost.caution { color:var(--amber-ink); border-color:rgba(122, 74, 7, 0.3); }
+        .ghost.caution:hover { background:var(--amber-soft); border-color:var(--amber); }
         .pane > .ghost { justify-self:start; }
         .secondary { border:none; background:none; padding:2px 0; text-decoration:underline; color:var(--muted); }
         .remove { border:none; background:none; padding:3px 7px; border-radius:4px; color:var(--muted); }

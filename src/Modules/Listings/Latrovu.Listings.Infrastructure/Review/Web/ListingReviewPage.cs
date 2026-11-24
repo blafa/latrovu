@@ -134,7 +134,7 @@ public static class ListingReviewPage
     {
         string token = Encode(model.Token);
         return model.Review.IsApproved
-            ? $"<button class=\"ghost\" hx-post=\"/review/{token}/withdraw\" hx-target=\"#approve-status\" "
+            ? $"<button class=\"ghost caution\" hx-post=\"/review/{token}/withdraw\" hx-target=\"#approve-status\" "
                 + $"hx-confirm=\"Inserat zurückziehen? Alle Links für Suchende werden sofort ungültig.\">{ReviewIcons.EyeOff}Zurückziehen</button>"
             : $"<button class=\"primary\" hx-post=\"/review/{token}/approve\" hx-target=\"#approve-status\">{ReviewIcons.Confirm}Inserat freigeben</button>";
     }
