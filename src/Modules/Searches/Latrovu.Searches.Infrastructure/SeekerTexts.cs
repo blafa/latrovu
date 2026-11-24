@@ -16,4 +16,7 @@ public sealed record SeekerTexts(
     string AlertIntro,
     string AlertButton,
     string AlertNote,
-    string Rooms);
+    string Rooms,
+    string StoppedSummary,
+    string PausedSummary,
+    string ResumedSummary);

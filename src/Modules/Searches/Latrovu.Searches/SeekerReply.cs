@@ -8,4 +8,5 @@ public sealed record SeekerReply(
     IReadOnlyList<string> Refinements,
     IReadOnlyList<Search> OpenSearches,
     bool Understood,
-    PlaceResolution Places);
+    PlaceResolution Places,
+    IReadOnlyList<Search>? StatusChanges = null);

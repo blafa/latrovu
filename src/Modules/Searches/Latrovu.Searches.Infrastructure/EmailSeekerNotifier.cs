@@ -28,7 +28,12 @@ public sealed class EmailSeekerNotifier(
         string url = $"{alertOptions.Value.ViewBaseUrl.TrimEnd('/')}{ViewPath}{alert.Token}";
         string subject = string.Format(CultureInfo.InvariantCulture, texts.AlertSubject, alert.SearchName);
         await emailSender.SendAsync(
-            new EmailMessage(alert.Address, subject, SeekerAlertMail.Text(alert, texts, url), SeekerAlertMail.Html(alert, texts, url)),
+            new EmailMessage(
+                alert.Address,
+                subject,
+                SeekerAlertMail.Text(alert, texts, url),
+                SeekerAlertMail.Html(alert, texts, url),
+                alertOptions.Value.ReplyToAddress),
             ct);
         logger.LogInformation("Alert for listing {ListingId} sent in {Language}", alert.Listing.ListingId, alert.Language);
     }
@@ -44,15 +49,41 @@ public sealed class EmailSeekerNotifier(
         }
 
         SeekerTexts texts = SeekerTextCatalog.For(reply.Language);
-        SeekerReply withPlaceQuestions = reply with { Refinements = [.. PlaceQuestions(reply.Places, texts), .. reply.Refinements] };
+        SeekerReply withPlaceQuestions = reply with
+        {
+            Refinements = [.. PlaceQuestions(reply.Places, texts), .. reply.Refinements],
+            Summary = StatusSummary(reply.StatusChanges, texts) ?? reply.Summary
+        };
         await emailSender.SendAsync(
             new EmailMessage(
                 reply.Address,
                 texts.Subject,
                 ComposeBody(withPlaceQuestions, texts),
-                SeekerReplyHtml.Render(withPlaceQuestions, texts)),
+                SeekerReplyHtml.Render(withPlaceQuestions, texts),
+                alertOptions.Value.ReplyToAddress),
             ct);
         logger.LogInformation("Search reply sent in {Language} with {SearchCount} open searches", reply.Language, reply.OpenSearches.Count);
+    }
+
+    private static string? StatusSummary(IReadOnlyList<Search>? changes, SeekerTexts texts)
+    {
+        if (changes is not { Count: > 0 })
+        {
+            return null;
+        }
+
+        IEnumerable<string> sentences = changes
+            .GroupBy(search => search.Status)
+            .Select(group => string.Format(
+                CultureInfo.InvariantCulture,
+                group.Key switch
+                {
+                    Search.StoppedStatus => texts.StoppedSummary,
+                    Search.PausedStatus => texts.PausedSummary,
+                    _ => texts.ResumedSummary
+                },
+                string.Join(", ", group.Select(search => search.Name))));
+        return string.Join(' ', sentences);
     }
 
     private static IEnumerable<string> PlaceQuestions(PlaceResolution places, SeekerTexts texts) =>

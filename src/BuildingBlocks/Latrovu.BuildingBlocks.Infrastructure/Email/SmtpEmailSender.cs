@@ -35,6 +35,11 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
         MimeMessage mime = new();
         mime.From.Add(new MailboxAddress(settings.FromName, fromAddress));
         mime.To.Add(MailboxAddress.Parse(message.To));
+        if (!string.IsNullOrWhiteSpace(message.ReplyTo))
+        {
+            mime.ReplyTo.Add(MailboxAddress.Parse(message.ReplyTo));
+        }
+
         mime.Subject = message.Subject;
         mime.Body = new BodyBuilder { TextBody = message.TextBody, HtmlBody = message.HtmlBody }.ToMessageBody();
         return mime;

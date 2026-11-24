@@ -22,7 +22,10 @@ public static class SeekerTextCatalog
             "Wir haben ein passendes Angebot für Ihre Suche «{0}» gefunden:",
             "Angebot ansehen",
             "Dieser Link ist 30 Tage gültig und nur für Sie bestimmt.",
-            "Zimmer"),
+            "Zimmer",
+            "Beendet: {0}. Sie erhalten dafür keine Angebote mehr.",
+            "Pausiert: {0}. Schreiben Sie uns, wenn es weitergehen soll.",
+            "Wieder aktiv: {0}."),
         ["fr"] = new SeekerTexts(
             "Votre recherche de logement avec Latrovu",
             "Bonjour",
@@ -39,7 +42,10 @@ public static class SeekerTextCatalog
             "Nous avons trouvé une offre correspondant à votre recherche « {0} » :",
             "Voir l’offre",
             "Ce lien est valable 30 jours et vous est personnellement destiné.",
-            "pièces"),
+            "pièces",
+            "Terminé : {0}. Vous ne recevrez plus d’offres pour cela.",
+            "En pause : {0}. Écrivez-nous lorsque vous souhaitez reprendre.",
+            "De nouveau actif : {0}."),
         ["it"] = new SeekerTexts(
             "La sua ricerca di casa con Latrovu",
             "Buongiorno",
@@ -56,7 +62,10 @@ public static class SeekerTextCatalog
             "Abbiamo trovato un’offerta adatta alla sua ricerca «{0}»:",
             "Vedere l’offerta",
             "Questo link è valido 30 giorni ed è destinato solo a lei.",
-            "locali"),
+            "locali",
+            "Terminato: {0}. Non riceverà più offerte per questo.",
+            "In pausa: {0}. Ci scriva quando vuole riprendere.",
+            "Di nuovo attivo: {0}."),
         ["en"] = new SeekerTexts(
             "Your home search with Latrovu",
             "Hello",
@@ -73,7 +82,10 @@ public static class SeekerTextCatalog
             "We found a listing that matches your search “{0}”:",
             "View the listing",
             "This link is valid for 30 days and meant only for you.",
-            "rooms")
+            "rooms",
+            "Stopped: {0}. You will no longer receive listings for it.",
+            "Paused: {0}. Write to us when you want to continue.",
+            "Active again: {0}.")
     };
 
     public static SeekerTexts For(string language) =>

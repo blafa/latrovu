@@ -87,6 +87,7 @@ public sealed class SearchRequestHandler(
             .Where(search => search.IsOpen)
             .ToList();
         bool understood = interpretation is not null && interpretation.Action != SearchAction.Unclear;
+        bool changesStatus = interpretation?.Action is SearchAction.Pause or SearchAction.Resume or SearchAction.Stop;
 
         return new SeekerReply(
             message.SenderAddress,
@@ -96,7 +97,8 @@ public sealed class SearchRequestHandler(
             interpretation?.Refinements ?? [],
             open,
             understood,
-            places);
+            places,
+            changesStatus ? changed : []);
     }
 
     private static string ReplyLanguage(SearchRequestReceived message, SearchInterpretation? interpretation, IReadOnlyList<Search> existing)

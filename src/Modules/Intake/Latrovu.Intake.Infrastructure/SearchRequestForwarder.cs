@@ -15,7 +15,7 @@ public sealed class SearchRequestForwarder(
     {
         ArgumentNullException.ThrowIfNull(mail);
 
-        string text = string.Join('\n', new[] { mail.Subject, mail.Body }.Where(part => !string.IsNullOrWhiteSpace(part)));
+        string text = string.Join('\n', new[] { mail.Subject, QuotedReplyStripper.Strip(mail.Body) }.Where(part => !string.IsNullOrWhiteSpace(part)));
         SearchRequestReceived message = new(Guid.NewGuid(), mail.MessageId, EmailChannel, mail.Sender, text, mail.InReplyTo);
 
         await using NpgsqlConnection connection = await dataSource.OpenConnectionAsync(ct);
