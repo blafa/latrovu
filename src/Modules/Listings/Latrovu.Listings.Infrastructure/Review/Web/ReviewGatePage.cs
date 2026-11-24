@@ -7,6 +7,7 @@ public static class ReviewGatePage
 {
     private const string PageTitle = "Inserat öffnen";
     private const int CodeLength = 6;
+    private const string Spinner = "<span class=\"spinner\" aria-hidden=\"true\"></span>";
 
     private const string CodeScript = """
         <script>
@@ -61,7 +62,7 @@ public static class ReviewGatePage
         html.Append("<main><div class=\"gate\"><h1>Inserat öffnen</h1>")
             .Append("<p>Zum Schutz Ihrer Daten senden wir Ihnen einen Bestätigungscode ")
             .Append("an die E-Mail-Adresse, von der das Inserat eingereicht wurde.</p>")
-            .Append($"<div id=\"gate\"><button class=\"primary\" hx-post=\"/review/{encodedToken}/code\" hx-target=\"#gate\">Code senden</button></div>")
+            .Append($"<div id=\"gate\"><button class=\"primary\" hx-post=\"/review/{encodedToken}/code\" hx-target=\"#gate\" hx-disabled-elt=\"this\">{Spinner}Code senden</button></div>")
             .Append("</div></main>")
             .Append(CodeScript);
         ReviewLayout.AppendEnd(html);
@@ -89,12 +90,12 @@ public static class ReviewGatePage
         string encodedToken = WebUtility.HtmlEncode(token);
         return new StringBuilder()
             .Append(Paragraph(message))
-            .Append($"<form class=\"code-form\" hx-post=\"/review/{encodedToken}/verify\" hx-target=\"#gate-message\">")
+            .Append($"<form class=\"code-form\" hx-post=\"/review/{encodedToken}/verify\" hx-target=\"#gate-message\" hx-disabled-elt=\"find button\">")
             .Append(DigitInputs())
             .Append("<input type=\"hidden\" name=\"code\">")
-            .Append("<button type=\"submit\" class=\"primary\">Bestätigen</button></form>")
+            .Append($"<button type=\"submit\" class=\"primary\">{Spinner}Bestätigen</button></form>")
             .Append("<div id=\"gate-message\" class=\"status\" aria-live=\"polite\"></div>")
-            .Append($"<button class=\"secondary\" hx-post=\"/review/{encodedToken}/code\" hx-target=\"#gate\">Neuen Code senden</button>")
+            .Append($"<button class=\"secondary\" hx-post=\"/review/{encodedToken}/code\" hx-target=\"#gate\" hx-disabled-elt=\"this\">{Spinner}Neuen Code senden</button>")
             .ToString();
     }
 

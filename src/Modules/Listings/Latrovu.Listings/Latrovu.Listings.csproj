@@ -15,6 +15,7 @@
     <Using Include="Latrovu.Listings.Images" />
     <Using Include="Latrovu.Listings.Ingestion" />
     <Using Include="Latrovu.Listings.Review" />
+    <Using Include="Latrovu.Listings.Viewing" />
   </ItemGroup>
 
   <ItemGroup>

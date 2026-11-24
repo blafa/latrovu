@@ -6,7 +6,6 @@ namespace Latrovu.Listings.Infrastructure.Review.Web;
 public static class ListingReviewPage
 {
     private const string PageTitle = "Inserat prüfen";
-    private const string ApprovedStatus = "approved";
 
     private const string PageScript = """
         <script>
@@ -117,22 +116,35 @@ public static class ListingReviewPage
         _ => "Nicht gefunden"
     };
 
-    public static string RenderApproveStatus(bool approved) =>
-        approved ? "Inserat freigegeben" : "Das Inserat ist bereits freigegeben";
+    public static string RenderStatusChange(bool changed) =>
+        changed ? "Gespeichert" : "Der Status konnte nicht geändert werden";
 
     private static void AppendTopBar(StringBuilder html, ReviewModel model)
     {
-        bool approved = model.Review.Status == ApprovedStatus;
         string title = ListingValues.Text(model.Data, "title") ?? model.Review.FileName ?? PageTitle;
         html.Append("<header class=\"topbar\"><div class=\"topbar-inner\"><span class=\"brand\">latrovu</span>")
             .Append($"<div class=\"listing-id\"><h1 title=\"{Encode(title)}\">{Encode(title)}</h1>")
             .Append($"<span class=\"listing-address\">{Encode(ListingValues.Address(model.Data))}</span></div>")
             .Append("<div class=\"actions\"><span id=\"approve-status\" class=\"status\" aria-live=\"polite\"></span>")
-            .Append("<div class=\"approve\">")
-            .Append($"<button class=\"primary\" hx-post=\"/review/{Encode(model.Token)}/approve\" hx-target=\"#approve-status\">{ReviewIcons.Confirm}Inserat freigeben</button>")
-            .Append($"<span class=\"state{(approved ? " approved" : string.Empty)}\">{(approved ? ReviewIcons.Approved : ReviewIcons.Draft)}{(approved ? "Freigegeben" : "Entwurf")}</span>")
-            .Append("</div></div></div></header>");
+            .Append($"<div class=\"approve\">{StatusAction(model)}{StatusChip(model.Review)}</div>")
+            .Append("</div></div></header>");
     }
+
+    private static string StatusAction(ReviewModel model)
+    {
+        string token = Encode(model.Token);
+        return model.Review.IsApproved
+            ? $"<button class=\"ghost\" hx-post=\"/review/{token}/withdraw\" hx-target=\"#approve-status\" "
+                + $"hx-confirm=\"Inserat zurückziehen? Alle Links für Suchende werden sofort ungültig.\">{ReviewIcons.EyeOff}Zurückziehen</button>"
+            : $"<button class=\"primary\" hx-post=\"/review/{token}/approve\" hx-target=\"#approve-status\">{ReviewIcons.Confirm}Inserat freigeben</button>";
+    }
+
+    private static string StatusChip(ListingReview review) => review switch
+    {
+        { IsApproved: true } => $"<span class=\"state approved\">{ReviewIcons.Approved}Freigegeben</span>",
+        { IsWithdrawn: true } => $"<span class=\"state withdrawn\">{ReviewIcons.Cross}Zurückgezogen</span>",
+        _ => $"<span class=\"state\">{ReviewIcons.Draft}Entwurf</span>"
+    };
 
     private static string Encode(string text) => WebUtility.HtmlEncode(text);
 }

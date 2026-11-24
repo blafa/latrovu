@@ -9,4 +9,12 @@ public sealed record ListingReview(
     string FieldScoresJson,
     string FieldEvidenceJson,
     bool PublishContact,
-    IReadOnlyList<ListingImageRef> Images);
+    IReadOnlyList<ListingImageRef> Images)
+{
+    public const string ApprovedStatus = "approved";
+    public const string WithdrawnStatus = "withdrawn";
+
+    public bool IsApproved => Status == ApprovedStatus;
+
+    public bool IsWithdrawn => Status == WithdrawnStatus;
+}

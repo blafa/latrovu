@@ -53,6 +53,16 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
             source_id    text PRIMARY KEY,
             processed_at timestamptz NOT NULL DEFAULT now()
         );
+        CREATE TABLE IF NOT EXISTS listing_view_links (
+            token_hash      char(64) PRIMARY KEY,
+            listing_id      uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            search_id       uuid,
+            created_at      timestamptz NOT NULL,
+            expires_at      timestamptz NOT NULL,
+            first_viewed_at timestamptz,
+            view_count      int NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS ix_listing_view_links_listing ON listing_view_links (listing_id);
         """;
 
     public async Task StartAsync(CancellationToken cancellationToken)

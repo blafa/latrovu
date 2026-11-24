@@ -13,4 +13,6 @@ public interface IListingReviewService
     Task<bool> SetPublishContactAsync(string token, bool publishContact, CancellationToken ct);
 
     Task<bool> ApproveAsync(string token, CancellationToken ct);
+
+    Task<bool> WithdrawAsync(string token, CancellationToken ct);
 }

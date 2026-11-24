@@ -29,6 +29,7 @@ internal static class ReviewLayout
                  border-radius:4px; background:var(--canvas); color:var(--muted); }
         .state .icon { width:15px; height:15px; }
         .state.approved { background:var(--lime-soft); color:#27500A; }
+        .state.withdrawn { background:var(--amber-soft); color:var(--amber-ink); }
         .actions { margin-left:auto; flex:none; display:flex; align-items:center; gap:12px; }
         .workspace { max-width:1360px; margin:0 auto; padding:16px 24px 48px; display:grid;
                      grid-template-columns:minmax(0, 7fr) minmax(0, 5fr); gap:16px; align-items:start; }
@@ -146,9 +147,19 @@ internal static class ReviewLayout
         .secondary { border:none; background:none; padding:2px 0; text-decoration:underline; color:var(--muted); }
         .remove { border:none; background:none; padding:3px 7px; border-radius:4px; color:var(--muted); }
         .remove:hover { background:var(--canvas); color:var(--ink); }
-        .gate { max-width:420px; margin:12vh auto 0; display:grid; gap:14px; padding:0 20px; }
+        .gate { max-width:420px; margin:12vh auto 0; display:grid; justify-items:start; gap:14px; padding:0 20px; }
         .gate h1 { font-size:20px; margin:0; }
         .gate form { display:grid; gap:12px; }
+        .code-form { width:max-content; }
+        .code-form .primary { padding:10px 14px; }
+        .gate .primary { justify-content:center; }
+        .secondary { display:inline-flex; align-items:center; gap:6px; }
+        .spinner { display:none; width:13px; height:13px; border:2px solid currentColor; border-right-color:transparent;
+                   border-radius:50%; animation:spin 0.7s linear infinite; }
+        .htmx-request .spinner, .htmx-request.spinner { display:inline-block; }
+        button[disabled] { opacity:0.7; cursor:progress; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .spinner { animation-duration:2s; } }
         .code-inputs { display:flex; gap:8px; }
         .code-inputs input { width:48px; height:56px; padding:0; text-align:center; font-size:24px; font-weight:600;
                              border-radius:6px; caret-color:var(--ink); }

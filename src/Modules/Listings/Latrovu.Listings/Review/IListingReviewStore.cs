@@ -9,4 +9,6 @@ public interface IListingReviewStore
     Task SetPublishContactAsync(Guid listingId, bool publishContact, CancellationToken ct);
 
     Task<bool> ApproveAsync(Guid listingId, CancellationToken ct);
+
+    Task<bool> WithdrawAsync(Guid listingId, CancellationToken ct);
 }

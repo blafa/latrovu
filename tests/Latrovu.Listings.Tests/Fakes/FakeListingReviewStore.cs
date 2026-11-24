@@ -12,9 +12,11 @@ internal sealed class FakeListingReviewStore : IListingReviewStore
 
     public bool PublishContact { get; private set; }
 
+    public string Status { get; private set; } = DraftStatus;
+
     public Task<ListingReview?> GetAsync(Guid listingId, CancellationToken ct) =>
         Task.FromResult<ListingReview?>(
-            new ListingReview(listingId, DraftStatus, SourceEmail, null, DataJson, ScoresJson, EmptyJson, PublishContact, []));
+            new ListingReview(listingId, Status, SourceEmail, null, DataJson, ScoresJson, EmptyJson, PublishContact, []));
 
     public Task SaveAsync(Guid listingId, string dataJson, string fieldScoresJson, CancellationToken ct)
     {
@@ -29,5 +31,15 @@ internal sealed class FakeListingReviewStore : IListingReviewStore
         return Task.CompletedTask;
     }
 
-    public Task<bool> ApproveAsync(Guid listingId, CancellationToken ct) => Task.FromResult(true);
+    public Task<bool> ApproveAsync(Guid listingId, CancellationToken ct)
+    {
+        Status = ListingReview.ApprovedStatus;
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> WithdrawAsync(Guid listingId, CancellationToken ct)
+    {
+        Status = ListingReview.WithdrawnStatus;
+        return Task.FromResult(true);
+    }
 }

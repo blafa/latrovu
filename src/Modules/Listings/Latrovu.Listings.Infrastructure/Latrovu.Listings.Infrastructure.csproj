@@ -19,10 +19,12 @@
     <Using Include="Latrovu.Listings.Images" />
     <Using Include="Latrovu.Listings.Ingestion" />
     <Using Include="Latrovu.Listings.Review" />
+    <Using Include="Latrovu.Listings.Viewing" />
     <Using Include="Latrovu.Listings.Infrastructure.Access" />
     <Using Include="Latrovu.Listings.Infrastructure.Images" />
     <Using Include="Latrovu.Listings.Infrastructure.Ingestion" />
     <Using Include="Latrovu.Listings.Infrastructure.Review" />
+    <Using Include="Latrovu.Listings.Infrastructure.Viewing" />
   </ItemGroup>
 
   <ItemGroup>

@@ -85,6 +85,14 @@ public sealed class ListingReviewService(
         return approved;
     }
 
+    public async Task<bool> WithdrawAsync(string token, CancellationToken ct)
+    {
+        Guid? listingId = await tokens.FindListingIdAsync(token, ct);
+        bool withdrawn = listingId is not null && await reviews.WithdrawAsync(listingId.Value, ct);
+        logger.LogInformation("Withdrawal for listing {ListingId}: {Withdrawn}", listingId, withdrawn);
+        return withdrawn;
+    }
+
     private async Task<FieldUpdateResult> ChangeAsync(
         string token,
         string path,

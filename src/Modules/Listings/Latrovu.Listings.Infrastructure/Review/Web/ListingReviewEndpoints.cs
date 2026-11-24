@@ -32,6 +32,7 @@ public static class ListingReviewEndpoints
         review.MapPost("/details", AddCustomDetailAsync);
         review.MapPost("/publish-contact", SetPublishContactAsync);
         review.MapPost("/approve", ApproveAsync);
+        review.MapPost("/withdraw", WithdrawAsync);
         review.MapGet("/images/{position:int}", ImageAsync);
         return app;
     }
@@ -198,19 +199,41 @@ public static class ListingReviewEndpoints
         return Html(ListingReviewPage.RenderFieldStatus(result));
     }
 
-    private static async Task<IResult> ApproveAsync(
+    private static Task<IResult> ApproveAsync(
         string token,
-        HttpRequest request,
+        HttpContext context,
         IReviewAccessService access,
         IListingReviewService reviews,
+        CancellationToken ct) =>
+        ChangeStatusAsync(token, context, access, () => reviews.ApproveAsync(token, ct), ct);
+
+    private static Task<IResult> WithdrawAsync(
+        string token,
+        HttpContext context,
+        IReviewAccessService access,
+        IListingReviewService reviews,
+        CancellationToken ct) =>
+        ChangeStatusAsync(token, context, access, () => reviews.WithdrawAsync(token, ct), ct);
+
+    private static async Task<IResult> ChangeStatusAsync(
+        string token,
+        HttpContext context,
+        IReviewAccessService access,
+        Func<Task<bool>> change,
         CancellationToken ct)
     {
-        if (!await HasSessionAsync(token, request, access, ct))
+        if (!await HasSessionAsync(token, context.Request, access, ct))
         {
             return Results.Unauthorized();
         }
 
-        return Html(ListingReviewPage.RenderApproveStatus(await reviews.ApproveAsync(token, ct)));
+        bool changed = await change();
+        if (changed)
+        {
+            context.Response.Headers[HtmxRefreshHeader] = HtmxTrue;
+        }
+
+        return Html(ListingReviewPage.RenderStatusChange(changed));
     }
 
     private static async Task<IResult> ImageAsync(

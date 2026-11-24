@@ -1,11 +1,12 @@
+using Latrovu.BuildingBlocks.Messaging;
+using Latrovu.Core.Listings;
 using Npgsql;
 
 namespace Latrovu.Listings.Infrastructure.Review;
 
-public sealed class ListingReviewStore(NpgsqlDataSource dataSource) : IListingReviewStore
+public sealed class ListingReviewStore(NpgsqlDataSource dataSource, IOutbox outbox) : IListingReviewStore
 {
     private const string DraftStatus = "draft";
-    private const string ApprovedStatus = "approved";
 
     private const string SelectListingSql = """
         SELECT id, status, source_email, file_name, COALESCE(data, '{}'::jsonb)::text, COALESCE(field_scores, '{}'::jsonb)::text,
@@ -20,7 +21,7 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource) : IListingRe
 
     private const string PublishContactSql = "UPDATE listings SET publish_contact = $2 WHERE id = $1";
 
-    private const string ApproveSql = "UPDATE listings SET status = $2 WHERE id = $1 AND status = $3";
+    private const string ChangeStatusSql = "UPDATE listings SET status = $2 WHERE id = $1 AND status = ANY($3)";
 
     public async Task<ListingReview?> GetAsync(Guid listingId, CancellationToken ct)
     {
@@ -32,12 +33,11 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource) : IListingRe
             return null;
         }
 
-        string? fileName = await reader.IsDBNullAsync(3, ct) ? null : reader.GetString(3);
         ListingReview review = new(
             reader.GetGuid(0),
             reader.GetString(1),
             reader.GetString(2),
-            fileName,
+            await reader.IsDBNullAsync(3, ct) ? null : reader.GetString(3),
             reader.GetString(4),
             reader.GetString(5),
             reader.GetString(6),
@@ -63,13 +63,33 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource) : IListingRe
         await command.ExecuteNonQueryAsync(ct);
     }
 
-    public async Task<bool> ApproveAsync(Guid listingId, CancellationToken ct)
+    public Task<bool> ApproveAsync(Guid listingId, CancellationToken ct) =>
+        ChangeStatusAsync(listingId, ListingReview.ApprovedStatus, [DraftStatus, ListingReview.WithdrawnStatus], new ListingApproved(listingId), ct);
+
+    public Task<bool> WithdrawAsync(Guid listingId, CancellationToken ct) =>
+        ChangeStatusAsync(listingId, ListingReview.WithdrawnStatus, [ListingReview.ApprovedStatus], new ListingWithdrawn(listingId), ct);
+
+    private async Task<bool> ChangeStatusAsync(
+        Guid listingId,
+        string newStatus,
+        string[] allowedCurrentStatuses,
+        object statusEvent,
+        CancellationToken ct)
     {
-        await using NpgsqlCommand command = dataSource.CreateCommand(ApproveSql);
+        await using NpgsqlConnection connection = await dataSource.OpenConnectionAsync(ct);
+        await using NpgsqlTransaction transaction = await connection.BeginTransactionAsync(ct);
+        await using NpgsqlCommand command = new(ChangeStatusSql, connection, transaction);
         command.Parameters.Add(new NpgsqlParameter { Value = listingId });
-        command.Parameters.Add(new NpgsqlParameter { Value = ApprovedStatus });
-        command.Parameters.Add(new NpgsqlParameter { Value = DraftStatus });
-        return await command.ExecuteNonQueryAsync(ct) > 0;
+        command.Parameters.Add(new NpgsqlParameter { Value = newStatus });
+        command.Parameters.Add(new NpgsqlParameter { Value = allowedCurrentStatuses });
+        bool changed = await command.ExecuteNonQueryAsync(ct) > 0;
+        if (changed)
+        {
+            await outbox.AddAsync([statusEvent], transaction, ct);
+        }
+
+        await transaction.CommitAsync(ct);
+        return changed;
     }
 
     private async Task<List<ListingImageRef>> GetImagesAsync(Guid listingId, CancellationToken ct)
