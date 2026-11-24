@@ -53,14 +53,14 @@ No comments (exceptions: algorithm references, workarounds, license headers, unc
 
 ## Current status
 Done: mail intake, classification, schema-based extraction with evidence, images to S3, review page with code gate, editing, value sources, contact opt-in, approve/withdraw with outbox events, view links with searcher page, three hosts, RabbitMQ/Rebus/outbox, dev LLM response cache, Postgres image `latrovu/postgres:17` with PostGIS 3.7 and pgvector 0.8.7.
-In progress: search side, step 1 (see below).
+In progress: search side. Step 1 done (Searches module, `SearchRequestReceived` from Intake, AI interpretation with language, multiple searches by place name, multilingual HTML replies with refinement box, `POST /dev/search` on Intake). Place catalog built: table `places` (kind municipality/locality/zip/district/quarter/alias, name, search_name with pg_trgm, geom MultiPolygon EPSG:2056) from `geo_raw` (swisstopo postal codes and municipalities via STAC, Zürich districts/quarters via city WFS). Rebuild: `bash scripts/places/import-raw.sh`, then `docker exec -i latrovu-db psql -U latrovu -d latrovu < scripts/places/build-places.sql`.
 
 ## Next steps (search side)
-1. Search module + channel-neutral search intake: message → AI (criteria + language) → search stored → confirmation in seeker's language with refinement box; multiple searches named by place.
-2. Place resolution: import swisstopo postal code/municipality polygons and Zurich districts/quarters into PostGIS; geocode listings (swisstopo API).
-3. Matching on `ListingApproved` (event should carry matchable facts so Search never reads Listings tables).
-4. Alert mail per match with personal view link (replaces dev view-link endpoint).
-5. Pause/stop by reply.
+1. Place resolver: AI place expressions (area names, "near X", distance) → lookup in `places` (exact, then trigram, prefer Zürich context) → union geometry stored on the search (`area geometry(MultiPolygon,2056)`); unknown/ambiguous places go into the refinement box. Lakes for "Seenähe" still to import.
+2. Geocode listings to a point (swisstopo SearchServer API) on extraction/approval.
+3. Matching on `ListingApproved` with `ST_Covers(search.area, listing.point)` plus rooms/price/type; event carries matchable facts.
+4. Alert mail per match with personal view link (replaces dev view-link endpoint); also check existing listings when a search is created.
+5. Pause/stop by reply (interpretation exists; verify end to end).
 
 ## Backlog
 - Extraction quality: golden set; object type confused by building names ("Haus First"); wrong ZIP (Wattwil "630"); multi-unit documents (one listing per unit); image classification (photo vs plan vs map vs document; hide land register extracts; photos first); some PDF image formats yield no images.
