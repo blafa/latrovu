@@ -10,6 +10,8 @@ CREATE TABLE places (
     context     text,
     geom        geometry(MultiPolygon, 2056) NOT NULL
 );
+CREATE INDEX ix_places_geom ON places USING gist (geom);
+CREATE INDEX ix_places_search_name ON places USING gin (search_name gin_trgm_ops);
 
 INSERT INTO places (kind, name, search_name, context, geom)
 SELECT 'canton', name, lower(unaccent(name)), NULL, ST_Multi(ST_Union(ST_Force2D(geom)))
@@ -52,21 +54,43 @@ SELECT 'quarter', qname, lower(unaccent(qname)), 'Zürich, ' || kname,
 FROM geo_raw.adm_statistische_quartiere_v;
 
 INSERT INTO places (kind, name, search_name, context, geom)
+WITH named AS (
+    SELECT objektart, name, ST_CollectionExtract(ST_MakeValid(ST_Force2D(wkb_geometry)), 3) AS geom
+    FROM geo_raw.names_swissnames3d_ply
+    WHERE objektart IN ('Ort', 'Quartier', 'Ortsteil', 'Quartierteil', 'See') AND name IS NOT NULL
+)
+SELECT CASE named.objektart
+           WHEN 'See' THEN 'lake'
+           WHEN 'Ort' THEN 'settlement'
+           WHEN 'Quartierteil' THEN 'quarter_part'
+           ELSE 'quarter'
+       END,
+       named.name, lower(unaccent(named.name)), municipality.name, ST_Multi(named.geom)
+FROM named
+LEFT JOIN LATERAL (
+    SELECT m.name FROM places m
+    WHERE m.kind = 'municipality' AND ST_Contains(m.geom, ST_PointOnSurface(named.geom))
+    LIMIT 1
+) municipality ON true
+WHERE NOT ST_IsEmpty(named.geom);
+
+INSERT INTO places (kind, name, search_name, context, geom)
 SELECT 'alias', alias.name, lower(unaccent(alias.name)), 'Zürich', ST_Multi(ST_Union(q.geom))
 FROM (VALUES
         ('Wiedikon', ARRAY['Alt-Wiedikon', 'Friesenberg', 'Sihlfeld']),
         ('Aussersihl', ARRAY['Langstrasse', 'Werd']),
         ('Altstadt', ARRAY['Rathaus', 'Hochschulen', 'Lindenhof', 'City'])
      ) AS alias(name, quarters)
-JOIN places q ON q.kind = 'quarter' AND q.name = ANY (alias.quarters)
+JOIN places q ON q.kind = 'quarter' AND q.name = ANY (alias.quarters) AND q.context LIKE 'Zürich%'
 GROUP BY alias.name;
 
-CREATE INDEX ix_places_geom ON places USING gist (geom);
-CREATE INDEX ix_places_search_name ON places USING gin (search_name gin_trgm_ops);
+ANALYZE places;
 
 SELECT kind, count(*) FROM places GROUP BY kind ORDER BY kind;
 
 SELECT kind, name, context, round(similarity(search_name, 'wiedikon')::numeric, 2) AS score
 FROM places WHERE search_name % 'wiedikon' ORDER BY score DESC LIMIT 5;
 
-SELECT kind, name, context FROM places WHERE search_name IN ('kreis 3', 'oerlikon', '8003', 'bern', 'horgen', 'lugano') ORDER BY kind;
+SELECT kind, name, context FROM places
+WHERE search_name IN ('kreis 3', 'oerlikon', '8003', 'bern', 'langgasse', 'plainpalais', 'ginevra', 'zurichsee', 'breitenrain')
+ORDER BY name, kind;
