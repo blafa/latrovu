@@ -12,7 +12,7 @@ public sealed class SearchRequestPlannerTests
     [Fact]
     public void New_WithoutExisting_CreatesActiveSearchNamedAfterPlace()
     {
-        Search? created = SearchRequestPlanner.Apply([], Interpretation(SearchAction.New, "Albisrieden"), Address, Channel);
+        Search? created = Single([], Interpretation(SearchAction.New, "Albisrieden"));
 
         Assert.NotNull(created);
         Assert.Equal("Albisrieden", created.Name);
@@ -24,7 +24,7 @@ public sealed class SearchRequestPlannerTests
     {
         Search existing = Existing("Albisrieden");
 
-        Search? result = SearchRequestPlanner.Apply([existing], Interpretation(SearchAction.New, "albisrieden"), Address, Channel);
+        Search? result = Single([existing], Interpretation(SearchAction.New, "albisrieden"));
 
         Assert.Equal(existing.Id, result?.Id);
     }
@@ -35,7 +35,7 @@ public sealed class SearchRequestPlannerTests
         Search albisrieden = Existing("Albisrieden");
         Search zurich = Existing("Zürich");
 
-        Search? result = SearchRequestPlanner.Apply([albisrieden, zurich], Interpretation(SearchAction.Update, "Zürich"), Address, Channel);
+        Search? result = Single([albisrieden, zurich], Interpretation(SearchAction.Update, "Zürich"));
 
         Assert.Equal(zurich.Id, result?.Id);
     }
@@ -45,7 +45,7 @@ public sealed class SearchRequestPlannerTests
     {
         Search existing = Existing("Albisrieden");
 
-        Search? result = SearchRequestPlanner.Apply([existing], Interpretation(SearchAction.Update, null), Address, Channel);
+        Search? result = Single([existing], Interpretation(SearchAction.Update, null));
 
         Assert.Equal(existing.Id, result?.Id);
     }
@@ -55,7 +55,7 @@ public sealed class SearchRequestPlannerTests
     {
         Search existing = Existing("Wiedikon oder Kreis 4");
 
-        Search? result = SearchRequestPlanner.Apply([existing], Interpretation(SearchAction.Update, "Thun"), Address, Channel);
+        Search? result = Single([existing], Interpretation(SearchAction.Update, "Thun"));
 
         Assert.NotEqual(existing.Id, result?.Id);
         Assert.Equal("Thun", result?.Name);
@@ -64,22 +64,38 @@ public sealed class SearchRequestPlannerTests
     [Fact]
     public void Stop_UnknownNameWithSeveralSearches_ChangesNothing()
     {
-        Search? result = SearchRequestPlanner.Apply(
+        IReadOnlyList<Search> result = SearchRequestPlanner.Apply(
             [Existing("Albisrieden"), Existing("Zürich")],
             Interpretation(SearchAction.Stop, "Bern"),
             Address,
             Channel);
 
-        Assert.Null(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void Stop_AppliesToAll_StopsEveryOpenSearch()
+    {
+        IReadOnlyList<Search> result = SearchRequestPlanner.Apply(
+            [Existing("Albisrieden"), Existing("Zürich")],
+            Interpretation(SearchAction.Stop, null) with { AppliesToAll = true },
+            Address,
+            Channel);
+
+        Assert.Equal(2, result.Count);
+        Assert.All(result, search => Assert.Equal(Search.StoppedStatus, search.Status));
     }
 
     [Fact]
     public void Pause_ByName_SetsPausedStatus()
     {
-        Search? result = SearchRequestPlanner.Apply([Existing("Albisrieden")], Interpretation(SearchAction.Pause, "Albisrieden"), Address, Channel);
+        Search? result = Single([Existing("Albisrieden")], Interpretation(SearchAction.Pause, "Albisrieden"));
 
         Assert.Equal(Search.PausedStatus, result?.Status);
     }
+
+    private static Search? Single(IReadOnlyList<Search> existing, SearchInterpretation interpretation) =>
+        SearchRequestPlanner.Apply(existing, interpretation, Address, Channel).SingleOrDefault();
 
     private static Search Existing(string name) =>
         new(Guid.NewGuid(), Address, Channel, name, "de", Criteria, Search.ActiveStatus);

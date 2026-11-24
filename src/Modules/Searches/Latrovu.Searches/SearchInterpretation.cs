@@ -7,4 +7,5 @@ public sealed record SearchInterpretation(
     string CriteriaJson,
     string Summary,
     IReadOnlyList<string> Refinements,
-    IReadOnlyList<PlaceExpression> Places);
+    IReadOnlyList<PlaceExpression> Places,
+    bool AppliesToAll = false);

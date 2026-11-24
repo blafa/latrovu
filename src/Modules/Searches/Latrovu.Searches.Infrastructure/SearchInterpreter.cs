@@ -9,16 +9,22 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
 {
     private const string FallbackLanguage = "en";
     private const int LanguageCodeLength = 2;
+    private const int ShortMessageLength = 20;
 
     private const string SystemPrompt = """
         You process messages from people looking for a flat or house in Switzerland. Messages can be in any language,
         may be short, informal or contain spelling mistakes. Many writers are not used to computers: be generous.
 
         You receive the message and the person's existing searches as JSON. Determine:
-        - language: ISO 639-1 code of the message language (e.g. de, fr, it, en, pt, sq, tr, ar, uk).
+        - language: ISO 639-1 code of the message language (e.g. de, fr, it, en, pt, sq, tr, ar, uk). If an
+          "Answer language" is given, use exactly that.
         - action: "new" for a new search, "update" to change an existing one, "pause", "resume", "stop",
           or "unclear" if the message contains no recognisable search wish. A message about other places than an
           existing search is a new search, unless the person clearly says to change that search.
+          "stop", "end", "cancel", "beenden", "arrêter" mean stop (end for good); use "pause" only if the person
+          says pause, break or temporarily.
+        - appliesToAll: true only if the person wants to pause, resume or stop all their searches ("stop all",
+          "alles stoppen"); otherwise false.
         - searchName: short name after the main place, e.g. "Albisrieden" or "Zürich". For update, pause, resume
           and stop use the exact name of the affected existing search.
         - criteria: the complete criteria after this message. For update: the existing criteria with the changes.
@@ -32,7 +38,8 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
             nearKm: distance in km for "near", "around", "max. 5 km from"; for vague "near X" use 3; for being
             close to a lake ("Seenähe", "am See") name the lake and use 1; else null.
         - summary: one to three short, simple sentences in the language of the message saying what we understood.
-          Always name every place of the search, so the person can spot misunderstandings.
+          Always name every place of the search, so the person can spot misunderstandings. State what happens;
+          never ask questions in the summary (questions belong in refinements). Keep rent or sale exactly as said.
           Address the person formally where the language has a formal form (Sie, vous, Lei, usted).
         - refinements: up to three short suggestions in the language of the message for missing details that would
           improve the search, e.g. budget or moving date, phrased as a polite question in the formal address.
@@ -61,10 +68,15 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
             {
                 ["name"] = search.Name,
                 ["status"] = search.Status,
+                ["language"] = search.Language,
                 ["criteria"] = JsonNode.Parse(search.CriteriaJson)
             })
             .ToArray());
-        return $"Existing searches:\n{existing.ToJsonString(WebJson)}\n\nMessage:\n{text}";
+        string? knownLanguage = existingSearches.FirstOrDefault()?.Language;
+        string answerLanguage = text.Trim().Length < ShortMessageLength && knownLanguage is not null
+            ? $"Answer language: {knownLanguage}\n\n"
+            : string.Empty;
+        return $"{answerLanguage}Existing searches:\n{existing.ToJsonString(WebJson)}\n\nMessage:\n{text}";
     }
 
     private SearchInterpretation? Parse(string answer)
@@ -82,7 +94,8 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
             root["criteria"]?.ToJsonString() ?? "{}",
             root["summary"]?.GetValue<string>() ?? string.Empty,
             root["refinements"]?.AsArray().Select(item => item?.GetValue<string>()).OfType<string>().ToList() ?? [],
-            ParsePlaces(root["criteria"]?["places"] as JsonArray));
+            ParsePlaces(root["criteria"]?["places"] as JsonArray),
+            root["appliesToAll"]?.GetValue<bool>() ?? false);
     }
 
     private static List<PlaceExpression> ParsePlaces(JsonArray? places) =>

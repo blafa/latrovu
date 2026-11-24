@@ -13,6 +13,7 @@ public sealed class SearchRequestHandler(
 {
     private const string FallbackLanguage = "en";
     private const int MaxInitialAlerts = 5;
+    private const int ShortMessageLength = 20;
 
     public async Task HandleAsync(SearchRequestReceived message, CancellationToken ct)
     {
@@ -26,64 +27,63 @@ public sealed class SearchRequestHandler(
 
         IReadOnlyList<Search> existing = await searches.FindBySeekerAsync(message.SenderAddress, ct);
         SearchInterpretation? interpretation = await interpreter.InterpretAsync(message.Text, existing, ct);
-        Search? changed = interpretation is null
-            ? null
+        IReadOnlyList<Search> changed = interpretation is null
+            ? []
             : SearchRequestPlanner.Apply(existing, interpretation, message.SenderAddress, message.Channel);
         PlaceResolution places = await SaveAsync(changed, interpretation, ct);
 
         logger.LogInformation(
-            "Search request {RequestId} interpreted as {Action}, search {SearchId}, {PlaceCount} places resolved",
+            "Search request {RequestId} interpreted as {Action}, {ChangedCount} searches changed, {PlaceCount} places resolved",
             message.RequestId,
             interpretation?.Action,
-            changed?.Id,
+            changed.Count,
             places.Places.Count);
         await notifier.SendReplyAsync(BuildReply(message, interpretation, existing, changed, places), ct);
         await AlertExistingListingsAsync(changed, ct);
         await searches.MarkProcessedAsync(message.SourceMessageId, ct);
     }
 
-    private async Task AlertExistingListingsAsync(Search? search, CancellationToken ct)
+    private async Task<PlaceResolution> SaveAsync(IReadOnlyList<Search> changed, SearchInterpretation? interpretation, CancellationToken ct)
     {
-        if (search is not { Status: Search.ActiveStatus })
+        foreach (Search search in changed)
         {
-            return;
+            await searches.SaveAsync(search, ct);
         }
 
-        IReadOnlyList<ListingReadyForMatching> candidates = await searches.FindCandidatesForSearchAsync(search.Id, MaxInitialAlerts, ct);
-        logger.LogInformation("Search {SearchId} matches {CandidateCount} existing listings", search.Id, candidates.Count);
-        foreach (ListingReadyForMatching candidate in candidates)
+        bool definesPlaces = interpretation is { Action: SearchAction.New or SearchAction.Update, Places.Count: > 0 };
+        if (changed.Count != 1 || !definesPlaces)
         {
-            await alerter.AlertAsync(search, candidate, ct);
+            return PlaceResolution.Empty;
         }
+
+        PlaceResolution places = await placeResolver.ResolveAsync(interpretation!.Places, ct);
+        await searches.SetAreaAsync(changed[0].Id, places.Places, ct);
+        return places;
     }
 
-    private async Task<PlaceResolution> SaveAsync(Search? changed, SearchInterpretation? interpretation, CancellationToken ct)
+    private async Task AlertExistingListingsAsync(IReadOnlyList<Search> changed, CancellationToken ct)
     {
-        if (changed is null || interpretation is null)
+        foreach (Search search in changed.Where(search => search.Status == Search.ActiveStatus))
         {
-            return PlaceResolution.Empty;
+            IReadOnlyList<ListingReadyForMatching> candidates = await searches.FindCandidatesForSearchAsync(search.Id, MaxInitialAlerts, ct);
+            logger.LogInformation("Search {SearchId} matches {CandidateCount} existing listings", search.Id, candidates.Count);
+            foreach (ListingReadyForMatching candidate in candidates)
+            {
+                await alerter.AlertAsync(search, candidate, ct);
+            }
         }
-
-        await searches.SaveAsync(changed, ct);
-        if (interpretation.Places.Count == 0)
-        {
-            return PlaceResolution.Empty;
-        }
-
-        PlaceResolution places = await placeResolver.ResolveAsync(interpretation.Places, ct);
-        await searches.SetAreaAsync(changed.Id, places.Places, ct);
-        return places;
     }
 
     private static SeekerReply BuildReply(
         SearchRequestReceived message,
         SearchInterpretation? interpretation,
         IReadOnlyList<Search> existing,
-        Search? changed,
+        IReadOnlyList<Search> changed,
         PlaceResolution places)
     {
-        List<Search> open = existing.Where(search => search.Id != changed?.Id).Append(changed)
-            .OfType<Search>()
+        HashSet<Guid> changedIds = changed.Select(search => search.Id).ToHashSet();
+        List<Search> open = existing.Where(search => !changedIds.Contains(search.Id))
+            .Concat(changed)
             .Where(search => search.IsOpen)
             .ToList();
         bool understood = interpretation is not null && interpretation.Action != SearchAction.Unclear;
@@ -91,11 +91,18 @@ public sealed class SearchRequestHandler(
         return new SeekerReply(
             message.SenderAddress,
             message.Channel,
-            interpretation?.Language ?? existing.FirstOrDefault()?.Language ?? FallbackLanguage,
+            ReplyLanguage(message, interpretation, existing),
             interpretation?.Summary,
             interpretation?.Refinements ?? [],
             open,
             understood,
             places);
+    }
+
+    private static string ReplyLanguage(SearchRequestReceived message, SearchInterpretation? interpretation, IReadOnlyList<Search> existing)
+    {
+        string? known = existing.FirstOrDefault()?.Language;
+        bool tooShortToTell = message.Text.Trim().Length < ShortMessageLength;
+        return (tooShortToTell ? known : null) ?? interpretation?.Language ?? known ?? FallbackLanguage;
     }
 }

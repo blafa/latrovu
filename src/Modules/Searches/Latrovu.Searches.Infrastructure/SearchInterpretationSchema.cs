@@ -12,6 +12,7 @@ public static class SearchInterpretationSchema
           "properties": {
             "language": { "type": "string" },
             "action": { "enum": ["new", "update", "pause", "resume", "stop", "unclear"] },
+            "appliesToAll": { "type": "boolean" },
             "searchName": { "type": ["string", "null"] },
             "criteria": {
               "type": "object",
@@ -43,7 +44,7 @@ public static class SearchInterpretationSchema
             "summary": { "type": "string" },
             "refinements": { "type": "array", "items": { "type": "string" } }
           },
-          "required": ["language", "action", "searchName", "criteria", "summary", "refinements"]
+          "required": ["language", "action", "appliesToAll", "searchName", "criteria", "summary", "refinements"]
         }
         """;
 }

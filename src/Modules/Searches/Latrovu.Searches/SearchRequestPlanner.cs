@@ -4,7 +4,7 @@ public static class SearchRequestPlanner
 {
     public const string FallbackName = "Suche";
 
-    public static Search? Apply(
+    public static IReadOnlyList<Search> Apply(
         IReadOnlyList<Search> existing,
         SearchInterpretation interpretation,
         string seekerAddress,
@@ -13,6 +13,23 @@ public static class SearchRequestPlanner
         ArgumentNullException.ThrowIfNull(existing);
         ArgumentNullException.ThrowIfNull(interpretation);
 
+        string? status = StatusFor(interpretation.Action);
+        if (interpretation.AppliesToAll && status is not null)
+        {
+            return existing.Where(search => search.IsOpen).Select(search => search with { Status = status }).ToList();
+        }
+
+        Search? changed = ApplyToOne(existing, interpretation, seekerAddress, channel, status);
+        return changed is null ? [] : [changed];
+    }
+
+    private static Search? ApplyToOne(
+        IReadOnlyList<Search> existing,
+        SearchInterpretation interpretation,
+        string seekerAddress,
+        string channel,
+        string? status)
+    {
         Search? target = FindTarget(existing, interpretation);
         return interpretation.Action switch
         {
@@ -20,12 +37,18 @@ public static class SearchRequestPlanner
                 Create(interpretation, seekerAddress, channel),
             SearchAction.New or SearchAction.Update =>
                 target! with { CriteriaJson = interpretation.CriteriaJson, Language = interpretation.Language, Status = Search.ActiveStatus },
-            SearchAction.Pause => target is null ? null : target with { Status = Search.PausedStatus },
-            SearchAction.Resume => target is null ? null : target with { Status = Search.ActiveStatus },
-            SearchAction.Stop => target is null ? null : target with { Status = Search.StoppedStatus },
+            _ when status is not null && target is not null => target with { Status = status },
             _ => null
         };
     }
+
+    private static string? StatusFor(SearchAction action) => action switch
+    {
+        SearchAction.Pause => Search.PausedStatus,
+        SearchAction.Resume => Search.ActiveStatus,
+        SearchAction.Stop => Search.StoppedStatus,
+        _ => null
+    };
 
     private static Search? FindTarget(IReadOnlyList<Search> existing, SearchInterpretation interpretation)
     {
