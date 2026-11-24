@@ -66,7 +66,7 @@ public sealed class ListingIntake(
     private async Task<Guid> ExtractAndStoreAsync(Submission message, SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
     {
         ListingExtraction? extraction = await extractor.ExtractAsync(pages, ct);
-        NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction);
+        NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction, pages);
         Guid listingId = await store.AddAsync(listing, ct);
         string token = await accessTokens.CreateAsync(listingId, ct);
         logger.LogInformation("Stored listing {ListingId} from {FileName}, review at /review/{Token}", listingId, pdf.FileName, token);

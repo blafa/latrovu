@@ -24,6 +24,7 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
         CREATE EXTENSION IF NOT EXISTS postgis;
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS location geometry(Point, 2056);
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS location_precision text;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS source_pages jsonb;
         CREATE TABLE IF NOT EXISTS listing_images (
             listing_id   uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
             position     int NOT NULL,
