@@ -1,8 +1,8 @@
 using Latrovu.BuildingBlocks.Storage;
+using Latrovu.Listings.Viewing.Chat;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Options;
 
 namespace Latrovu.Listings.Infrastructure.Viewing.Web;
 
@@ -12,6 +12,8 @@ public static class ListingViewEndpoints
     private const string HtmlContentType = "text/html; charset=utf-8";
     private const string RobotsHeader = "X-Robots-Tag";
     private const string NoIndex = "noindex, nofollow";
+    private const string QuestionFormKey = "question";
+    private const string AnswerIdFormKey = "answerId";
 
     public static IEndpointRouteBuilder MapListingViews(this IEndpointRouteBuilder app)
     {
@@ -19,6 +21,8 @@ public static class ListingViewEndpoints
 
         RouteGroupBuilder views = app.MapGroup("/i/{token}").RequireRateLimiting(RateLimitPolicy);
         views.MapGet(string.Empty, ShowAsync);
+        views.MapPost("/chat", AskAsync);
+        views.MapPost("/forward", ForwardAsync);
         views.MapGet("/images/{position:int}", ImageAsync);
         return app;
     }
@@ -27,14 +31,42 @@ public static class ListingViewEndpoints
         string token,
         HttpResponse response,
         IListingViewService views,
-        IOptions<ViewingOptions> options,
+        ListingChatService chat,
         CancellationToken ct)
     {
         response.Headers[RobotsHeader] = NoIndex;
         ListingReview? listing = await views.OpenAsync(token, ct);
-        return listing is null
-            ? Results.Content(ListingViewPage.RenderUnavailable(), HtmlContentType, statusCode: StatusCodes.Status404NotFound)
-            : Results.Content(ListingViewPage.Render(token, listing, options.Value.InquiryAddress), HtmlContentType);
+        if (listing is null)
+        {
+            return Results.Content(ListingViewPage.RenderUnavailable(), HtmlContentType, statusCode: StatusCodes.Status404NotFound);
+        }
+
+        return Results.Content(ListingViewPage.Render(token, listing, await chat.GetAsync(token, ct)), HtmlContentType);
+    }
+
+    private static async Task<IResult> AskAsync(string token, HttpRequest request, ListingChatService chat, CancellationToken ct)
+    {
+        request.HttpContext.Response.Headers[RobotsHeader] = NoIndex;
+        IFormCollection form = await request.ReadFormAsync(ct);
+        ChatResult result = await chat.AskAsync(token, form[QuestionFormKey].ToString(), ct);
+        return result.Outcome == ChatOutcome.NotFound
+            ? Results.NotFound()
+            : Results.Content(ListingChatPanel.Render(token, result), HtmlContentType);
+    }
+
+    private static async Task<IResult> ForwardAsync(string token, HttpRequest request, ListingChatService chat, CancellationToken ct)
+    {
+        request.HttpContext.Response.Headers[RobotsHeader] = NoIndex;
+        IFormCollection form = await request.ReadFormAsync(ct);
+        if (!long.TryParse(form[AnswerIdFormKey], System.Globalization.CultureInfo.InvariantCulture, out long answerId))
+        {
+            return Results.BadRequest();
+        }
+
+        ChatResult result = await chat.ForwardAsync(token, answerId, ct);
+        return result.Outcome == ChatOutcome.NotFound
+            ? Results.NotFound()
+            : Results.Content(ListingChatPanel.Render(token, result with { Outcome = ChatOutcome.Answered }), HtmlContentType);
     }
 
     private static async Task<IResult> ImageAsync(

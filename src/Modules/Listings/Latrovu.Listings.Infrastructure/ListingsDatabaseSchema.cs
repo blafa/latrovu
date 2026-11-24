@@ -67,6 +67,22 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
             view_count      int NOT NULL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS ix_listing_view_links_listing ON listing_view_links (listing_id);
+        CREATE TABLE IF NOT EXISTS listing_chat_messages (
+            id          bigserial PRIMARY KEY,
+            token_hash  char(64) NOT NULL,
+            listing_id  uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            role        text NOT NULL,
+            text        text NOT NULL,
+            source      text,
+            page        int,
+            created_at  timestamptz NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ix_listing_chat_messages_token ON listing_chat_messages (token_hash, created_at);
+        ALTER TABLE listing_chat_messages ADD COLUMN IF NOT EXISTS forward_status text;
+        ALTER TABLE listing_chat_messages ADD COLUMN IF NOT EXISTS forwarded_question text;
+        ALTER TABLE listing_chat_messages ADD COLUMN IF NOT EXISTS forwarded_at timestamptz;
+        ALTER TABLE listing_chat_messages ADD COLUMN IF NOT EXISTS forward_batch uuid;
+        CREATE INDEX IF NOT EXISTS ix_listing_chat_messages_pending ON listing_chat_messages (forwarded_at) WHERE forward_status = 'pending';
         """;
 
     public async Task StartAsync(CancellationToken cancellationToken)

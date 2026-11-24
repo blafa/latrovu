@@ -56,7 +56,7 @@ public sealed class InfomaniakLlmClient(
     {
         model = settings.Model,
         temperature = DeterministicTemperature,
-        max_tokens = settings.MaxOutputTokens,
+        max_tokens = responseSchema.MaxOutputTokens ?? settings.MaxOutputTokens,
         response_format = new
         {
             type = JsonSchemaFormat,

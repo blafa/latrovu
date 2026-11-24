@@ -1,3 +1,4 @@
+using Latrovu.BuildingBlocks.Infrastructure.Ai;
 using Latrovu.BuildingBlocks.Infrastructure.Email;
 using Latrovu.BuildingBlocks.Infrastructure.Messaging;
 using Latrovu.BuildingBlocks.Infrastructure.Persistence;
@@ -11,10 +12,11 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddPostgres(builder.Configuration)
+    .AddAiExtraction(builder.Configuration)
     .AddObjectStorage(builder.Configuration)
     .AddEmailSending(builder.Configuration)
     .AddListingsReview()
-    .AddListingsViewing(builder.Configuration)
+    .AddListingsViewing()
     .AddMessagePublishing(builder.Configuration);
 
 WebApplication app = builder.Build();

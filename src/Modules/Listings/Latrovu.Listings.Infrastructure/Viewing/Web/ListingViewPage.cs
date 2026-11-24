@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 using Latrovu.Listings.Infrastructure.Review.Web;
+using Latrovu.Listings.Viewing.Chat;
 
 namespace Latrovu.Listings.Infrastructure.Viewing.Web;
 
@@ -24,18 +25,23 @@ internal static class ListingViewPage
         body { margin:0; background:var(--canvas); color:var(--ink); font:15px/1.55 Outfit, system-ui, sans-serif; }
         img { display:block; max-width:100%; }
         a { color:inherit; }
-        .site { max-width:1120px; margin:0 auto; padding:18px 24px; display:flex; align-items:baseline; justify-content:space-between; }
+        .site { max-width:1360px; margin:0 auto; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; }
         .brand { font-weight:700; font-size:20px; letter-spacing:-0.02em; text-decoration:none; }
         .brand span { color:#8FB61E; }
         .tagline { font-size:13px; color:var(--muted); }
-        main { max-width:1120px; margin:0 auto; padding:0 24px 48px; }
-        .gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:200px 200px; gap:4px; border-radius:8px; overflow:hidden; }
+        main { max-width:1360px; margin:0 auto; padding:0 32px 48px; }
+        .gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:240px 240px; gap:4px; border-radius:8px; overflow:hidden; }
         .gallery a { position:relative; display:block; background:var(--well); }
         .gallery a:first-child { grid-row:span 2; }
         .gallery img { width:100%; height:100%; object-fit:cover; }
         .gallery .more { position:absolute; right:8px; bottom:8px; font-size:12px; padding:3px 9px; border-radius:4px; background:var(--paper); }
-        .content { display:grid; grid-template-columns:minmax(0, 1.7fr) minmax(0, 1fr); gap:28px; margin-top:24px; align-items:start; }
+        .content { display:grid; grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr); gap:32px; margin-top:24px; align-items:start; }
         .address { margin:0; font-size:14px; color:var(--muted); }
+        .price-line { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin:4px 0 2px; }
+        .price { font-size:30px; font-weight:700; letter-spacing:-0.01em; margin:0; }
+        .price-label { font-size:13px; color:var(--muted); }
+        .side-lines { display:flex; flex-wrap:wrap; gap:2px 16px; font-size:13px; color:var(--muted); margin:0; }
+        .side-lines div { display:flex; gap:5px; } .side-lines dd { margin:0; color:var(--ink); }
         h1 { margin:2px 0 14px; font-size:26px; line-height:1.2; letter-spacing:-0.01em; }
         h2 { margin:28px 0 10px; font-size:15px; }
         .chips { display:flex; flex-wrap:wrap; gap:6px; }
@@ -45,13 +51,6 @@ internal static class ListingViewPage
         .details { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0 24px; margin:0; }
         .details div { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); }
         .details dt { color:var(--muted); } .details dd { margin:0; font-weight:500; text-align:right; }
-        .side { position:sticky; top:20px; background:var(--paper); border-radius:8px; padding:20px; }
-        .price-label { font-size:13px; color:var(--muted); }
-        .price { font-size:26px; font-weight:600; margin:0 0 12px; }
-        .side-lines { display:grid; grid-template-columns:1fr auto; gap:4px 12px; font-size:14px; margin:0 0 16px; }
-        .side-lines dt { color:var(--muted); } .side-lines dd { margin:0; }
-        .inquiry { display:block; text-align:center; text-decoration:none; font-weight:600; padding:12px; border-radius:6px; background:var(--lime); }
-        .side-note { margin:10px 0 0; font-size:12px; color:var(--muted); text-align:center; }
         .contact { display:grid; gap:4px; font-size:14px; }
         .all-images { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px; }
         .all-images img { width:100%; border-radius:4px; background:var(--well); }
@@ -62,12 +61,11 @@ internal static class ListingViewPage
             .gallery a:first-child { grid-column:span 2; grid-row:auto; }
             .gallery a:nth-child(n+4) { display:none; }
             .content { grid-template-columns:1fr; }
-            .side { position:static; }
             .details { grid-template-columns:1fr; }
         }
         """;
 
-    public static string Render(string token, ListingReview listing, string inquiryAddress)
+    public static string Render(string token, ListingReview listing, ChatResult chat)
     {
         JsonObject data = JsonNode.Parse(listing.DataJson) as JsonObject ?? [];
         string title = ListingValues.Text(data, "title") ?? "Inserat";
@@ -80,11 +78,18 @@ internal static class ListingViewPage
         AppendIntro(html, data, title);
         AppendFeatures(html, data);
         AppendDetails(html, data);
+        if (listing.PublishContact)
+        {
+            AppendPublicContact(html, data);
+        }
+
         html.Append("</div>");
-        AppendSide(html, listing, data, title, inquiryAddress);
+        html.Append(ListingChatPanel.Render(token, chat));
         html.Append("</div>");
         AppendAllImages(html, token, listing.Images);
-        html.Append("</main><footer>Diese Seite ist nur über Ihren persönlichen Link erreichbar. Vermittelt durch Latrovu.</footer></body></html>");
+        html.Append("</main><footer>Diese Seite ist nur über Ihren persönlichen Link erreichbar. Vermittelt durch Latrovu.</footer>")
+            .Append(ListingChatPanel.Script)
+            .Append("</body></html>");
         return html.ToString();
     }
 
@@ -105,7 +110,8 @@ internal static class ListingViewPage
     private static string Head(string title) =>
         "<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">"
         + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"robots\" content=\"noindex, nofollow\">"
-        + $"<title>{Encode(title)} – Latrovu</title>{SiteAssets.HeadLinks}<style>{SiteAssets.FontFaces}{Styles}</style></head><body>";
+        + $"<title>{Encode(title)} – Latrovu</title>{SiteAssets.HeadLinks}<script src=\"{SiteAssets.HtmxScript}\"></script>"
+        + $"<style>{SiteAssets.FontFaces}{Styles}{ListingChatPanel.Styles}</style></head><body>";
 
     private static void AppendGallery(StringBuilder html, string token, IReadOnlyList<ListingImageRef> images)
     {
@@ -129,7 +135,9 @@ internal static class ListingViewPage
 
     private static void AppendIntro(StringBuilder html, JsonObject data, string title)
     {
-        html.Append($"<p class=\"address\">{Encode(ListingValues.Address(data))}</p><h1>{Encode(title)}</h1><div class=\"chips\">");
+        html.Append($"<p class=\"address\">{Encode(ListingValues.Address(data))}</p>");
+        AppendPrice(html, data);
+        html.Append($"<h1>{Encode(title)}</h1><div class=\"chips\">");
         foreach (string path in HeadlinePaths)
         {
             string? text = Display(data, path);
@@ -183,21 +191,17 @@ internal static class ListingViewPage
             .Append("</dl>");
     }
 
-    private static void AppendSide(StringBuilder html, ListingReview listing, JsonObject data, string title, string inquiryAddress)
+    private static void AppendPrice(StringBuilder html, JsonObject data)
     {
         (string label, string? price) = Display(data, "sale.priceChf") is { } salePrice
             ? ("Kaufpreis", salePrice)
             : Display(data, "rent.grossChf") is { } grossRent ? ("Miete brutto pro Monat", grossRent) : ("Nettomiete pro Monat", Display(data, "rent.netChf"));
-
-        html.Append("<aside class=\"side\">");
         if (price is not null)
         {
-            html.Append($"<div class=\"price-label\">{Encode(label)}</div><p class=\"price\">{Encode(price)}</p>");
+            html.Append($"<div class=\"price-line\"><p class=\"price\">{Encode(price)}</p><span class=\"price-label\">{Encode(label)}</span></div>");
         }
 
         AppendSideLines(html, data);
-        AppendContact(html, listing, data, title, inquiryAddress);
-        html.Append("</aside>");
     }
 
     private static void AppendSideLines(StringBuilder html, JsonObject data)
@@ -206,7 +210,7 @@ internal static class ListingViewPage
         List<string> lines = paths
             .Select(path => (Label: FieldLabels.Label(path), Value: Display(data, path)))
             .Where(line => line.Value is not null)
-            .Select(line => $"<dt>{Encode(line.Label)}</dt><dd>{Encode(line.Value!)}</dd>")
+            .Select(line => $"<div><dt>{Encode(line.Label)}</dt><dd>{Encode(line.Value!)}</dd></div>")
             .ToList();
         if (lines.Count > 0)
         {
@@ -214,22 +218,9 @@ internal static class ListingViewPage
         }
     }
 
-    private static void AppendContact(StringBuilder html, ListingReview listing, JsonObject data, string title, string inquiryAddress)
-    {
-        if (listing.PublishContact)
-        {
-            AppendPublicContact(html, data);
-            return;
-        }
-
-        string subject = Uri.EscapeDataString($"Anfrage: {title}");
-        html.Append($"<a class=\"inquiry\" href=\"mailto:{Encode(inquiryAddress)}?subject={subject}\">Anfrage senden</a>")
-            .Append("<p class=\"side-note\">Ihre Anfrage geht über Latrovu an den Anbieter.</p>");
-    }
-
     private static void AppendPublicContact(StringBuilder html, JsonObject data)
     {
-        html.Append("<div class=\"contact\">");
+        html.Append("<h2>Kontakt</h2><div class=\"contact\">");
         foreach (string path in new[] { "contact.company", "contact.name" })
         {
             if (ListingValues.Text(data, path) is { } text)

@@ -22,7 +22,7 @@ builder.Services
     .AddEmailSending(builder.Configuration)
     .AddGeocoding()
     .AddPdfReading()
-    .AddListingsProcessing()
+    .AddListingsProcessing(builder.Configuration)
     .AddSearchesModule(builder.Configuration)
     .AddMessageConsuming(
         builder.Configuration,

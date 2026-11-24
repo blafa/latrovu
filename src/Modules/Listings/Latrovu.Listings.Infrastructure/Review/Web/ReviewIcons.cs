@@ -54,6 +54,10 @@ internal static class ReviewIcons
 
     public static readonly string Plus = Outline("M12 5l0 14", "M5 12l14 0");
 
+    public static readonly string Send = Outline("M10 14l11 -11", "M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5");
+
+    public static readonly string CollapseDown = Outline("M6 9l6 6l6 -6");
+
     public static readonly string Document = Outline(
         "M14 3v4a1 1 0 0 0 1 1h4",
         "M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2",

@@ -3,7 +3,9 @@ using Latrovu.BuildingBlocks.Infrastructure.Messaging;
 using Latrovu.Core.Listings;
 using Latrovu.Core.Submissions;
 using Latrovu.Listings.Infrastructure.Matching;
+using Latrovu.Listings.Infrastructure.Viewing.Chat;
 using Latrovu.Listings.Matching;
+using Latrovu.Listings.Viewing.Chat;
 using Latrovu.Listings.Infrastructure.Viewing.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -28,16 +30,14 @@ public static class ListingsSetup
         return services;
     }
 
-    public static IServiceCollection AddListingsViewing(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddListingsViewing(this IServiceCollection services)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-
         AddListingsStorage(services);
-        services.AddOptions<ViewingOptions>()
-            .Bind(configuration.GetSection(ViewingOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
         services.TryAddSingleton<IListingViewLinkStore, ListingViewLinkStore>();
+        services.TryAddSingleton<IListingChatStore, ListingChatStore>();
+        services.TryAddSingleton<IListingSourceTextStore, ListingSourceTextStore>();
+        services.AddScoped<IListingChatAnswerer, ListingChatAnswerer>();
+        services.AddScoped<ListingChatService>();
         services.AddScoped<IListingViewService, ListingViewService>();
         services.AddRateLimiter(options =>
         {
@@ -47,9 +47,16 @@ public static class ListingsSetup
         return services;
     }
 
-    public static IServiceCollection AddListingsProcessing(this IServiceCollection services)
+    public static IServiceCollection AddListingsProcessing(this IServiceCollection services, IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(configuration);
+
         AddListingsStorage(services);
+        services.AddOptions<QuestionForwardingOptions>()
+            .Bind(configuration.GetSection(QuestionForwardingOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddHostedService<QuestionForwardingService>();
         services.AddScoped<IDocumentClassifier, DocumentClassifier>();
         services.AddScoped<IListingExtractor, ListingExtractor>();
         services.AddScoped<IListingImageService, ListingImageService>();
