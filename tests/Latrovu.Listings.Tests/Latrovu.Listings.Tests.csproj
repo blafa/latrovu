@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Modules\Listings\Latrovu.Listings\Latrovu.Listings.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Listings\Latrovu.Listings.Infrastructure\Latrovu.Listings.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -121,4 +121,6 @@ public sealed class ListingChatAnswerer(ILlmClient llm, ILogger<ListingChatAnswe
             content.Append(CultureInfo.InvariantCulture, $"{message.Role}: {message.Text}\n");
         }
 
-        return content.Append(CultureInfo.Inv
+        return content.Append(CultureInfo.InvariantCulture, $"\nMessage:\n{question}").ToString();
+    }
+}
