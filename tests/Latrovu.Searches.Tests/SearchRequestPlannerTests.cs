@@ -51,6 +51,17 @@ public sealed class SearchRequestPlannerTests
     }
 
     [Fact]
+    public void Update_WithUnknownName_CreatesNewSearchInsteadOfOverwriting()
+    {
+        Search existing = Existing("Wiedikon oder Kreis 4");
+
+        Search? result = SearchRequestPlanner.Apply([existing], Interpretation(SearchAction.Update, "Thun"), Address, Channel);
+
+        Assert.NotEqual(existing.Id, result?.Id);
+        Assert.Equal("Thun", result?.Name);
+    }
+
+    [Fact]
     public void Stop_UnknownNameWithSeveralSearches_ChangesNothing()
     {
         Search? result = SearchRequestPlanner.Apply(

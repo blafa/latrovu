@@ -17,7 +17,8 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
         You receive the message and the person's existing searches as JSON. Determine:
         - language: ISO 639-1 code of the message language (e.g. de, fr, it, en, pt, sq, tr, ar, uk).
         - action: "new" for a new search, "update" to change an existing one, "pause", "resume", "stop",
-          or "unclear" if the message contains no recognisable search wish.
+          or "unclear" if the message contains no recognisable search wish. A message about other places than an
+          existing search is a new search, unless the person clearly says to change that search.
         - searchName: short name after the main place, e.g. "Albisrieden" or "Zürich". For update, pause, resume
           and stop use the exact name of the affected existing search.
         - criteria: the complete criteria after this message. For update: the existing criteria with the changes.

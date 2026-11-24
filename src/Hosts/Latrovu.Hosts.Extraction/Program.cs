@@ -23,11 +23,11 @@ builder.Services
     .AddGeocoding()
     .AddPdfReading()
     .AddListingsProcessing()
-    .AddSearchesModule()
+    .AddSearchesModule(builder.Configuration)
     .AddMessageConsuming(
         builder.Configuration,
         InputQueue,
-        [typeof(SubmissionReceived), typeof(SearchRequestReceived), typeof(ListingApproved)]);
+        [typeof(SubmissionReceived), typeof(SearchRequestReceived), typeof(ListingApproved), typeof(ListingReadyForMatching), typeof(ViewLinkRequested)]);
 
 IHost host = builder.Build();
 host.Run();

@@ -9,4 +9,6 @@ public sealed record ListingReadyForMatching(
     decimal? Rooms,
     decimal? PriceChf,
     decimal? LivingAreaM2,
-    string? AvailableFrom);
+    string? AvailableFrom,
+    string? Title,
+    string? City);

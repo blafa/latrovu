@@ -1,13 +1,37 @@
 using System.Globalization;
 using System.Text;
 using Latrovu.BuildingBlocks.Email;
+using Microsoft.Extensions.Options;
 
 namespace Latrovu.Searches.Infrastructure;
 
-public sealed class EmailSeekerNotifier(IEmailSender emailSender, ILogger<EmailSeekerNotifier> logger) : ISeekerNotifier
+public sealed class EmailSeekerNotifier(
+    IEmailSender emailSender,
+    IOptions<AlertOptions> alertOptions,
+    ILogger<EmailSeekerNotifier> logger) : ISeekerNotifier
 {
     private const string EmailChannel = "email";
     private const string ListPrefix = "– ";
+    private const string ViewPath = "/i/";
+
+    public async Task SendAlertAsync(SeekerAlert alert, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(alert);
+
+        if (alert.Channel != EmailChannel)
+        {
+            logger.LogWarning("Channel {Channel} is not supported yet, alert for listing {ListingId} not sent", alert.Channel, alert.Listing.ListingId);
+            return;
+        }
+
+        SeekerTexts texts = SeekerTextCatalog.For(alert.Language);
+        string url = $"{alertOptions.Value.ViewBaseUrl.TrimEnd('/')}{ViewPath}{alert.Token}";
+        string subject = string.Format(CultureInfo.InvariantCulture, texts.AlertSubject, alert.SearchName);
+        await emailSender.SendAsync(
+            new EmailMessage(alert.Address, subject, SeekerAlertMail.Text(alert, texts, url), SeekerAlertMail.Html(alert, texts, url)),
+            ct);
+        logger.LogInformation("Alert for listing {ListingId} sent in {Language}", alert.Listing.ListingId, alert.Language);
+    }
 
     public async Task SendReplyAsync(SeekerReply reply, CancellationToken ct)
     {

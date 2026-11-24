@@ -20,6 +20,13 @@ public static class ListingReviewPage
             return pane;
         }
         const firstSpec = document.querySelector('.summary [data-select]:not(.ghost)');
+        document.addEventListener('click', event => {
+            const open = event.target.closest('[data-dialog-open]');
+            if (open) { document.getElementById(open.dataset.dialogOpen)?.showModal(); }
+            const close = event.target.closest('[data-dialog-close]');
+            if (close) { close.closest('dialog')?.close(); }
+            if (event.target.tagName === 'DIALOG') { event.target.close(); }
+        });
         select(location.hash.slice(1) || firstSpec?.dataset.select || 'intro');
 
         const thumbs = [...document.querySelectorAll('.thumb')];
@@ -134,8 +141,13 @@ public static class ListingReviewPage
     {
         string token = Encode(model.Token);
         return model.Review.IsApproved
-            ? $"<button class=\"ghost caution\" hx-post=\"/review/{token}/withdraw\" hx-target=\"#approve-status\" "
-                + $"hx-confirm=\"Inserat zurückziehen? Alle Links für Suchende werden sofort ungültig.\">{ReviewIcons.EyeOff}Zurückziehen</button>"
+            ? $"<button type=\"button\" class=\"ghost caution\" data-dialog-open=\"withdraw-dialog\">{ReviewIcons.EyeOff}Zurückziehen</button>"
+                + "<dialog id=\"withdraw-dialog\" class=\"dialog\" aria-labelledby=\"withdraw-title\">"
+                + "<h2 id=\"withdraw-title\">Inserat zurückziehen?</h2>"
+                + "<p>Alle Links für Suchende werden sofort ungültig. Sie können das Inserat später wieder freigeben.</p>"
+                + "<div class=\"dialog-actions\"><button type=\"button\" class=\"ghost\" data-dialog-close>Abbrechen</button>"
+                + $"<button class=\"caution-solid\" hx-post=\"/review/{token}/withdraw\" hx-target=\"#approve-status\" hx-disabled-elt=\"this\">"
+                + $"<span class=\"spinner\" aria-hidden=\"true\"></span>{ReviewIcons.EyeOff}Ja, zurückziehen</button></div></dialog>"
             : $"<button class=\"primary\" hx-post=\"/review/{token}/approve\" hx-target=\"#approve-status\">{ReviewIcons.Confirm}Inserat freigeben</button>";
     }
 

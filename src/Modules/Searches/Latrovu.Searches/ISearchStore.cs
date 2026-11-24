@@ -1,3 +1,5 @@
+using Latrovu.Core.Listings;
+
 namespace Latrovu.Searches;
 
 public interface ISearchStore
@@ -7,6 +9,10 @@ public interface ISearchStore
     Task SaveAsync(Search search, CancellationToken ct);
 
     Task SetAreaAsync(Guid searchId, IReadOnlyList<PlaceRef> places, CancellationToken ct);
+
+    Task<IReadOnlyList<Search>> FindMatchesAsync(ListingReadyForMatching listing, CancellationToken ct);
+
+    Task<bool> RecordAlertAsync(ViewLinkRequested linkRequest, CancellationToken ct);
 
     Task<bool> IsProcessedAsync(string sourceId, CancellationToken ct);
 

@@ -23,7 +23,9 @@ public static class ListingMatchFacts
             Number(data, "size.rooms"),
             Number(data, "rent.grossChf") ?? Number(data, "rent.netChf") ?? Number(data, "sale.priceChf"),
             Number(data, "size.livingAreaM2"),
-            Text(data, "availability.availableFrom"));
+            Text(data, "availability.availableFrom"),
+            Text(data, "title"),
+            Text(data, "location.city"));
     }
 
     private static string? Text(JsonObject data, string path) =>

@@ -1,20 +1,12 @@
-using System.Security.Cryptography;
-using System.Text;
+using Latrovu.BuildingBlocks.Security;
 
 namespace Latrovu.Listings.Access;
 
 public static class AccessTokens
 {
-    public const int TokenBytes = 32;
+    public const int TokenBytes = SecureTokens.TokenBytes;
 
-    public static string Create() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(TokenBytes))
-        .TrimEnd('=')
-        .Replace('+', '-')
-        .Replace('/', '_');
+    public static string Create() => SecureTokens.Create();
 
-    public static string Hash(string token)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(token);
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
-    }
+    public static string Hash(string token) => SecureTokens.Hash(token);
 }

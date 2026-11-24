@@ -48,6 +48,7 @@ No comments (exceptions: algorithm references, workarounds, license headers, unc
 - View link for an approved listing: `curl -s -X POST "http://localhost:5082/dev/view-links/<listingId>"`.
 - Re-import a processed file: `DELETE FROM processed_submissions WHERE source_id LIKE 'dev-import:%'`.
 - Test exposés in `tests/exposes` (git-ignored, contain personal data).
+- `Alerts:ViewBaseUrl` (e.g. http://localhost:5082) for links in alert mails. Test seeker flow: `POST http://localhost:5083/dev/search` with `{"text":"..."}`; replies go to `DevImport:Sender`.
 - User secrets (shared id for all hosts): `ConnectionStrings:Db`, `Mail:*`, `Smtp:*`, `AI:*`, `Storage:*`, `Messaging:RabbitMqConnectionString`, `DevImport:Sender`, `Viewing:InquiryAddress`.
 - `AI:CacheResponses = true` (dev only): model answers cached in `llm_response_cache` by hash of model, prompt, schema and text, so re-imports cost no AI credits. Changing prompt or schema creates new calls automatically.
 
@@ -58,13 +59,14 @@ In progress: search side. Step 1 done (Searches module, `SearchRequestReceived` 
 ## Next steps (search side)
 1. Done: place resolver (`PostgresPlaceResolver`): AI returns structured places (name, within, kind, nearKm) → exact then trigram lookup in `places`, kind hint retried without filter, ambiguity by municipality → question in refinement box, unknown → question; area = union with buffers (lakes 1 km shore) stored in `searches.area`, refs in `searches.place_refs`.
 2. Done: geocoding on approval (`ListingApprovedHandler` in Extraction host, `SwisstopoGeocoder` via api3.geo.admin.ch SearchServer, address then postal code fallback) → `listings.location` (Point 2056) + `location_precision`, and `ListingReadyForMatching` (point, offer type, rooms, price, area, availability) via outbox.
-3. Matching on `ListingApproved` with `ST_Covers(search.area, listing.point)` plus rooms/price/type; event carries matchable facts.
-4. Alert mail per match with personal view link (replaces dev view-link endpoint); also check existing listings when a search is created.
+3. Done: matching (`ListingMatchingHandler` in Searches on `ListingReadyForMatching`): active searches with `ST_Covers(area, point)`, offer type, rooms min/max, price ≤ max × 1.05, min living area, not yet alerted (`search_alerts`). Per match: token created in Searches, only its hash sent to Listings (`ViewLinkRequested` via outbox, stored by `ViewLinkRequestedHandler`).
+4. Done: alert mail (`SeekerAlertMail`, texts de/fr/it/en, neutral "Angebot"), link `{Alerts:ViewBaseUrl}/i/{token}`. Open: also check existing approved listings when a search is created or changed.
 5. Pause/stop by reply (interpretation exists; verify end to end).
 
 ## Backlog
 - Extraction quality: golden set; object type confused by building names ("Haus First"); wrong ZIP (Wattwil "630"); multi-unit documents (one listing per unit); image classification (photo vs plan vs map vs document; hide land register extracts; photos first); some PDF image formats yield no images.
 - Delete listing + data retention; review page HTML tests.
+- View link validity (30 days) is hardcoded in `ListingMatchingHandler.LinkValidity` and in the alert texts; make it a setting (probably shorter). Remove dev view-link endpoint (real alerts create links now).
 - Deployment: Dockerfiles per host, compose for hosts, optional VS `.dcproj`, Caddy, forwarded headers (cookie `Secure` flag behind proxy), Infomaniak VM.
 - Cleanup: delete bucket `latrovu-public`, RabbitMQ queue `latrovu-listings`, any leftover `src/Api` folder.
 - Business: Einzelfirma registration → Meta business verification for WhatsApp; Swiss lawyer check before launch; trademark check.

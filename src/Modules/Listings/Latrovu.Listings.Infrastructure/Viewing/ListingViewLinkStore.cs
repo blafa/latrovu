@@ -7,6 +7,7 @@ public sealed class ListingViewLinkStore(NpgsqlDataSource dataSource, TimeProvid
     private const string InsertSql = """
         INSERT INTO listing_view_links (token_hash, listing_id, search_id, created_at, expires_at)
         VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (token_hash) DO NOTHING
         """;
 
     private const string FindSql = "SELECT listing_id FROM listing_view_links WHERE token_hash = $1 AND expires_at > $2";
@@ -20,14 +21,22 @@ public sealed class ListingViewLinkStore(NpgsqlDataSource dataSource, TimeProvid
     public async Task<string> CreateAsync(Guid listingId, Guid? searchId, DateTimeOffset expiresAt, CancellationToken ct)
     {
         string token = AccessTokens.Create();
+        await InsertAsync(AccessTokens.Hash(token), listingId, searchId, expiresAt, ct);
+        return token;
+    }
+
+    public Task CreateFromHashAsync(Guid listingId, Guid searchId, string tokenHash, DateTimeOffset expiresAt, CancellationToken ct) =>
+        InsertAsync(tokenHash, listingId, searchId, expiresAt, ct);
+
+    private async Task InsertAsync(string tokenHash, Guid listingId, Guid? searchId, DateTimeOffset expiresAt, CancellationToken ct)
+    {
         await using NpgsqlCommand command = dataSource.CreateCommand(InsertSql);
-        command.Parameters.Add(new NpgsqlParameter { Value = AccessTokens.Hash(token) });
+        command.Parameters.Add(new NpgsqlParameter { Value = tokenHash });
         command.Parameters.Add(new NpgsqlParameter { Value = listingId });
         command.Parameters.Add(new NpgsqlParameter { Value = (object?)searchId ?? DBNull.Value });
         command.Parameters.Add(new NpgsqlParameter { Value = timeProvider.GetUtcNow() });
         command.Parameters.Add(new NpgsqlParameter { Value = expiresAt });
         await command.ExecuteNonQueryAsync(ct);
-        return token;
     }
 
     public async Task<Guid?> FindListingIdAsync(string token, DateTimeOffset now, CancellationToken ct)

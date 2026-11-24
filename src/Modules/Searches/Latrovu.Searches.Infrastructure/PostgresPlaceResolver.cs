@@ -40,7 +40,7 @@ public sealed class PostgresPlaceResolver(NpgsqlDataSource dataSource, ILogger<P
         foreach (PlaceExpression place in places.Where(place => !string.IsNullOrWhiteSpace(place.Name)))
         {
             List<PlaceCandidate> candidates = await LookupAsync(place, ct);
-            if (candidates.Count == 0 && place.Kind is not null)
+            if (BestCandidates(candidates).Count == 0 && place.Kind is not null)
             {
                 candidates = await LookupAsync(place with { Kind = null }, ct);
             }

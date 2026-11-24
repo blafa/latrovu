@@ -32,7 +32,7 @@ public static class SearchRequestPlanner
         List<Search> open = existing.Where(search => search.IsOpen).ToList();
         Search? byName = open.FirstOrDefault(search =>
             string.Equals(search.Name, interpretation.SearchName?.Trim(), StringComparison.OrdinalIgnoreCase));
-        if (byName is not null || interpretation.Action == SearchAction.New)
+        if (byName is not null || interpretation.Action == SearchAction.New || !string.IsNullOrWhiteSpace(interpretation.SearchName))
         {
             return byName;
         }

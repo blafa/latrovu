@@ -56,8 +56,10 @@ public static class ListingsSetup
         services.AddScoped<IListingImageCollector, ListingImageCollector>();
         services.AddScoped<IListingIntake, ListingIntake>();
         services.TryAddSingleton<IListingLocationStore, ListingLocationStore>();
+        services.TryAddSingleton<IListingViewLinkStore, ListingViewLinkStore>();
         services.AddMessageHandler<SubmissionReceived, SubmissionReceivedHandler>();
         services.AddMessageHandler<ListingApproved, ListingApprovedHandler>();
+        services.AddMessageHandler<ViewLinkRequested, ViewLinkRequestedHandler>();
         return services;
     }
 

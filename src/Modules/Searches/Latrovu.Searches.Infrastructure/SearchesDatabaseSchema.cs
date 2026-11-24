@@ -23,6 +23,12 @@ public sealed class SearchesDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
         ALTER TABLE searches ADD COLUMN IF NOT EXISTS place_refs jsonb;
         ALTER TABLE searches ADD COLUMN IF NOT EXISTS area geometry(MultiPolygon, 2056);
         CREATE INDEX IF NOT EXISTS ix_searches_area ON searches USING gist (area);
+        CREATE TABLE IF NOT EXISTS search_alerts (
+            search_id  uuid NOT NULL REFERENCES searches (id) ON DELETE CASCADE,
+            listing_id uuid NOT NULL,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            PRIMARY KEY (search_id, listing_id)
+        );
         CREATE TABLE IF NOT EXISTS processed_search_requests (
             source_id    text PRIMARY KEY,
             processed_at timestamptz NOT NULL DEFAULT now()

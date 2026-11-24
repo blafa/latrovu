@@ -11,4 +11,9 @@ public sealed record SeekerTexts(
     string NotUnderstood,
     string Closing,
     string AmbiguousPlace,
-    string UnknownPlace);
+    string UnknownPlace,
+    string AlertSubject,
+    string AlertIntro,
+    string AlertButton,
+    string AlertNote,
+    string Rooms);

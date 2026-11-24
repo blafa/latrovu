@@ -17,7 +17,12 @@ public static class SeekerTextCatalog
             "Wir haben Ihre Nachricht leider nicht ganz verstanden. Schreiben Sie uns einfach, wo und was Sie suchen, zum Beispiel: «3 Zimmer in Zürich bis 2500 Franken».",
             "Freundliche Grüsse\nIhr Latrovu-Team",
             "Welches «{0}» meinen Sie: {1}?",
-            "Den Ort «{0}» haben wir nicht gefunden. Können Sie ihn anders schreiben oder einen Ort in der Nähe nennen?"),
+            "Den Ort «{0}» haben wir nicht gefunden. Können Sie ihn anders schreiben oder einen Ort in der Nähe nennen?",
+            "Neues Angebot für Ihre Suche «{0}»",
+            "Wir haben ein passendes Angebot für Ihre Suche «{0}» gefunden:",
+            "Angebot ansehen",
+            "Dieser Link ist 30 Tage gültig und nur für Sie bestimmt.",
+            "Zimmer"),
         ["fr"] = new SeekerTexts(
             "Votre recherche de logement avec Latrovu",
             "Bonjour",
@@ -29,7 +34,12 @@ public static class SeekerTextCatalog
             "Nous n’avons malheureusement pas bien compris votre message. Écrivez-nous simplement où et ce que vous cherchez, par exemple : « 3 pièces à Zurich jusqu’à 2500 francs ».",
             "Meilleures salutations\nL’équipe Latrovu",
             "Quel « {0} » voulez-vous dire : {1} ?",
-            "Nous n’avons pas trouvé le lieu « {0} ». Pouvez-vous l’écrire autrement ou indiquer un lieu proche ?"),
+            "Nous n’avons pas trouvé le lieu « {0} ». Pouvez-vous l’écrire autrement ou indiquer un lieu proche ?",
+            "Nouvelle offre pour votre recherche « {0} »",
+            "Nous avons trouvé une offre correspondant à votre recherche « {0} » :",
+            "Voir l’offre",
+            "Ce lien est valable 30 jours et vous est personnellement destiné.",
+            "pièces"),
         ["it"] = new SeekerTexts(
             "La sua ricerca di casa con Latrovu",
             "Buongiorno",
@@ -41,7 +51,12 @@ public static class SeekerTextCatalog
             "Purtroppo non abbiamo capito bene il suo messaggio. Ci scriva semplicemente dove e cosa cerca, per esempio: «3 locali a Zurigo fino a 2500 franchi».",
             "Cordiali saluti\nIl team di Latrovu",
             "Quale «{0}» intende: {1}?",
-            "Non abbiamo trovato il luogo «{0}». Può scriverlo diversamente o indicare un luogo vicino?"),
+            "Non abbiamo trovato il luogo «{0}». Può scriverlo diversamente o indicare un luogo vicino?",
+            "Nuova offerta per la sua ricerca «{0}»",
+            "Abbiamo trovato un’offerta adatta alla sua ricerca «{0}»:",
+            "Vedere l’offerta",
+            "Questo link è valido 30 giorni ed è destinato solo a lei.",
+            "locali"),
         ["en"] = new SeekerTexts(
             "Your home search with Latrovu",
             "Hello",
@@ -53,7 +68,12 @@ public static class SeekerTextCatalog
             "Sorry, we did not quite understand your message. Just tell us where and what you are looking for, for example: “3 rooms in Zurich up to 2500 francs”.",
             "Kind regards\nThe Latrovu team",
             "Which “{0}” do you mean: {1}?",
-            "We could not find “{0}”. Could you spell it differently or name a place nearby?")
+            "We could not find “{0}”. Could you spell it differently or name a place nearby?",
+            "New listing for your search “{0}”",
+            "We found a listing that matches your search “{0}”:",
+            "View the listing",
+            "This link is valid for 30 days and meant only for you.",
+            "rooms")
     };
 
     public static SeekerTexts For(string language) =>

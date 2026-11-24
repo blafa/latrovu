@@ -145,6 +145,16 @@ internal static class ReviewLayout
         .ghost:hover { border-color:var(--muted); }
         .ghost.caution { color:var(--amber-ink); border-color:rgba(122, 74, 7, 0.3); }
         .ghost.caution:hover { background:var(--amber-soft); border-color:var(--amber); }
+        .dialog { width:min(420px, calc(100vw - 32px)); border:none; border-radius:8px; padding:22px 22px 18px; color:var(--ink);
+                  box-shadow:0 18px 48px rgba(17, 20, 24, 0.18); }
+        .dialog::backdrop { background:rgba(17, 20, 24, 0.35); backdrop-filter:blur(2px); }
+        .dialog h2 { margin:0 0 6px; font-size:16px; font-weight:600; }
+        .dialog p { margin:0; color:var(--muted); }
+        .dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+        .caution-solid { display:inline-flex; align-items:center; gap:6px; border:none; border-radius:4px; padding:6px 12px;
+                         font-weight:600; background:var(--amber); color:#3D2604; }
+        .caution-solid .icon { width:15px; height:15px; }
+        .caution-solid:hover { filter:brightness(0.95); }
         .pane > .ghost { justify-self:start; }
         .secondary { border:none; background:none; padding:2px 0; text-decoration:underline; color:var(--muted); }
         .remove { border:none; background:none; padding:3px 7px; border-radius:4px; color:var(--muted); }
