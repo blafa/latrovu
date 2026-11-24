@@ -4,6 +4,7 @@ namespace Latrovu.Searches;
 
 public sealed class SearchRequestHandler(
     ISearchInterpreter interpreter,
+    IPlaceResolver placeResolver,
     ISearchStore searches,
     ISeekerNotifier notifier,
     ILogger<SearchRequestHandler> logger) : IMessageHandler<SearchRequestReceived>
@@ -25,25 +26,42 @@ public sealed class SearchRequestHandler(
         Search? changed = interpretation is null
             ? null
             : SearchRequestPlanner.Apply(existing, interpretation, message.SenderAddress, message.Channel);
-        if (changed is not null)
-        {
-            await searches.SaveAsync(changed, ct);
-        }
+        PlaceResolution places = await SaveAsync(changed, interpretation, ct);
 
         logger.LogInformation(
-            "Search request {RequestId} interpreted as {Action}, search {SearchId}",
+            "Search request {RequestId} interpreted as {Action}, search {SearchId}, {PlaceCount} places resolved",
             message.RequestId,
             interpretation?.Action,
-            changed?.Id);
-        await notifier.SendReplyAsync(BuildReply(message, interpretation, existing, changed), ct);
+            changed?.Id,
+            places.Places.Count);
+        await notifier.SendReplyAsync(BuildReply(message, interpretation, existing, changed, places), ct);
         await searches.MarkProcessedAsync(message.SourceMessageId, ct);
+    }
+
+    private async Task<PlaceResolution> SaveAsync(Search? changed, SearchInterpretation? interpretation, CancellationToken ct)
+    {
+        if (changed is null || interpretation is null)
+        {
+            return PlaceResolution.Empty;
+        }
+
+        await searches.SaveAsync(changed, ct);
+        if (interpretation.Places.Count == 0)
+        {
+            return PlaceResolution.Empty;
+        }
+
+        PlaceResolution places = await placeResolver.ResolveAsync(interpretation.Places, ct);
+        await searches.SetAreaAsync(changed.Id, places.Places, ct);
+        return places;
     }
 
     private static SeekerReply BuildReply(
         SearchRequestReceived message,
         SearchInterpretation? interpretation,
         IReadOnlyList<Search> existing,
-        Search? changed)
+        Search? changed,
+        PlaceResolution places)
     {
         List<Search> open = existing.Where(search => search.Id != changed?.Id).Append(changed)
             .OfType<Search>()
@@ -58,6 +76,7 @@ public sealed class SearchRequestHandler(
             interpretation?.Summary,
             interpretation?.Refinements ?? [],
             open,
-            understood);
+            understood,
+            places);
     }
 }

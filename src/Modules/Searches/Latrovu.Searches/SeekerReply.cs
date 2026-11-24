@@ -7,4 +7,5 @@ public sealed record SeekerReply(
     string? Summary,
     IReadOnlyList<string> Refinements,
     IReadOnlyList<Search> OpenSearches,
-    bool Understood);
+    bool Understood,
+    PlaceResolution Places);

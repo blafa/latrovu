@@ -74,5 +74,5 @@ public sealed class SearchRequestPlannerTests
         new(Guid.NewGuid(), Address, Channel, name, "de", Criteria, Search.ActiveStatus);
 
     private static SearchInterpretation Interpretation(SearchAction action, string? name) =>
-        new("de", action, name, Criteria, "Zusammenfassung", []);
+        new("de", action, name, Criteria, "Zusammenfassung", [], []);
 }

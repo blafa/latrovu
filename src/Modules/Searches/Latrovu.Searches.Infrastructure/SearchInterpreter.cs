@@ -21,9 +21,17 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
         - searchName: short name after the main place, e.g. "Albisrieden" or "Zürich". For update, pause, resume
           and stop use the exact name of the affected existing search.
         - criteria: the complete criteria after this message. For update: the existing criteria with the changes.
-          offerType rent or sale (null if not said), places as written by the person, prices in CHF per month for
-          rent and total for sale, availableFrom as ISO date or a short phrase.
+          offerType rent or sale (null if not said), prices in CHF per month for rent and total for sale,
+          availableFrom as ISO date or a short phrase.
+          places: every place the person mentions, anywhere in Switzerland, one entry each:
+            name: the place itself in its usual local spelling ("Kreis 3", "Länggasse", "Genève", "Zürichsee", "8003").
+            within: a larger place the person names with it, e.g. "Länggasse in Bern" gives within "Bern"; else null.
+            kind: "canton" only for canton/Kanton, "region" only for a Bezirk (never for a city district like "Kreis 3"),
+            "lake" for lakes; else null.
+            nearKm: distance in km for "near", "around", "max. 5 km from"; for vague "near X" use 3; for being
+            close to a lake ("Seenähe", "am See") name the lake and use 1; else null.
         - summary: one to three short, simple sentences in the language of the message saying what we understood.
+          Always name every place of the search, so the person can spot misunderstandings.
           Address the person formally where the language has a formal form (Sie, vous, Lei, usted).
         - refinements: up to three short suggestions in the language of the message for missing details that would
           improve the search, e.g. budget or moving date, phrased as a polite question in the formal address.
@@ -72,8 +80,19 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
             root["searchName"]?.GetValue<string>(),
             root["criteria"]?.ToJsonString() ?? "{}",
             root["summary"]?.GetValue<string>() ?? string.Empty,
-            root["refinements"]?.AsArray().Select(item => item?.GetValue<string>()).OfType<string>().ToList() ?? []);
+            root["refinements"]?.AsArray().Select(item => item?.GetValue<string>()).OfType<string>().ToList() ?? [],
+            ParsePlaces(root["criteria"]?["places"] as JsonArray));
     }
+
+    private static List<PlaceExpression> ParsePlaces(JsonArray? places) =>
+        places?.OfType<JsonObject>()
+            .Select(place => new PlaceExpression(
+                place["name"]?.GetValue<string>() ?? string.Empty,
+                place["within"]?.GetValue<string>(),
+                place["kind"]?.GetValue<string>(),
+                place["nearKm"]?.GetValue<double>()))
+            .Where(place => !string.IsNullOrWhiteSpace(place.Name))
+            .ToList() ?? [];
 
     private static string NormalizeLanguage(string? code) =>
         code is { Length: >= LanguageCodeLength } ? code[..LanguageCodeLength].ToLowerInvariant() : FallbackLanguage;

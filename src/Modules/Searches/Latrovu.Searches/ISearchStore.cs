@@ -6,6 +6,8 @@ public interface ISearchStore
 
     Task SaveAsync(Search search, CancellationToken ct);
 
+    Task SetAreaAsync(Guid searchId, IReadOnlyList<PlaceRef> places, CancellationToken ct);
+
     Task<bool> IsProcessedAsync(string sourceId, CancellationToken ct);
 
     Task MarkProcessedAsync(string sourceId, CancellationToken ct);

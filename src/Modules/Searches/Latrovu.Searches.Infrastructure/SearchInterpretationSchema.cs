@@ -17,7 +17,19 @@ public static class SearchInterpretationSchema
               "type": "object",
               "properties": {
                 "offerType": { "enum": ["rent", "sale", null] },
-                "places": { "type": "array", "items": { "type": "string" } },
+                "places": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string" },
+                      "within": { "type": ["string", "null"] },
+                      "kind": { "enum": ["canton", "region", "lake", null] },
+                      "nearKm": { "type": ["number", "null"] }
+                    },
+                    "required": ["name", "within", "kind", "nearKm"]
+                  }
+                },
                 "roomsMin": { "type": ["number", "null"] },
                 "roomsMax": { "type": ["number", "null"] },
                 "priceMaxChf": { "type": ["number", "null"] },

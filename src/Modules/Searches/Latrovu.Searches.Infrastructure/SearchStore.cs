@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Npgsql;
 
 namespace Latrovu.Searches.Infrastructure;
@@ -16,6 +17,17 @@ public sealed class SearchStore(NpgsqlDataSource dataSource) : ISearchStore
         """;
 
     private const string ProcessedSql = "SELECT EXISTS (SELECT 1 FROM processed_search_requests WHERE source_id = $1)";
+
+    private const string SetAreaSql = """
+        UPDATE searches SET place_refs = $2::jsonb, updated_at = now(), area = (
+            SELECT ST_Multi(ST_CollectionExtract(ST_Union(
+                       CASE WHEN refs.buffer_meters > 0 THEN ST_Buffer(p.geom, refs.buffer_meters) ELSE p.geom END), 3))
+            FROM jsonb_to_recordset($2::jsonb) AS refs(place_id bigint, buffer_meters double precision)
+            JOIN places p ON p.id = refs.place_id)
+        WHERE id = $1
+        """;
+
+    private static readonly JsonSerializerOptions SnakeCase = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
     private const string MarkProcessedSql = "INSERT INTO processed_search_requests (source_id) VALUES ($1) ON CONFLICT DO NOTHING";
 
@@ -50,6 +62,16 @@ public sealed class SearchStore(NpgsqlDataSource dataSource) : ISearchStore
             command.Parameters.Add(new NpgsqlParameter { Value = value });
         }
 
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
+    public async Task SetAreaAsync(Guid searchId, IReadOnlyList<PlaceRef> places, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(places);
+
+        await using NpgsqlCommand command = dataSource.CreateCommand(SetAreaSql);
+        command.Parameters.Add(new NpgsqlParameter { Value = searchId });
+        command.Parameters.Add(new NpgsqlParameter { Value = JsonSerializer.Serialize(places, SnakeCase) });
         await command.ExecuteNonQueryAsync(ct);
     }
 

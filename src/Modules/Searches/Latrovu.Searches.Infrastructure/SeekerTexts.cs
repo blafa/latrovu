@@ -9,4 +9,6 @@ public sealed record SeekerTexts(
     string Paused,
     string HowToChange,
     string NotUnderstood,
-    string Closing);
+    string Closing,
+    string AmbiguousPlace,
+    string UnknownPlace);

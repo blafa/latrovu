@@ -42,12 +42,14 @@ public static class SearchRequestPlanner
 
     private static Search Create(SearchInterpretation interpretation, string seekerAddress, string channel)
     {
-        string name = string.IsNullOrWhiteSpace(interpretation.SearchName) ? FallbackName : interpretation.SearchName.Trim();
+        string? name = string.IsNullOrWhiteSpace(interpretation.SearchName)
+            ? interpretation.Places.FirstOrDefault()?.Name
+            : interpretation.SearchName;
         return new Search(
             Guid.NewGuid(),
             seekerAddress,
             channel,
-            name,
+            string.IsNullOrWhiteSpace(name) ? FallbackName : name.Trim(),
             interpretation.Language,
             interpretation.CriteriaJson,
             Search.ActiveStatus);

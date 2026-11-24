@@ -13,6 +13,7 @@ public static class SearchesSetup
 
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, SearchesDatabaseSchema>());
         services.AddSingleton<ISearchStore, SearchStore>();
+        services.AddSingleton<IPlaceResolver, PostgresPlaceResolver>();
         services.AddScoped<ISearchInterpreter, SearchInterpreter>();
         services.AddScoped<ISeekerNotifier, EmailSeekerNotifier>();
         services.AddMessageHandler<SearchRequestReceived, SearchRequestHandler>();

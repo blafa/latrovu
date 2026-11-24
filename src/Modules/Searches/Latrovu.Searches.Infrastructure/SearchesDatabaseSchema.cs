@@ -7,6 +7,7 @@ namespace Latrovu.Searches.Infrastructure;
 public sealed class SearchesDatabaseSchema(NpgsqlDataSource dataSource, ILogger<SearchesDatabaseSchema> logger) : IHostedService
 {
     private const string CreateSql = """
+        CREATE EXTENSION IF NOT EXISTS postgis;
         CREATE TABLE IF NOT EXISTS searches (
             id             uuid PRIMARY KEY,
             seeker_address text NOT NULL,
@@ -19,6 +20,9 @@ public sealed class SearchesDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
             updated_at     timestamptz NOT NULL DEFAULT now()
         );
         CREATE INDEX IF NOT EXISTS ix_searches_seeker ON searches (seeker_address);
+        ALTER TABLE searches ADD COLUMN IF NOT EXISTS place_refs jsonb;
+        ALTER TABLE searches ADD COLUMN IF NOT EXISTS area geometry(MultiPolygon, 2056);
+        CREATE INDEX IF NOT EXISTS ix_searches_area ON searches USING gist (area);
         CREATE TABLE IF NOT EXISTS processed_search_requests (
             source_id    text PRIMARY KEY,
             processed_at timestamptz NOT NULL DEFAULT now()

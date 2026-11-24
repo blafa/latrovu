@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Latrovu.BuildingBlocks.Email;
 
@@ -19,11 +20,21 @@ public sealed class EmailSeekerNotifier(IEmailSender emailSender, ILogger<EmailS
         }
 
         SeekerTexts texts = SeekerTextCatalog.For(reply.Language);
+        SeekerReply withPlaceQuestions = reply with { Refinements = [.. PlaceQuestions(reply.Places, texts), .. reply.Refinements] };
         await emailSender.SendAsync(
-            new EmailMessage(reply.Address, texts.Subject, ComposeBody(reply, texts), SeekerReplyHtml.Render(reply, texts)),
+            new EmailMessage(
+                reply.Address,
+                texts.Subject,
+                ComposeBody(withPlaceQuestions, texts),
+                SeekerReplyHtml.Render(withPlaceQuestions, texts)),
             ct);
         logger.LogInformation("Search reply sent in {Language} with {SearchCount} open searches", reply.Language, reply.OpenSearches.Count);
     }
+
+    private static IEnumerable<string> PlaceQuestions(PlaceResolution places, SeekerTexts texts) =>
+        places.Ambiguous
+            .Select(choice => string.Format(CultureInfo.InvariantCulture, texts.AmbiguousPlace, choice.Name, string.Join(" / ", choice.Options)))
+            .Concat(places.Unknown.Select(name => string.Format(CultureInfo.InvariantCulture, texts.UnknownPlace, name)));
 
     private static string ComposeBody(SeekerReply reply, SeekerTexts texts)
     {

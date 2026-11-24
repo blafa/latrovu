@@ -6,4 +6,5 @@ public sealed record SearchInterpretation(
     string? SearchName,
     string CriteriaJson,
     string Summary,
-    IReadOnlyList<string> Refinements);
+    IReadOnlyList<string> Refinements,
+    IReadOnlyList<PlaceExpression> Places);
