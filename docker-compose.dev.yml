@@ -1,6 +1,7 @@
 services:
   db:
-    image: pgvector/pgvector:pg17
+    build: ./docker/postgres
+    image: latrovu/postgres:17
     container_name: latrovu-db
     environment:
       POSTGRES_USER: latrovu
