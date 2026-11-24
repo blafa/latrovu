@@ -64,6 +64,12 @@ In progress: search side. Step 1 done (Searches module, `SearchRequestReceived` 
 5. Done: pause/resume/stop incl. "all searches" (`appliesToAll`), answer language for short messages, summaries for status changes from our own texts. Seeker mails have Reply-To `Alerts:ReplyToAddress` (default suche@latrovu.com); replies are cut at quoted text (`QuotedReplyStripper`). Real round trip via IMAP verified.
 6. Open: link replies to the search a mail was about (store sent message ids, use `ReplyToReference`); confirmation should say whether matches were sent, already sent, or none yet.
 
+## Brand
+Symbol: two chat bubbles (seeker lime, Latrovu outline) with a keyhole where they meet; wordmark `latrovu.` with lime full stop. Pillars: effortless, for everyone, safe (Swiss hosting, no big tech, no tracking). Files and rules in `branding/README.md`. Web assets (logo, favicon, self-hosted Outfit font, htmx) in `src/Hosts/Latrovu.Hosts.Web/wwwroot/assets`, refilled by `scripts/fetch-web-assets.sh`; referenced via `SiteAssets`. Mails embed the symbol as inline image (`EmailBranding`, content id `latrovu-symbol`). Open: convert the wordmark in `latrovu-logo.svg` to outlines.
+
+## Next
+Micro page (latrovu.com: seekers and agents paths, three steps, safety promise, de/fr/it/en, Impressum/Datenschutz) → deployment (Dockerfiles, compose with Caddy, Infomaniak VM, disk encryption, closed ports, encrypted backups, retention).
+
 ## Backlog
 - Extraction quality: golden set; object type confused by building names ("Haus First"); wrong ZIP (Wattwil "630"); multi-unit documents (one listing per unit); image classification (photo vs plan vs map vs document; hide land register extracts; photos first); some PDF image formats yield no images.
 - Delete listing + data retention; review page HTML tests.

@@ -100,7 +100,7 @@ internal static class ListingViewPage
 
     private static void AppendHead(StringBuilder html, string title) =>
         html.Append(Head(title))
-            .Append($"<header class=\"site\">{SiteAssets.LogoImage(28)}<span class=\"tagline\">Te la trovo.</span></header>");
+            .Append($"<header class=\"site\">{SiteAssets.LogoImage(36)}<span class=\"tagline\">Te la trovo.</span></header>");
 
     private static string Head(string title) =>
         "<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">"

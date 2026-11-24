@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Latrovu.BuildingBlocks.Infrastructure.Email;
 
 namespace Latrovu.Searches.Infrastructure;
 
@@ -15,7 +16,7 @@ public static class SeekerReplyHtml
         StringBuilder html = new($"<!doctype html><html lang=\"{Encode(reply.Language)}\"><body style=\"margin:0;padding:0;background:#F3F4F1;\">");
         html.Append("<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#F3F4F1;padding:32px 16px;\"><tr><td align=\"center\">")
             .Append($"<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:520px;background:#FFFFFF;border-radius:6px;font-family:{FontStack};color:#111418;font-size:15px;line-height:1.55;\">")
-            .Append("<tr><td style=\"padding:28px 32px 0;font-size:20px;font-weight:700;letter-spacing:-0.02em;\">latrovu<span style=\"color:#9CC41F;\">.</span></td></tr>")
+            .Append(EmailBranding.HeaderRow)
             .Append(Row($"<p style=\"margin:0;\">{Encode(texts.Greeting)}</p>"));
         AppendUnderstanding(html, reply, texts);
         AppendRefinements(html, reply, texts);

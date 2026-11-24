@@ -41,7 +41,19 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
         }
 
         mime.Subject = message.Subject;
-        mime.Body = new BodyBuilder { TextBody = message.TextBody, HtmlBody = message.HtmlBody }.ToMessageBody();
+        mime.Body = BuildBody(message);
         return mime;
+    }
+
+    private static MimeEntity BuildBody(EmailMessage message)
+    {
+        BodyBuilder builder = new() { TextBody = message.TextBody, HtmlBody = message.HtmlBody };
+        foreach (EmailInlineImage image in message.InlineImages ?? [])
+        {
+            MimeEntity resource = builder.LinkedResources.Add(image.FileName, image.Content, ContentType.Parse(image.MediaType));
+            resource.ContentId = image.ContentId;
+        }
+
+        return builder.ToMessageBody();
     }
 }

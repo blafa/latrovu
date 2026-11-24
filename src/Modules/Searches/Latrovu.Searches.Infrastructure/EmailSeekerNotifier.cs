@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Latrovu.BuildingBlocks.Email;
+using Latrovu.BuildingBlocks.Infrastructure.Email;
 using Microsoft.Extensions.Options;
 
 namespace Latrovu.Searches.Infrastructure;
@@ -33,7 +34,8 @@ public sealed class EmailSeekerNotifier(
                 subject,
                 SeekerAlertMail.Text(alert, texts, url),
                 SeekerAlertMail.Html(alert, texts, url),
-                alertOptions.Value.ReplyToAddress),
+                alertOptions.Value.ReplyToAddress,
+                EmailBranding.InlineImages),
             ct);
         logger.LogInformation("Alert for listing {ListingId} sent in {Language}", alert.Listing.ListingId, alert.Language);
     }
@@ -60,7 +62,8 @@ public sealed class EmailSeekerNotifier(
                 texts.Subject,
                 ComposeBody(withPlaceQuestions, texts),
                 SeekerReplyHtml.Render(withPlaceQuestions, texts),
-                alertOptions.Value.ReplyToAddress),
+                alertOptions.Value.ReplyToAddress,
+                EmailBranding.InlineImages),
             ct);
         logger.LogInformation("Search reply sent in {Language} with {SearchCount} open searches", reply.Language, reply.OpenSearches.Count);
     }

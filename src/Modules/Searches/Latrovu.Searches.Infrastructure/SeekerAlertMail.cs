@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using Latrovu.BuildingBlocks.Infrastructure.Email;
 
 namespace Latrovu.Searches.Infrastructure;
 
@@ -46,7 +47,7 @@ public static class SeekerAlertMail
         $"<!doctype html><html lang=\"{Encode(alert.Language)}\"><body style=\"margin:0;padding:0;background:#F3F4F1;\">"
         + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#F3F4F1;padding:32px 16px;\"><tr><td align=\"center\">"
         + $"<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:520px;background:#FFFFFF;border-radius:6px;font-family:{FontStack};color:#111418;font-size:15px;line-height:1.55;\">"
-        + "<tr><td style=\"padding:28px 32px 0;font-size:20px;font-weight:700;letter-spacing:-0.02em;\">latrovu<span style=\"color:#9CC41F;\">.</span></td></tr>"
+        + EmailBranding.HeaderRow
         + Row($"<p style=\"margin:0;\">{Encode(texts.Greeting)}</p><p style=\"margin:12px 0 0;\">{Encode(Format(texts.AlertIntro, alert.SearchName))}</p>")
         + Row("<div style=\"background:#F6F7F4;border-radius:4px;padding:14px 16px;\">"
             + $"<p style=\"margin:0 0 4px;font-weight:600;font-size:16px;\">{Encode(alert.Listing.Title ?? string.Empty)}</p>"

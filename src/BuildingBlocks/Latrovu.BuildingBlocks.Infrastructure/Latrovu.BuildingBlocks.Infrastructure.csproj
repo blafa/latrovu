@@ -25,6 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Email\latrovu-symbol-email.png" LogicalName="latrovu-symbol-email.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Latrovu.BuildingBlocks\Latrovu.BuildingBlocks.csproj" />
   </ItemGroup>
 
