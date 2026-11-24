@@ -9,6 +9,7 @@ namespace Latrovu.BuildingBlocks.Infrastructure.Ai;
 public static class AiSetup
 {
     private const string BearerScheme = "Bearer";
+    private const string CacheSettingKey = "AI:CacheResponses";
 
     public static IServiceCollection AddAiExtraction(this IServiceCollection services, IConfiguration configuration)
     {
@@ -18,7 +19,18 @@ public static class AiSetup
             .Bind(configuration.GetSection(AiOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        services.AddHttpClient<ILlmClient, InfomaniakLlmClient>(ConfigureHttpClient);
+        services.AddHttpClient<InfomaniakLlmClient>(ConfigureHttpClient);
+
+        if (configuration.GetValue<bool>(CacheSettingKey))
+        {
+            services.AddHostedService<LlmCacheSchema>();
+            services.AddScoped<ILlmClient, CachingLlmClient>();
+        }
+        else
+        {
+            services.AddScoped<ILlmClient>(provider => provider.GetRequiredService<InfomaniakLlmClient>());
+        }
+
         return services;
     }
 

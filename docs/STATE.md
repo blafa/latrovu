@@ -49,10 +49,11 @@ No comments (exceptions: algorithm references, workarounds, license headers, unc
 - Re-import a processed file: `DELETE FROM processed_submissions WHERE source_id LIKE 'dev-import:%'`.
 - Test exposés in `tests/exposes` (git-ignored, contain personal data).
 - User secrets (shared id for all hosts): `ConnectionStrings:Db`, `Mail:*`, `Smtp:*`, `AI:*`, `Storage:*`, `Messaging:RabbitMqConnectionString`, `DevImport:Sender`, `Viewing:InquiryAddress`.
+- `AI:CacheResponses = true` (dev only): model answers cached in `llm_response_cache` by hash of model, prompt, schema and text, so re-imports cost no AI credits. Changing prompt or schema creates new calls automatically.
 
 ## Current status
-Done: mail intake, classification, schema-based extraction with evidence, images to S3, review page with code gate, editing, value sources, contact opt-in, approve/withdraw with outbox events, view links with searcher page, three hosts, RabbitMQ/Rebus/outbox.
-In progress: Postgres image with PostGIS (`docker/postgres/Dockerfile`, now based on `pgvector/pgvector:pg17` + `postgresql-17-postgis-3`). Verify with `SELECT name FROM pg_available_extensions WHERE name IN ('postgis','vector')`.
+Done: mail intake, classification, schema-based extraction with evidence, images to S3, review page with code gate, editing, value sources, contact opt-in, approve/withdraw with outbox events, view links with searcher page, three hosts, RabbitMQ/Rebus/outbox, dev LLM response cache, Postgres image `latrovu/postgres:17` with PostGIS 3.7 and pgvector 0.8.7.
+In progress: search side, step 1 (see below).
 
 ## Next steps (search side)
 1. Search module + channel-neutral search intake: message → AI (criteria + language) → search stored → confirmation in seeker's language with refinement box; multiple searches named by place.
