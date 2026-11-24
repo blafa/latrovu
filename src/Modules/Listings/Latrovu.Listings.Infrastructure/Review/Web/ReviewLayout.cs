@@ -5,9 +5,6 @@ namespace Latrovu.Listings.Infrastructure.Review.Web;
 
 internal static class ReviewLayout
 {
-    private const string HtmxScriptUrl = "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js";
-    private const string FontUrl = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap";
-
     private const string Styles = """
         :root { --ink:#111418; --paper:#FFFFFF; --canvas:#F3F4F1; --well:#F6F7F4; --line:#E1E4DD; --muted:#5E6660;
                 --lime:#B8E62E; --lime-soft:#EEF8D2; --green:#4E8A1E; --green-soft:#E3F1D2;
@@ -195,9 +192,9 @@ internal static class ReviewLayout
         html.Append("<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">")
             .Append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
             .Append($"<title>{WebUtility.HtmlEncode(title)} – Latrovu</title>")
-            .Append($"<link rel=\"stylesheet\" href=\"{FontUrl}\">")
-            .Append($"<script src=\"{HtmxScriptUrl}\"></script>")
-            .Append($"<style>{Styles}</style></head><body>");
+            .Append(SiteAssets.HeadLinks)
+            .Append($"<script src=\"{SiteAssets.HtmxScript}\"></script>")
+            .Append($"<style>{SiteAssets.FontFaces}{Styles}</style></head><body>");
     }
 
     public static void AppendEnd(StringBuilder html) => html.Append("</body></html>");

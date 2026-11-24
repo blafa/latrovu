@@ -59,7 +59,7 @@ public static class ReviewGatePage
         string encodedToken = WebUtility.HtmlEncode(token);
         StringBuilder html = new();
         ReviewLayout.AppendHead(html, PageTitle);
-        html.Append("<main><div class=\"gate\"><h1>Inserat öffnen</h1>")
+        html.Append($"<main><div class=\"gate\">{SiteAssets.LogoImage(30)}<h1>Inserat öffnen</h1>")
             .Append("<p>Zum Schutz Ihrer Daten senden wir Ihnen einen Bestätigungscode ")
             .Append("an die E-Mail-Adresse, von der das Inserat eingereicht wurde.</p>")
             .Append($"<div id=\"gate\"><button class=\"primary\" hx-post=\"/review/{encodedToken}/code\" hx-target=\"#gate\" hx-disabled-elt=\"this\">{Spinner}Code senden</button></div>")

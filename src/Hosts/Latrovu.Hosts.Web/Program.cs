@@ -22,6 +22,7 @@ WebApplication app = builder.Build();
 app.Lifetime.ApplicationStarted.Register(() => app.Logger.LogInformation("Latrovu Web started"));
 app.Lifetime.ApplicationStopping.Register(() => app.Logger.LogInformation("Latrovu Web stopping"));
 
+app.UseStaticFiles();
 app.UseRateLimiter();
 app.MapGet("/", () => "Latrovu Web");
 app.MapListingReview();

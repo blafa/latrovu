@@ -8,7 +8,6 @@ namespace Latrovu.Listings.Infrastructure.Viewing.Web;
 internal static class ListingViewPage
 {
     private const int GalleryPreviewCount = 5;
-    private const string FontUrl = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap";
 
     private static readonly string[] HeadlinePaths =
         ["size.rooms", "size.livingAreaM2", "building.floor", "building.yearBuilt", "availability.availableFrom"];
@@ -101,12 +100,12 @@ internal static class ListingViewPage
 
     private static void AppendHead(StringBuilder html, string title) =>
         html.Append(Head(title))
-            .Append("<header class=\"site\"><span class=\"brand\">latrovu<span>.</span></span><span class=\"tagline\">Te la trovo.</span></header>");
+            .Append($"<header class=\"site\">{SiteAssets.LogoImage(28)}<span class=\"tagline\">Te la trovo.</span></header>");
 
     private static string Head(string title) =>
         "<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">"
         + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"robots\" content=\"noindex, nofollow\">"
-        + $"<title>{Encode(title)} – Latrovu</title><link rel=\"stylesheet\" href=\"{FontUrl}\"><style>{Styles}</style></head><body>";
+        + $"<title>{Encode(title)} – Latrovu</title>{SiteAssets.HeadLinks}<style>{SiteAssets.FontFaces}{Styles}</style></head><body>";
 
     private static void AppendGallery(StringBuilder html, string token, IReadOnlyList<ListingImageRef> images)
     {

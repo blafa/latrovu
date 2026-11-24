@@ -1,5 +1,17 @@
 # Third-party notices
 
+## Outfit font
+
+Used in: `src/Hosts/Latrovu.Hosts.Web/wwwroot/assets/fonts`, brand wordmark
+Source: https://github.com/Outfitio/Outfit-Fonts (via Fontsource)
+License: SIL Open Font License 1.1, https://openfontlicense.org
+
+## htmx
+
+Used in: `src/Hosts/Latrovu.Hosts.Web/wwwroot/assets/htmx.min.js`
+Source: https://github.com/bigskysoftware/htmx
+License: Zero-Clause BSD
+
 ## Tabler Icons
 
 Used in: `src/Modules/Listings/Latrovu.Listings.Infrastructure/Review/Web/ReviewIcons.cs`
