@@ -148,8 +148,11 @@ internal static class ReviewLayout
         .remove:hover { background:var(--canvas); color:var(--ink); }
         .gate { max-width:420px; margin:12vh auto 0; display:grid; gap:14px; padding:0 20px; }
         .gate h1 { font-size:20px; margin:0; }
-        .gate form { display:grid; gap:10px; }
-        .gate input { font-size:22px; letter-spacing:6px; text-align:center; }
+        .gate form { display:grid; gap:12px; }
+        .code-inputs { display:flex; gap:8px; }
+        .code-inputs input { width:48px; height:56px; padding:0; text-align:center; font-size:24px; font-weight:600;
+                             border-radius:6px; caret-color:var(--ink); }
+        .code-inputs input:focus { outline:2px solid var(--ink); outline-offset:0; }
         @media (max-width: 960px) {
             .topbar-inner, .workspace { padding-left:16px; padding-right:16px; }
             .workspace { grid-template-columns:1fr; }

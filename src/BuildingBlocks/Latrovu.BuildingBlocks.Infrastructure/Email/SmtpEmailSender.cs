@@ -10,8 +10,6 @@ namespace Latrovu.BuildingBlocks.Infrastructure.Email;
 
 public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpEmailSender> logger) : IEmailSender
 {
-    private const string PlainTextSubtype = "plain";
-
     private readonly SmtpOptions settings = options.Value;
 
     public async Task SendAsync(EmailMessage message, CancellationToken ct)
@@ -38,7 +36,7 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
         mime.From.Add(new MailboxAddress(settings.FromName, fromAddress));
         mime.To.Add(MailboxAddress.Parse(message.To));
         mime.Subject = message.Subject;
-        mime.Body = new TextPart(PlainTextSubtype) { Text = message.TextBody };
+        mime.Body = new BodyBuilder { TextBody = message.TextBody, HtmlBody = message.HtmlBody }.ToMessageBody();
         return mime;
     }
 }
