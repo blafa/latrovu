@@ -13,11 +13,14 @@ public static class ListingReviewPage
         function select(id) {
             const pane = document.getElementById('pane-' + id) || document.getElementById('pane-intro');
             document.querySelectorAll('.pane').forEach(other => other.hidden = other !== pane);
-            document.querySelectorAll('.spec, .chip').forEach(item => item.classList.toggle('selected', item.dataset.select === id));
+            document.querySelectorAll('.spec, .chip').forEach(item => {
+                const key = item.dataset.select ?? item.querySelector('[data-select]')?.dataset.select;
+                item.classList.toggle('selected', key === id);
+            });
             history.replaceState(null, '', pane.id === 'pane-intro' ? location.pathname : '#' + id);
             return pane;
         }
-        const firstSpec = document.querySelector('.spec, .chip');
+        const firstSpec = document.querySelector('.summary [data-select]:not(.ghost)');
         select(location.hash.slice(1) || firstSpec?.dataset.select || 'intro');
 
         const thumbs = [...document.querySelectorAll('.thumb')];
@@ -127,7 +130,7 @@ public static class ListingReviewPage
             .Append("<div class=\"actions\"><span id=\"approve-status\" class=\"status\" aria-live=\"polite\"></span>")
             .Append("<div class=\"approve\">")
             .Append($"<button class=\"primary\" hx-post=\"/review/{Encode(model.Token)}/approve\" hx-target=\"#approve-status\">{ReviewIcons.Confirm}Inserat freigeben</button>")
-            .Append($"<span class=\"state{(approved ? " approved" : string.Empty)}\">Status: {(approved ? "freigegeben" : "Entwurf")}</span>")
+            .Append($"<span class=\"state{(approved ? " approved" : string.Empty)}\">{(approved ? ReviewIcons.Approved : ReviewIcons.Draft)}{(approved ? "Freigegeben" : "Entwurf")}</span>")
             .Append("</div></div></div></header>");
     }
 

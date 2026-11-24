@@ -48,21 +48,20 @@ internal static class ReviewContextPane
                 + $"<blockquote>{Encode(location.Before)}<mark>{Encode(location.Match)}</mark>{Encode(location.After)}</blockquote></figure>";
         }
 
-        if (ReviewFieldRenderer.IsWide(field))
+        if (ReviewFieldRenderer.IsWide(field) && model.SourceOf(field) == ValueSource.Found)
         {
-            return Note("neutral", "Aus dem Beschreibungstext Ihres Exposés übernommen.");
+            return Note("neutral", "Wörtlich aus dem Text Ihres Exposés übernommen.");
         }
 
-        if (model.Open.Contains(field))
+        return model.SourceOf(field) switch
         {
-            return Note("missing", ListingKeyFields.InferredPaths.Contains(field.Path)
+            ValueSource.Open => Note("missing", ListingKeyFields.InferredPaths.Contains(field.Path)
                 ? "Diesen Wert haben wir aus dem Exposé abgeleitet. Bitte prüfen Sie, ob er stimmt."
-                : "Diesen Wert haben wir im Exposé nicht gefunden. Bitte prüfen Sie ihn.");
-        }
-
-        return model.IsConfirmed(field)
-            ? Note("neutral", "Eine wörtliche Fundstelle im Exposé gibt es dafür nicht. Sie haben den Wert bestätigt.")
-            : Note("neutral", "Sinngemäss aus dem Exposé übernommen. Eine wörtliche Fundstelle gibt es dafür nicht.");
+                : "Diesen Wert haben wir im Exposé nicht gefunden. Bitte prüfen Sie ihn."),
+            ValueSource.Agent => Note("neutral", "Sie haben diesen Wert bestätigt."),
+            ValueSource.AiWritten => Note("neutral", "Diesen Text hat die KI aus Ihrem Exposé formuliert. Passen Sie ihn gerne an."),
+            _ => Note("neutral", "Diesen Wert haben wir aus dem Exposé abgeleitet. Er steht so nicht wörtlich drin.")
+        };
     }
 
     private static string Note(string kind, string message) => $"<p class=\"evidence {kind}\">{Encode(message)}</p>";

@@ -1,14 +1,21 @@
 <Solution>
-  <Folder Name="/src/" />
-  <Folder Name="/src/Api/">
-    <Project Path="src/Api/Latrovu.Api.csproj" />
+  <Folder Name="/Solution Items/">
+    <File Path="docker-compose.dev.yml" />
+    <File Path=".gitignore" />
+    <File Path="THIRD-PARTY-NOTICES.md" />
   </Folder>
+  <Folder Name="/src/" />
   <Folder Name="/src/BuildingBlocks/">
     <Project Path="src/BuildingBlocks/Latrovu.BuildingBlocks.Infrastructure/Latrovu.BuildingBlocks.Infrastructure.csproj" />
     <Project Path="src/BuildingBlocks/Latrovu.BuildingBlocks/Latrovu.BuildingBlocks.csproj" />
   </Folder>
   <Folder Name="/src/Core/">
     <Project Path="src/Core/Latrovu.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/Hosts/">
+    <Project Path="src/Hosts/Latrovu.Hosts.Extraction/Latrovu.Hosts.Extraction.csproj" />
+    <Project Path="src/Hosts/Latrovu.Hosts.Intake/Latrovu.Hosts.Intake.csproj" />
+    <Project Path="src/Hosts/Latrovu.Hosts.Web/Latrovu.Hosts.Web.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Intake/">

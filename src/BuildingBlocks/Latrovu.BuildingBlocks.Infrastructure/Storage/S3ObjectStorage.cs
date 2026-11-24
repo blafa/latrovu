@@ -54,6 +54,20 @@ public sealed class S3ObjectStorage(
         return new StoredObject(content, contentType);
     }
 
+    public async Task DeleteAsync(string key, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+        using HttpRequestMessage request = CreateSignedRequest(HttpMethod.Delete, key, []);
+        using HttpResponseMessage response = await http.SendAsync(request, ct);
+        if (response.StatusCode != HttpStatusCode.NotFound)
+        {
+            await EnsureSuccessAsync(response, key, ct);
+        }
+
+        logger.LogDebug("Deleted {Key}", key);
+    }
+
     private HttpRequestMessage CreateSignedRequest(HttpMethod method, string key, byte[] payload)
     {
         Uri uri = new($"{settings.Endpoint.TrimEnd('/')}/{settings.Bucket}/{key}");

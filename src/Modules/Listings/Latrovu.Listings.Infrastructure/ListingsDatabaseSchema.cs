@@ -49,6 +49,10 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
             listing_id   uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
             expires_at   timestamptz NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS processed_submissions (
+            source_id    text PRIMARY KEY,
+            processed_at timestamptz NOT NULL DEFAULT now()
+        );
         """;
 
     public async Task StartAsync(CancellationToken cancellationToken)

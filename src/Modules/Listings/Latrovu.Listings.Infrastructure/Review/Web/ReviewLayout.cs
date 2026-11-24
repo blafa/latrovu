@@ -25,7 +25,9 @@ internal static class ReviewLayout
         .listing-id h1 { margin:0; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .listing-address { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .approve { display:grid; gap:4px; }
-        .state { font-size:11px; padding:1px 8px; border-radius:4px; background:var(--canvas); color:var(--muted); text-align:center; }
+        .state { display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:2px 14px;
+                 border-radius:4px; background:var(--canvas); color:var(--muted); }
+        .state .icon { width:15px; height:15px; }
         .state.approved { background:var(--lime-soft); color:#27500A; }
         .actions { margin-left:auto; flex:none; display:flex; align-items:center; gap:12px; }
         .workspace { max-width:1360px; margin:0 auto; padding:16px 24px 48px; display:grid;
@@ -37,13 +39,18 @@ internal static class ReviewLayout
         .summary-header p { margin:2px 0 0; color:var(--muted); }
         .legend { display:flex; flex-wrap:wrap; gap:4px 16px; margin:10px 0 0; padding:0; list-style:none; font-size:12px; color:var(--muted); }
         .legend li { display:flex; align-items:center; gap:6px; }
-        .open-points { padding:12px 10px 8px; background:var(--amber-soft); }
-        .open-points h3, .group h3 { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:600; color:var(--ink); margin:0 10px 8px; }
+        .group h3 { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:600; color:var(--ink); margin:0 10px 8px; }
         .group h3 .icon { width:16px; height:16px; color:var(--muted); }
-        .open-points h3 { color:var(--amber-ink); }
-        .open-row { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; gap:8px; align-items:center; }
-        .open-row .spec { background:rgba(255, 255, 255, 0.6); }
-        .open-row + .open-row { border-top:1px solid rgba(122, 74, 7, 0.15); }
+        .open-group h3 { color:var(--amber-ink); }
+        .open-group h3 .icon { color:var(--amber); }
+        .spec.open-spec { padding:0; background:var(--amber-soft); }
+        .spec.open-spec:hover { background:#F9E8CC; }
+        .spec.open-spec.selected { background:var(--amber-soft); box-shadow:inset 0 0 0 1.5px var(--amber); }
+        .spec-main { display:grid; gap:1px; min-width:0; padding:7px 10px 4px; text-align:left; border:none; background:none; }
+        .open-spec .spec-note { margin-left:0; }
+        .spec-actions { display:flex; gap:6px; padding:2px 10px 9px; }
+        .spec-actions .ghost { padding:3px 9px; font-size:12px; border-color:rgba(122, 74, 7, 0.2); }
+        .spec-actions .ghost .icon { width:13px; height:13px; }
         .group { padding:14px 10px 10px; }
         .group + .group { border-top:1px solid var(--well); }
         .specs { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
@@ -59,7 +66,9 @@ internal static class ReviewLayout
         .mark.found { background:var(--green-soft); color:var(--green); }
         .mark.confirmed { background:var(--lime); color:#27500A; }
         .mark.open { background:var(--amber); width:8px; height:8px; margin:0 3px; }
-        .mark.none { border:1.5px solid #B9BEB3; width:11px; height:11px; margin:0 1.5px; }
+        .mark.derived { background:#E6E9E3; color:#5E6660; }
+        .mark.ai { background:#ECE8F4; color:#5B4B8A; }
+        .mark .icon { stroke-width:2.6; }
         .icon { width:16px; height:16px; flex:none; }
         .chips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 8px; }
         .chip { display:inline-flex; align-items:center; gap:5px; padding:6px 10px 6px 8px; border:none; border-radius:4px;
@@ -149,8 +158,6 @@ internal static class ReviewLayout
         }
         @media (max-width: 600px) {
             .specs { grid-template-columns:1fr; }
-            .open-row { grid-template-columns:1fr auto; }
-            .open-row .spec { grid-column:1 / -1; }
             .add-detail { grid-template-columns:1fr; }
             .summary-header { flex-direction:column; }
             .brand { display:none; }

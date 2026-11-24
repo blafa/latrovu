@@ -1,6 +1,8 @@
-namespace Latrovu.Core.Submissions;
+using Latrovu.Core.Submissions;
 
-public interface IListingSubmissionHandler
+namespace Latrovu.Listings.Ingestion;
+
+public interface IListingIntake
 {
     Task HandleAsync(Submission message, IReadOnlyList<SubmittedFile> files, CancellationToken ct);
 }

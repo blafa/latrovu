@@ -1,15 +1,15 @@
 using Latrovu.Core.Submissions;
 using Latrovu.Intake;
 
-namespace Latrovu.Api.Dev;
+namespace Latrovu.Hosts.Intake.Dev;
 
 public static class DevImportEndpoint
 {
     private const string Route = "/dev/import";
     private const string FolderSettingKey = "DevImport:Folder";
     private const string SenderSettingKey = "DevImport:Sender";
-    private const string DefaultFolder = "../../tests/exposes";
-    private const string LoggerCategory = "Latrovu.Api.Dev.DevImport";
+    private const string DefaultFolder = "../../../tests/exposes";
+    private const string LoggerCategory = "Latrovu.Hosts.Intake.Dev.DevImport";
     private const string DevSender = "dev-import@latrovu.local";
     private const string ListingRecipient = "inserat@latrovu.com";
     private const string PdfSearchPattern = "*.pdf";

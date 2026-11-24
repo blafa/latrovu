@@ -17,10 +17,12 @@
 
   <ItemGroup>
     <PackageReference Include="MailKit" Version="5.0.0" />
+    <PackageReference Include="Npgsql" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Latrovu.Intake\Latrovu.Intake.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Latrovu.BuildingBlocks\Latrovu.BuildingBlocks.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Latrovu.Hosts.Extraction": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

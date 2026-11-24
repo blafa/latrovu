@@ -7,7 +7,4 @@ public sealed record InboundMail(
     string Sender,
     string? Subject,
     IReadOnlyList<string> Recipients,
-    IReadOnlyList<SubmittedFile> Attachments)
-{
-    public Submission ToSubmission() => new(MessageId, Sender, Subject);
-}
+    IReadOnlyList<SubmittedFile> Attachments);

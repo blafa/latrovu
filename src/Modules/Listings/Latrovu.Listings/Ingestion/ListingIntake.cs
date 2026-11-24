@@ -10,7 +10,7 @@ public sealed class ListingIntake(
     IListingStore store,
     IListingAccessTokenStore accessTokens,
     IListingImageCollector imageCollector,
-    ILogger<ListingIntake> logger) : IListingSubmissionHandler
+    ILogger<ListingIntake> logger) : IListingIntake
 {
     private const char PageSeparator = '\n';
 

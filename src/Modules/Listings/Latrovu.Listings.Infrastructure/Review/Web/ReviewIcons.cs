@@ -37,6 +37,19 @@ internal static class ReviewIcons
 
     public static readonly string Confirm = Outline("M5 12l5 5l10 -10");
 
+    public static readonly string Alert = Outline("M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0", "M12 8v4", "M12 16h.01");
+
+    public static readonly string Approved = Outline("M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0", "M9 12l2 2l4 -4");
+
+    public const string Draft =
+        "<svg class=\"icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" "
+        + "stroke-linecap=\"round\" aria-hidden=\"true\" focusable=\"false\">"
+        + "<circle cx=\"12\" cy=\"12\" r=\"8.5\" stroke-dasharray=\"3 3.2\"/></svg>";
+
+    public static readonly string Derived = Outline("M6 6v6a3 3 0 0 0 3 3h10l-4 -4m0 8l4 -4");
+
+    public static readonly string Pencil = Outline("M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4", "M13.5 6.5l4 4");
+
     public static readonly string Cross = Outline("M18 6l-12 12", "M6 6l12 12");
 
     public static readonly string Plus = Outline("M12 5l0 14", "M5 12l14 0");

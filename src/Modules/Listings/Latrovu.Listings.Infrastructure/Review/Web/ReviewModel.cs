@@ -6,6 +6,7 @@ namespace Latrovu.Listings.Infrastructure.Review.Web;
 internal sealed class ReviewModel
 {
     private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
+    private static readonly HashSet<string> AiWrittenPaths = ["title", "description.summary"];
 
     private ReviewModel(string token, ListingReview review)
     {
@@ -48,4 +49,29 @@ internal sealed class ReviewModel
     public EvidenceLocation? EvidenceOf(FieldDefinition field) => Evidence.GetValueOrDefault(field.Path);
 
     public bool IsConfirmed(FieldDefinition field) => ScoreOf(field) == ListingReviewService.ConfirmedScore;
+
+    public ValueSource SourceOf(FieldDefinition field)
+    {
+        if (Open.Contains(field))
+        {
+            return ValueSource.Open;
+        }
+
+        if (IsConfirmed(field))
+        {
+            return ValueSource.Agent;
+        }
+
+        if (EvidenceOf(field) is not null)
+        {
+            return ValueSource.Found;
+        }
+
+        if (AiWrittenPaths.Contains(field.Path))
+        {
+            return ValueSource.AiWritten;
+        }
+
+        return FieldLabels.LongTextPaths.Contains(field.Path) ? ValueSource.Found : ValueSource.Derived;
+    }
 }

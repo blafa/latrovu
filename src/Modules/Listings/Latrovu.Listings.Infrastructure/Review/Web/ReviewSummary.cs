@@ -11,10 +11,6 @@ internal static class ReviewSummary
     private const string SuggestionListId = "field-suggestions";
     private const string TitlePath = "title";
     private const string ContactSection = "contact";
-    private const string FoundMark = "found";
-    private const string ConfirmedMark = "confirmed";
-    private const string NoSourceMark = "none";
-    private const string OpenMark = "open";
     private const string YesChip = "yes";
     private const string NoChip = "no";
 
@@ -43,19 +39,14 @@ internal static class ReviewSummary
     private static void AppendHeader(StringBuilder html, ReviewModel model)
     {
         int total = model.Filled.Count;
-        int open = model.Open.Count;
-        int confirmed = model.Filled.Count(model.IsConfirmed);
-        int found = model.Filled.Count(field => !model.IsConfirmed(field) && !model.Open.Contains(field) && model.EvidenceOf(field) is not null);
-        int withoutSource = total - open - confirmed - found;
-        string openText = open == 0 ? "Nichts zu prüfen." : $"{open} {(open == 1 ? "Angabe" : "Angaben")} bitte kurz prüfen.";
+        Dictionary<ValueSource, int> counts = model.Filled
+            .GroupBy(model.SourceOf)
+            .ToDictionary(group => group.Key, group => group.Count());
 
         html.Append("<header class=\"summary-header\"><div>")
             .Append($"<h2>{total} Angaben aus Ihrem Exposé übernommen</h2>")
-            .Append($"<p>{openText}</p><ul class=\"legend\">")
-            .Append(LegendItem(FoundMark, found, "im Exposé gefunden"))
-            .Append(LegendItem(ConfirmedMark, confirmed, "von Ihnen bestätigt"))
-            .Append(LegendItem(NoSourceMark, withoutSource, "ohne wörtliche Fundstelle"))
-            .Append(LegendItem(OpenMark, open, "bitte prüfen"))
+            .Append("<ul class=\"legend\">")
+            .AppendJoin(string.Empty, Enum.GetValues<ValueSource>().Select(source => LegendItem(source, counts.GetValueOrDefault(source))))
             .Append("</ul></div>");
         if (model.Review.Images.Count > 0)
         {
@@ -66,8 +57,8 @@ internal static class ReviewSummary
         html.Append("</header>");
     }
 
-    private static string LegendItem(string kind, int count, string label) =>
-        count == 0 ? string.Empty : $"<li>{MarkHtml(kind, null)}{count} {Encode(label)}</li>";
+    private static string LegendItem(ValueSource source, int count) =>
+        count == 0 ? string.Empty : $"<li>{MarkFor(source, withTitle: false)}{count} {Encode(SourceLabel(source))}</li>";
 
     private static void AppendOpenPoints(StringBuilder html, ReviewModel model)
     {
@@ -76,19 +67,31 @@ internal static class ReviewSummary
             return;
         }
 
-        html.Append("<section class=\"open-points\" aria-label=\"Offene Angaben\"><h3>Bitte prüfen</h3>");
+        html.Append($"<section class=\"group open-group\" aria-label=\"Offene Angaben\"><h3>{ReviewIcons.Alert}Prüfen</h3><div class=\"specs\">");
         foreach (FieldDefinition field in model.Open)
         {
-            string id = ReviewFieldRenderer.InputId(field);
-            string reason = model.EvidenceOf(field) is null ? "Im Exposé nicht gefunden" : "Weicht vom Exposé ab";
-            html.Append("<div class=\"open-row\">")
-                .Append(Spec(model, field, reason))
-                .Append($"<button type=\"button\" class=\"ghost\" hx-post=\"/review/{Encode(model.Token)}/confirm\" ")
-                .Append($"hx-vals='{{\"path\":\"{Encode(field.Path)}\"}}' hx-swap=\"none\">{ReviewIcons.Confirm}Stimmt</button>")
-                .Append($"<button type=\"button\" class=\"ghost\" data-select=\"{id}\">Ändern</button></div>");
+            html.Append(OpenSpec(model, field));
         }
 
-        html.Append("</section>");
+        html.Append("</div></section>");
+    }
+
+    private static string OpenSpec(ReviewModel model, FieldDefinition field)
+    {
+        string id = ReviewFieldRenderer.InputId(field);
+        string reason = model.EvidenceOf(field) is null ? "Im Exposé nicht gefunden" : "Weicht vom Exposé ab";
+        string display = ReviewFieldRenderer.DisplayText(field, model.ValueOf(field));
+
+        return new StringBuilder("<div class=\"spec open-spec\">")
+            .Append($"<button type=\"button\" class=\"spec-main\" data-select=\"{id}\">")
+            .Append($"<span class=\"spec-label\">{Encode(FieldLabels.Label(field.Path))}{MarkFor(ValueSource.Open, withTitle: true)}</span>")
+            .Append($"<span class=\"spec-value\" id=\"v-{id}\">{Encode(display)}</span>")
+            .Append($"<span class=\"spec-note\">{Encode(reason)}</span></button>")
+            .Append("<div class=\"spec-actions\">")
+            .Append($"<button type=\"button\" class=\"ghost\" hx-post=\"/review/{Encode(model.Token)}/confirm\" ")
+            .Append($"hx-vals='{{\"path\":\"{Encode(field.Path)}\"}}' hx-swap=\"none\">{ReviewIcons.Confirm}Stimmt</button>")
+            .Append($"<button type=\"button\" class=\"ghost\" data-select=\"{id}\">Ändern</button></div></div>")
+            .ToString();
     }
 
     private static void AppendGroup(StringBuilder html, ReviewModel model, ReviewGroup group)
@@ -135,7 +138,7 @@ internal static class ReviewSummary
         html.Append("<div class=\"specs\">");
         foreach (FieldDefinition field in fields.OrderByDescending(IsFullWidth))
         {
-            html.Append(Spec(model, field, null));
+            html.Append(Spec(model, field));
         }
 
         html.Append("</div>");
@@ -171,43 +174,39 @@ internal static class ReviewSummary
     private static bool IsFullWidth(FieldDefinition field) =>
         field.Path == TitlePath || FieldLabels.LongTextPaths.Contains(field.Path);
 
-    private static string Spec(ReviewModel model, FieldDefinition field, string? reason)
+    private static string Spec(ReviewModel model, FieldDefinition field)
     {
         string id = ReviewFieldRenderer.InputId(field);
         string wide = IsFullWidth(field) ? " wide" : string.Empty;
         string display = ReviewFieldRenderer.DisplayText(field, model.ValueOf(field));
-        string value = reason is null
-            ? Encode(display)
-            : $"{Encode(display)} <span class=\"spec-note\">{Encode(reason)}</span>";
 
         return $"<button type=\"button\" class=\"spec{wide}\" data-select=\"{id}\">"
-            + $"<span class=\"spec-label\">{Encode(FieldLabels.Label(field.Path))}{Mark(model, field, reason is not null)}</span>"
-            + $"<span class=\"spec-value\" id=\"v-{id}\">{value}</span></button>";
+            + $"<span class=\"spec-label\">{Encode(FieldLabels.Label(field.Path))}{MarkFor(model.SourceOf(field), withTitle: true)}</span>"
+            + $"<span class=\"spec-value\" id=\"v-{id}\">{Encode(display)}</span></button>";
     }
 
-    private static string Mark(ReviewModel model, FieldDefinition field, bool open)
+    private static string MarkFor(ValueSource source, bool withTitle)
     {
-        if (open)
+        (string cssClass, string icon) = source switch
         {
-            return MarkHtml(OpenMark, "Bitte prüfen");
-        }
-
-        if (model.IsConfirmed(field))
-        {
-            return MarkHtml(ConfirmedMark, "Von Ihnen bestätigt");
-        }
-
-        return model.EvidenceOf(field) is null
-            ? MarkHtml(NoSourceMark, "Ohne wörtliche Fundstelle")
-            : MarkHtml(FoundMark, "Im Exposé gefunden");
+            ValueSource.Found => ("found", ReviewIcons.Check),
+            ValueSource.Derived => ("derived", ReviewIcons.Derived),
+            ValueSource.AiWritten => ("ai", ReviewIcons.Pencil),
+            ValueSource.Agent => ("confirmed", ReviewIcons.Check),
+            _ => ("open", string.Empty)
+        };
+        string tooltip = withTitle ? $" title=\"{Encode(SourceLabel(source))}\"" : string.Empty;
+        return $"<span class=\"mark {cssClass}\"{tooltip}>{icon}</span>";
     }
 
-    private static string MarkHtml(string kind, string? title)
+    private static string SourceLabel(ValueSource source) => source switch
     {
-        string icon = kind is FoundMark or ConfirmedMark ? ReviewIcons.Check : string.Empty;
-        string tooltip = title is null ? string.Empty : $" title=\"{Encode(title)}\"";
-        return $"<span class=\"mark {kind}\"{tooltip}>{icon}</span>";
-    }
+        ValueSource.Found => "im Exposé gefunden",
+        ValueSource.Derived => "abgeleitet",
+        ValueSource.AiWritten => "von der KI formuliert",
+        ValueSource.Agent => "von Ihnen bestätigt",
+        _ => "bitte prüfen"
+    };
 
     private static void AppendAddDetail(StringBuilder html, ReviewModel model)
     {
