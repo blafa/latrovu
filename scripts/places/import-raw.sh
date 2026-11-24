@@ -40,6 +40,8 @@ done < <(find "$WORK/plz" -iname '*.shp')
 download boundaries.zip "$(latest_asset ch.swisstopo.swissboundaries3d '_2056_.*\.gpkg\.zip$')"
 unzip -oq "$WORK/boundaries.zip" -d "$WORK/boundaries"
 load "boundaries/$(cd "$WORK/boundaries" && ls *.gpkg | head -1)" municipalities tlm_hoheitsgebiet
+load "boundaries/$(cd "$WORK/boundaries" && ls *.gpkg | head -1)" cantons tlm_kantonsgebiet
+load "boundaries/$(cd "$WORK/boundaries" && ls *.gpkg | head -1)" regions tlm_bezirksgebiet
 
 load_wfs() {
   echo "Event=LoadWfs Source=$1"

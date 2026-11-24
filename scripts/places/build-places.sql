@@ -12,6 +12,18 @@ CREATE TABLE places (
 );
 
 INSERT INTO places (kind, name, search_name, context, geom)
+SELECT 'canton', name, lower(unaccent(name)), NULL, ST_Multi(ST_Union(ST_Force2D(geom)))
+FROM geo_raw.cantons
+WHERE name IS NOT NULL
+GROUP BY name;
+
+INSERT INTO places (kind, name, search_name, context, geom)
+SELECT 'region', name, lower(unaccent(name)), 'Kanton ' || kantonsnummer, ST_Multi(ST_Union(ST_Force2D(geom)))
+FROM geo_raw.regions
+WHERE name IS NOT NULL
+GROUP BY name, kantonsnummer;
+
+INSERT INTO places (kind, name, search_name, context, geom)
 SELECT 'municipality', name, lower(unaccent(name)), 'Kanton ' || kantonsnummer, ST_Multi(ST_Union(ST_Force2D(geom)))
 FROM geo_raw.municipalities
 WHERE name IS NOT NULL
@@ -57,4 +69,4 @@ SELECT kind, count(*) FROM places GROUP BY kind ORDER BY kind;
 SELECT kind, name, context, round(similarity(search_name, 'wiedikon')::numeric, 2) AS score
 FROM places WHERE search_name % 'wiedikon' ORDER BY score DESC LIMIT 5;
 
-SELECT kind, name, context FROM places WHERE search_name IN ('kreis 3', 'oerlikon', '8003') ORDER BY kind;
+SELECT kind, name, context FROM places WHERE search_name IN ('kreis 3', 'oerlikon', '8003', 'bern', 'horgen', 'lugano') ORDER BY kind;
