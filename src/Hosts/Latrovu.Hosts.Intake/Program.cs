@@ -21,6 +21,7 @@ app.MapGet("/", () => "Latrovu Intake");
 if (app.Environment.IsDevelopment())
 {
     app.MapDevImport();
+    app.MapDevSearch();
 }
 
 app.Run();

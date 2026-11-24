@@ -3,6 +3,7 @@ namespace Latrovu.Intake;
 public sealed class MailDispatcher(
     IMailRouter router,
     ISubmissionForwarder forwarder,
+    ISearchRequestForwarder searchForwarder,
     ILogger<MailDispatcher> logger) : IMailDispatcher
 {
     public async Task DispatchAsync(InboundMail mail, CancellationToken ct)
@@ -22,7 +23,7 @@ public sealed class MailDispatcher(
                 await forwarder.ForwardAsync(mail, ct);
                 break;
             case MailKind.Search:
-                logger.LogWarning("Search mail {MessageId} received, search intake is not implemented yet", mail.MessageId);
+                await searchForwarder.ForwardAsync(mail, ct);
                 break;
             default:
                 logger.LogWarning("Mail {MessageId} has no known recipient and is ignored", mail.MessageId);

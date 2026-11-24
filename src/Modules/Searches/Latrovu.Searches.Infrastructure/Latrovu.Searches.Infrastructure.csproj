@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.Extensions.Logging" />
+    <Using Include="Latrovu.Core.Searches" />
+    <Using Include="Latrovu.Searches" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Latrovu.Searches\Latrovu.Searches.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Latrovu.BuildingBlocks.Infrastructure\Latrovu.BuildingBlocks.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

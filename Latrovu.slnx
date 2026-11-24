@@ -26,10 +26,15 @@
     <Project Path="src/Modules/Listings/Latrovu.Listings.Infrastructure/Latrovu.Listings.Infrastructure.csproj" />
     <Project Path="src/Modules/Listings/Latrovu.Listings/Latrovu.Listings.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Searches/">
+    <Project Path="src/Modules/Searches/Latrovu.Searches.Infrastructure/Latrovu.Searches.Infrastructure.csproj" />
+    <Project Path="src/Modules/Searches/Latrovu.Searches/Latrovu.Searches.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Latrovu.BuildingBlocks.Tests/Latrovu.BuildingBlocks.Tests.csproj" />
     <Project Path="tests/Latrovu.Core.Tests/Latrovu.Core.Tests.csproj" />
     <Project Path="tests/Latrovu.Intake.Tests/Latrovu.Intake.Tests.csproj" />
     <Project Path="tests/Latrovu.Listings.Tests/Latrovu.Listings.Tests.csproj" />
+    <Project Path="tests/Latrovu.Searches.Tests/Latrovu.Searches.Tests.csproj" />
   </Folder>
 </Solution>

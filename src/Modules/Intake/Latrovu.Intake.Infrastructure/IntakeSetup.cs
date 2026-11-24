@@ -17,6 +17,7 @@ public static class IntakeSetup
         services.AddSingleton<IMailRouter, MailRouter>();
         services.AddScoped<IMailDispatcher, MailDispatcher>();
         services.AddScoped<ISubmissionForwarder, SubmissionForwarder>();
+        services.AddScoped<ISearchRequestForwarder, SearchRequestForwarder>();
         services.AddHostedService<MailPollingService>();
         return services;
     }

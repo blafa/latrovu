@@ -7,4 +7,6 @@ public sealed record InboundMail(
     string Sender,
     string? Subject,
     IReadOnlyList<string> Recipients,
-    IReadOnlyList<SubmittedFile> Attachments);
+    IReadOnlyList<SubmittedFile> Attachments,
+    string Body = "",
+    string? InReplyTo = null);

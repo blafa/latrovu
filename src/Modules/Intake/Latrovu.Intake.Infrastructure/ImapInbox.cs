@@ -87,7 +87,9 @@ public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> 
             message.From.Mailboxes.FirstOrDefault()?.Address ?? string.Empty,
             message.Subject,
             recipients,
-            attachments);
+            attachments,
+            message.TextBody ?? string.Empty,
+            message.InReplyTo);
     }
 
     private static async Task<SubmittedFile> ToReceivedFileAsync(MimePart part, CancellationToken ct)

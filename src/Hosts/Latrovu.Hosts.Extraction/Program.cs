@@ -1,10 +1,13 @@
 using Latrovu.BuildingBlocks.Infrastructure.Ai;
+using Latrovu.BuildingBlocks.Infrastructure.Email;
 using Latrovu.BuildingBlocks.Infrastructure.Messaging;
 using Latrovu.BuildingBlocks.Infrastructure.Pdf;
 using Latrovu.BuildingBlocks.Infrastructure.Persistence;
 using Latrovu.BuildingBlocks.Infrastructure.Storage;
+using Latrovu.Core.Searches;
 using Latrovu.Core.Submissions;
 using Latrovu.Listings.Infrastructure;
+using Latrovu.Searches.Infrastructure;
 
 const string InputQueue = "latrovu-extraction";
 
@@ -14,9 +17,11 @@ builder.Services
     .AddPostgres(builder.Configuration)
     .AddAiExtraction(builder.Configuration)
     .AddObjectStorage(builder.Configuration)
+    .AddEmailSending(builder.Configuration)
     .AddPdfReading()
     .AddListingsProcessing()
-    .AddMessageConsuming(builder.Configuration, InputQueue, [typeof(SubmissionReceived)]);
+    .AddSearchesModule()
+    .AddMessageConsuming(builder.Configuration, InputQueue, [typeof(SubmissionReceived), typeof(SearchRequestReceived)]);
 
 IHost host = builder.Build();
 host.Run();
