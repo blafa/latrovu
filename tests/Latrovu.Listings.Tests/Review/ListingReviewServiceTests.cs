@@ -9,12 +9,36 @@ public sealed class ListingReviewServiceTests
     private const string Token = "valid-token";
 
     private readonly FakeListingReviewStore reviews = new();
+    private readonly FakeObjectStorage storage = new();
     private readonly ListingReviewService service;
 
     public ListingReviewServiceTests()
     {
         FakeListingAccessTokenStore tokens = new(Token, Guid.NewGuid());
-        service = new ListingReviewService(tokens, reviews, NullLogger<ListingReviewService>.Instance);
+        service = new ListingReviewService(tokens, reviews, storage, NullLogger<ListingReviewService>.Instance);
+    }
+
+    [Fact]
+    public async Task Withdraw_ApprovedListing_DeletesItsImages()
+    {
+        await service.ApproveAsync(Token, CancellationToken.None);
+        reviews.ImageKeys.AddRange(["listings/a/0.jpg", "listings/a/1.jpg"]);
+
+        bool withdrawn = await service.WithdrawAsync(Token, CancellationToken.None);
+
+        Assert.True(withdrawn);
+        Assert.Equal(reviews.ImageKeys, storage.DeletedKeys);
+    }
+
+    [Fact]
+    public async Task Withdraw_DraftListing_IsRefusedAndKeepsImages()
+    {
+        reviews.ImageKeys.Add("listings/a/0.jpg");
+
+        bool withdrawn = await service.WithdrawAsync(Token, CancellationToken.None);
+
+        Assert.False(withdrawn);
+        Assert.Empty(storage.DeletedKeys);
     }
 
     [Fact]

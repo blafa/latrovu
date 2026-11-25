@@ -3,9 +3,11 @@ using Latrovu.BuildingBlocks.Infrastructure.Messaging;
 using Latrovu.Core.Listings;
 using Latrovu.Core.Submissions;
 using Latrovu.Listings.Infrastructure.Matching;
+using Latrovu.Listings.Infrastructure.Viewing.Access;
 using Latrovu.Listings.Infrastructure.Viewing.Chat;
 using Latrovu.Listings.Infrastructure.Viewing.Viewings;
 using Latrovu.Listings.Matching;
+using Latrovu.Listings.Viewing.Access;
 using Latrovu.Listings.Viewing.Chat;
 using Latrovu.Listings.Viewing.Viewings;
 using Latrovu.Listings.Infrastructure.Viewing.Web;
@@ -45,6 +47,8 @@ public static class ListingsSetup
         services.AddScoped<IViewingNotifier, EmailViewingNotifier>();
         services.AddScoped<SeekerViewingService>();
         services.AddScoped<IListingViewService, ListingViewService>();
+        services.TryAddSingleton<IListingAccessRequestStore, ListingAccessRequestStore>();
+        services.AddScoped<ListingAccessService>();
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -92,6 +96,7 @@ public static class ListingsSetup
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ListingsDatabaseSchema>());
         services.TryAddSingleton<IListingStore, ListingStore>();
+        services.TryAddSingleton<IListingSourceMailStore, ListingSourceMailStore>();
         services.TryAddSingleton<IListingImageStore, ListingImageStore>();
         services.TryAddSingleton<IListingReviewStore, ListingReviewStore>();
         services.TryAddSingleton<IListingAccessTokenStore, ListingAccessTokenStore>();

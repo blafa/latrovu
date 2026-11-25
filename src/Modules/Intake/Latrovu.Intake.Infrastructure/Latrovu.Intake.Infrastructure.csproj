@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Latrovu.Intake\Latrovu.Intake.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Latrovu.BuildingBlocks\Latrovu.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Latrovu.BuildingBlocks.Infrastructure\Latrovu.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

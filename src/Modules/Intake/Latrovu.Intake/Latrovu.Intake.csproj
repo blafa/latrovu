@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Core\Latrovu.Core.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Latrovu.BuildingBlocks\Latrovu.BuildingBlocks.csproj" />
   </ItemGroup>
 
 </Project>

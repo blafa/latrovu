@@ -12,6 +12,7 @@ public sealed class ListingWithdrawnHandler(
         ArgumentNullException.ThrowIfNull(message);
 
         await searches.RemoveCandidateAsync(message.ListingId, ct);
-        logger.LogInformation("Listing {ListingId} removed from matching candidates", message.ListingId);
+        await searches.RemoveAlertsAsync(message.ListingId, ct);
+        logger.LogInformation("Listing {ListingId} removed from matching candidates and alerts", message.ListingId);
     }
 }

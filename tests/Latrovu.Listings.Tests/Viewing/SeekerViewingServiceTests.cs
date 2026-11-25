@@ -85,6 +85,18 @@ public sealed class SeekerViewingServiceTests
         Assert.False(result.Found);
     }
 
+    [Fact]
+    public async Task Book_SharedLink_IsRefused()
+    {
+        string shared = (await views.ShareAsync(await ApprovedLinkAsync(), CancellationToken.None))!;
+        long slotId = await SlotAsync(capacity: 2);
+
+        ViewingResult result = await service.BookAsync(shared, slotId, CancellationToken.None);
+
+        Assert.False(result.Found);
+        Assert.Empty(viewings.NotifiedSlots);
+    }
+
     private async Task<long> SlotAsync(int capacity, int hoursAhead = 24) =>
         await viewings.AddSlotAsync(ListingId, Now.AddHours(hoursAhead), Now.AddHours(hoursAhead).AddMinutes(30), capacity, CancellationToken.None);
 

@@ -28,7 +28,7 @@ builder.Services
         builder.Configuration,
         InputQueue,
         [typeof(SubmissionReceived), typeof(SearchRequestReceived), typeof(ListingApproved), typeof(ListingReadyForMatching), typeof(ViewLinkRequested), typeof(ListingWithdrawn),
-            typeof(AgentReplyReceived), typeof(AgentAnswered), typeof(ViewingBooked)]);
+            typeof(AgentReplyReceived), typeof(AgentAnswered), typeof(ViewingBooked), typeof(ListingAccessRequested)]);
 
 IHost host = builder.Build();
 host.Run();

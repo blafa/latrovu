@@ -35,7 +35,11 @@ public static class SeekerTextCatalog
             "Ein passendes Angebot haben wir Ihnen soeben geschickt.",
             "{0} passende Angebote haben wir Ihnen soeben geschickt.",
             "Die passenden Angebote haben Sie bereits von uns erhalten. Neue schicken wir Ihnen, sobald sie erscheinen.",
-            "Zurzeit gibt es noch kein passendes Angebot. Wir melden uns, sobald eines erscheint."),
+            "Zurzeit gibt es noch kein passendes Angebot. Wir melden uns, sobald eines erscheint.",
+            "Ihr persönlicher Link: «{0}»",
+            "Hier ist Ihr persönlicher Link zu «{0}». Damit stellen Sie Fragen zum Angebot und buchen eine Besichtigung.",
+            "Angebot öffnen",
+            "Sie haben diesen Link nicht angefordert? Dann können Sie diese E-Mail einfach löschen."),
         ["fr"] = new SeekerTexts(
             "Votre recherche de logement avec Latrovu",
             "Bonjour",
@@ -65,7 +69,11 @@ public static class SeekerTextCatalog
             "Nous venons de vous envoyer une offre correspondante.",
             "Nous venons de vous envoyer {0} offres correspondantes.",
             "Vous avez déjà reçu les offres correspondantes. Nous vous enverrons les nouvelles dès leur parution.",
-            "Il n’y a pas encore d’offre correspondante. Nous vous écrivons dès qu’il y en a une."),
+            "Il n’y a pas encore d’offre correspondante. Nous vous écrivons dès qu’il y en a une.",
+            "Votre lien personnel : « {0} »",
+            "Voici votre lien personnel pour « {0} ». Il vous permet de poser vos questions et de réserver une visite.",
+            "Ouvrir l’offre",
+            "Vous n’avez pas demandé ce lien ? Supprimez simplement cet e-mail."),
         ["it"] = new SeekerTexts(
             "La sua ricerca di casa con Latrovu",
             "Buongiorno",
@@ -95,7 +103,11 @@ public static class SeekerTextCatalog
             "Le abbiamo appena inviato un’offerta adatta.",
             "Le abbiamo appena inviato {0} offerte adatte.",
             "Ha già ricevuto da noi le offerte adatte. Le invieremo le nuove appena saranno disponibili.",
-            "Al momento non c’è ancora un’offerta adatta. Le scriveremo appena ce ne sarà una."),
+            "Al momento non c’è ancora un’offerta adatta. Le scriveremo appena ce ne sarà una.",
+            "Il suo link personale: «{0}»",
+            "Ecco il suo link personale per «{0}». Le permette di porre domande e di prenotare una visita.",
+            "Aprire l’offerta",
+            "Non ha richiesto questo link? Può semplicemente cancellare questa e-mail."),
         ["en"] = new SeekerTexts(
             "Your home search with Latrovu",
             "Hello",
@@ -125,7 +137,11 @@ public static class SeekerTextCatalog
             "We have just sent you one matching listing.",
             "We have just sent you {0} matching listings.",
             "You have already received the matching listings from us. We will send new ones as soon as they appear.",
-            "There is no matching listing yet. We will let you know as soon as one appears.")
+            "There is no matching listing yet. We will let you know as soon as one appears.",
+            "Your personal link: “{0}”",
+            "Here is your personal link to “{0}”. Use it to ask questions about the listing and book a viewing.",
+            "Open listing",
+            "Didn’t request this link? You can simply delete this email.")
     };
 
     public static SeekerTexts For(string language) =>

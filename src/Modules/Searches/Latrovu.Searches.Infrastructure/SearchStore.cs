@@ -46,6 +46,8 @@ public sealed class SearchStore(NpgsqlDataSource dataSource, IOutbox outbox) : I
 
     private const string RemoveCandidateSql = "DELETE FROM matchable_listings WHERE listing_id = $1";
 
+    private const string RemoveAlertsSql = "DELETE FROM search_alerts WHERE listing_id = $1";
+
     private const string UpsertSql = """
         INSERT INTO searches (id, seeker_address, channel, name, language, criteria, status)
         VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)
@@ -153,6 +155,20 @@ public sealed class SearchStore(NpgsqlDataSource dataSource, IOutbox outbox) : I
         return recorded;
     }
 
+    public async Task PublishViewLinkAsync(ViewLinkRequested linkRequest, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(linkRequest);
+
+        await using NpgsqlConnection connection = await dataSource.OpenConnectionAsync(ct);
+        await using NpgsqlTransaction transaction = await connection.BeginTransactionAsync(ct);
+        await using NpgsqlCommand command = new(RecordAlertSql, connection, transaction);
+        command.Parameters.Add(new NpgsqlParameter { Value = linkRequest.SearchId });
+        command.Parameters.Add(new NpgsqlParameter { Value = linkRequest.ListingId });
+        await command.ExecuteNonQueryAsync(ct);
+        await outbox.AddAsync([linkRequest], transaction, ct);
+        await transaction.CommitAsync(ct);
+    }
+
     public async Task SaveCandidateAsync(ListingReadyForMatching listing, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(listing);
@@ -175,6 +191,13 @@ public sealed class SearchStore(NpgsqlDataSource dataSource, IOutbox outbox) : I
     public async Task RemoveCandidateAsync(Guid listingId, CancellationToken ct)
     {
         await using NpgsqlCommand command = dataSource.CreateCommand(RemoveCandidateSql);
+        command.Parameters.Add(new NpgsqlParameter { Value = listingId });
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
+    public async Task RemoveAlertsAsync(Guid listingId, CancellationToken ct)
+    {
+        await using NpgsqlCommand command = dataSource.CreateCommand(RemoveAlertsSql);
         command.Parameters.Add(new NpgsqlParameter { Value = listingId });
         await command.ExecuteNonQueryAsync(ct);
     }

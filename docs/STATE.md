@@ -32,7 +32,7 @@ scripts/dev-run.sh                         builds, starts 3 hosts in tmux, logs 
 Setup extensions per area: `AddPostgres`, `AddAiExtraction`, `AddObjectStorage`, `AddEmailSending`, `AddPdfReading`, `AddMessagePublishing`, `AddMessageConsuming`, `AddIntakeModule`, `AddListingsReview`, `AddListingsViewing`, `AddListingsProcessing`.
 
 ## Events
-`SubmissionReceived` (Intake → Listings), `ListingApproved`, `ListingWithdrawn` (Listings → future Search/Notifications).
+`SubmissionReceived` (Intake → Listings), `ListingApproved`, `ListingWithdrawn`, `ListingReadyForMatching`, `ViewingBooked`, `AgentAnswered`, `ListingAccessRequested` (Listings → Searches), `SearchRequestReceived`, `AgentReplyReceived` (Intake → Searches/Listings), `ViewLinkRequested` (Searches → Listings).
 
 ## Main tables
 `listings` (data, extracted_data, field_scores, field_evidence, status draft/approved/withdrawn, publish_contact), `listing_images`, `listing_access_tokens`, `listing_verification_codes`, `listing_review_sessions`, `listing_view_links`, `processed_submissions`, `outbox`.
@@ -71,14 +71,25 @@ Messenger readiness: chat answers are channel-neutral (kind first, then our code
 ## Brand
 Symbol: two chat bubbles (seeker lime, Latrovu outline) with a keyhole where they meet; wordmark `latrovu.` with lime full stop. Pillars: effortless, for everyone, safe (Swiss hosting, no big tech, no tracking). Files and rules in `branding/README.md`. Web assets (logo, favicon, self-hosted Outfit font, htmx) in `src/Hosts/Latrovu.Hosts.Web/wwwroot/assets`, refilled by `scripts/fetch-web-assets.sh`; referenced via `SiteAssets`. Mails embed the symbol as inline image (`EmailBranding`, content id `latrovu-symbol`). Open: convert the wordmark in `latrovu-logo.svg` to outlines.
 
+## Sharing (searcher page)
+"Teilen" on the searcher page (`POST /i/{token}/share`) creates a **shared link** (`listing_view_links.kind = 'shared'`, no search, no address), valid 7 days or until the original expires (`ListingViewService.SharedLinkValidity`). A shared link shows the listing read-only: chat without history and input disabled, viewing times without booking. Actions use `FindPersonalAsync`, so chat, forwarding, booking and cancelling refuse shared tokens on the server. Re-sharing passes on the same link. "Persönlichen Link anfordern" (chat card and viewing row) opens `UnlockDialog` → `POST /i/{token}/access` → `ListingAccessService` (limits: 10 per shared link, 3 per address per hour, stored in `listing_access_requests`) publishes `ListingAccessRequested` → Searches (`ListingAccessRequestedHandler`) creates or reuses a **paused search** named after the city, publishes a new personal link (`ISearchStore.PublishViewLinkAsync`) and mails it (`SeekerAccessLinkMail`, de/fr/it/en, language from the browser's Accept-Language). Link preview shows only "Wohnungsangebot in {Ort}". Web host serves `robots.txt` with `Disallow: /`.
+
+## Micro-site
+Static site in `site/` (served by Caddy later, no .NET): `index.html` (de) and `fr/`, `it/`, `en/`, one screen per language: headline, two columns (Wohnung suchen → mailto suche@, Wohnung anbieten → mailto inserat@), seven keys (günstig, schnell, automatisch, in der Schweiz, keine Datensammlung, jede Sprache, unabhängig). Shared `assets/site.css`, `assets/icons.svg`, self-hosted Outfit variable font (Fontsource 5.2.8, OFL in `assets/fonts/OFL.txt`). Demos with invented data, German only: `beispiel/suchen/` (searcher page) and `beispiel/anbieten/` (review page). Saved app pages used as templates (`site/beispiel/*-raw.html`) are git-ignored. `impressum.html` and `datenschutz.html` are placeholders (`noindex`) until the company exists and the privacy statement is reviewed. Local preview: `python3 -m http.server 8090 -d site`.
+
 ## Next
-Micro page (latrovu.com: seekers and agents paths, three steps, safety promise, de/fr/it/en, Impressum/Datenschutz) → deployment (Dockerfiles, compose with Caddy, Infomaniak VM, disk encryption, closed ports, encrypted backups, retention).
+1. Deletion. Step A done: withdrawing (review page, dialog "zurückziehen und löschen") deletes the listing in one transaction (`ListingReviewStore.WithdrawAsync`, all child tables cascade), then its S3 images (`ListingReviewService`); `ListingWithdrawn` carries the Message-Ids from `listing_source_mails` (exposé mail and agent replies, recorded by `ListingIntake` and `AgentReplyHandler`). Searches removes `matchable_listings` and `search_alerts`; Intake (now consuming, queue `latrovu-intake`) deletes those mails from the processed folder (`ListingMailCleanupHandler`, `IMailInbox.DeleteProcessedAsync`). Listings created before this change have no recorded mails. Dev: review link for an existing listing = insert into `listing_access_tokens` with `upper(encode(sha256(convert_to(token,'UTF8')),'hex'))`.
+   Step B next: new host `Latrovu.Hosts.Scheduler` with reminders to the agent after 1, 2 and 3 months ("Ja, weiterhin aktiv" resets, "Zurückziehen"), withdraw and delete after the 3rd without reaction, and cleanup of delivered outbox rows.
+2. Small items: booking mail to the agent without link to the review page; cancellation mail to seeker and agent; refinement box asks for things already given; demos in fr/it/en.
+3. Data inventory → privacy statement draft → lawyer review. All processors are Infomaniak (hosting, S3, AI, mail), no transfer abroad.
+4. Deployment (Dockerfiles, compose with Caddy for `site/` and the hosts, Infomaniak VM, disk encryption, closed ports, encrypted backups, retention).
 
 ## Backlog
 - Extraction quality: golden set; object type confused by building names ("Haus First"); wrong ZIP (Wattwil "630"); multi-unit documents (one listing per unit); image classification (photo vs plan vs map vs document; hide land register extracts; photos first); some PDF image formats yield no images.
-- Delete listing + data retention; review page HTML tests.
+- Review page HTML tests.
 - View link validity (30 days) is hardcoded in `ListingMatchingHandler.LinkValidity` and in the alert texts; make it a setting (probably shorter). Remove dev view-link endpoint (real alerts create links now).
 - Deployment: Dockerfiles per host, compose for hosts, optional VS `.dcproj`, Caddy, forwarded headers (cookie `Secure` flag behind proxy), Infomaniak VM.
 - Cleanup: delete bucket `latrovu-public`, RabbitMQ queue `latrovu-listings`, any leftover `src/Api` folder.
-- Business: Einzelfirma registration → Meta business verification for WhatsApp; Swiss lawyer check before launch; trademark check.
+- Business: company registration (sole proprietorship with voluntary register entry, or GmbH; trustee check) → Impressum. Swiss lawyer check before launch; trademark check.
+- WhatsApp (parked until the company exists): Meta test number and app work; the WABA is blocked without a payment method (also for replies in the 24 h window), and Meta requires a registered business. Order: register extract → business verification → own number + payment method → webhook to Intake → adapter; alerts after 24 h need paid templates. Threema Gateway (Swiss, E2E mode) as alternative; Signal has no official API.
 - Other countries (after CH): FR and LU easy (open boundaries, open geocoding), AT easy to medium, DE and IT medium (no open postal code areas, OSM fallback). Prepare: `places.country`, geocoder per country behind `IGeocoder`.

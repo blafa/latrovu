@@ -1,4 +1,5 @@
 using Latrovu.BuildingBlocks.Storage;
+using Latrovu.Listings.Viewing.Access;
 using Latrovu.Listings.Viewing.Chat;
 using Latrovu.Listings.Viewing.Viewings;
 using Microsoft.AspNetCore.Builder;
@@ -17,6 +18,8 @@ public static class ListingViewEndpoints
     private const string NoIndex = "noindex, nofollow";
     private const string QuestionFormKey = "question";
     private const string AnswerIdFormKey = "answerId";
+    private const string EmailFormKey = "email";
+    private const string FallbackLanguage = "de";
 
     public static IEndpointRouteBuilder MapListingViews(this IEndpointRouteBuilder app)
     {
@@ -24,6 +27,8 @@ public static class ListingViewEndpoints
 
         RouteGroupBuilder views = app.MapGroup("/i/{token}").RequireRateLimiting(RateLimitPolicy);
         views.MapGet(string.Empty, ShowAsync);
+        views.MapPost("/share", ShareAsync);
+        views.MapPost("/access", RequestAccessAsync);
         views.MapPost("/chat", AskAsync);
         views.MapPost("/forward", ForwardAsync);
         views.MapPost("/viewings/{slotId:long}/book", BookViewingAsync);
@@ -41,15 +46,41 @@ public static class ListingViewEndpoints
         CancellationToken ct)
     {
         response.Headers[RobotsHeader] = NoIndex;
-        ListingReview? listing = await views.OpenAsync(token, ct);
-        if (listing is null)
+        ListingView? view = await views.OpenAsync(token, ct);
+        if (view is null)
         {
             return Results.Content(ListingViewPage.RenderUnavailable(), HtmlContentType, statusCode: StatusCodes.Status404NotFound);
         }
 
         return Results.Content(
-            ListingViewPage.Render(token, listing, await chat.GetAsync(token, ct), await viewings.GetAsync(token, ct)),
+            ListingViewPage.Render(token, view, await chat.GetAsync(token, ct), await viewings.GetAsync(token, ct)),
             HtmlContentType);
+    }
+
+    private static async Task<IResult> ShareAsync(string token, HttpResponse response, IListingViewService views, CancellationToken ct)
+    {
+        response.Headers[RobotsHeader] = NoIndex;
+        string? shared = await views.ShareAsync(token, ct);
+        return shared is null ? Results.NotFound() : Results.Ok(new { path = $"/i/{shared}" });
+    }
+
+    private static async Task<IResult> RequestAccessAsync(string token, HttpRequest request, ListingAccessService access, CancellationToken ct)
+    {
+        request.HttpContext.Response.Headers[RobotsHeader] = NoIndex;
+        IFormCollection form = await request.ReadFormAsync(ct);
+        AccessOutcome outcome = await access.RequestAsync(token, form[EmailFormKey].ToString(), PreferredLanguage(request), ct);
+        return outcome == AccessOutcome.NotFound
+            ? Results.NotFound()
+            : Results.Content(UnlockDialog.Result(token, outcome), HtmlContentType);
+    }
+
+    private static string PreferredLanguage(HttpRequest request)
+    {
+        string? preferred = request.GetTypedHeaders().AcceptLanguage
+            .OrderByDescending(language => language.Quality ?? 1)
+            .Select(language => language.Value.Value)
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value) && value != "*");
+        return preferred?.Split('-')[0] ?? FallbackLanguage;
     }
 
     private static async Task<IResult> BookViewingAsync(

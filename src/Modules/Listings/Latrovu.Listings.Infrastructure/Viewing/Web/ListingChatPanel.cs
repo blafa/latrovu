@@ -65,6 +65,11 @@ internal static class ListingChatPanel
         .chat-form button .icon { width:18px; height:18px; }
         .chat-form button[disabled] { opacity:0.6; cursor:progress; }
         @media (prefers-reduced-motion: reduce) { .typing span { animation:none; opacity:0.7; } }
+        .unlock { margin:auto 0; display:grid; gap:8px; padding:16px; border-radius:12px; background:#EEF8D2; color:#27500A; font-size:14px; }
+        .unlock p { margin:0; }
+        .chat.locked { height:auto; }
+        .chat.locked .chat-messages { flex:none; }
+        .chat.locked .chat-form { opacity:0.5; }
         @media (max-width: 860px) {
             body { padding-bottom:140px; }
             .chat { position:fixed; left:0; right:0; bottom:0; top:auto; height:auto; z-index:40; border-radius:16px 16px 0 0;
@@ -76,6 +81,9 @@ internal static class ListingChatPanel
             .chat.open { top:0; height:100dvh; border-radius:0; }
             .chat.open .chat-close { display:grid; }
             body.chat-open { overflow:hidden; }
+            body:has(.chat.locked) { padding-bottom:0; }
+            .chat.locked { position:static; height:auto; margin-top:24px; border-radius:8px; box-shadow:none; }
+            .chat.locked .chat-header, .chat.locked .chat-messages { display:flex; }
         }
         """;
 
@@ -184,6 +192,18 @@ internal static class ListingChatPanel
         AppendForm(html, token);
         return html.Append("</section>").ToString();
     }
+
+    public static string RenderLocked() =>
+        "<section id=\"chat\" class=\"chat locked\" aria-label=\"Fragen zum Angebot\">"
+        + "<header class=\"chat-header\"><div style=\"flex:1\"><h2 class=\"chat-title\">Fragen zu diesem Angebot?</h2>"
+        + "<p class=\"chat-sub\">Antworten aus dem Exposé, in Ihrer Sprache.</p></div></header>"
+        + "<div class=\"chat-messages\"><div class=\"unlock\"><strong>Fragen und Besichtigung mit Ihrem eigenen Link</strong>"
+        + "<p>Dieser Link wurde mit Ihnen geteilt und ist nur zum Ansehen. Mit Ihrem persönlichen Link stellen Sie Fragen und buchen einen Termin.</p>"
+        + "<button type=\"button\" class=\"unlock-open\" data-unlock>Persönlichen Link anfordern</button>"
+        + "</div></div>"
+        + "<div class=\"chat-form\" aria-hidden=\"true\"><textarea rows=\"1\" disabled placeholder=\"Nur mit persönlichem Link\"></textarea>"
+        + $"<div class=\"composer-row\"><span class=\"composer-hint\"></span><button type=\"button\" disabled>{ReviewIcons.Send}</button></div></div>"
+        + "</section>";
 
     private static void AppendSuggestions(StringBuilder html, int messageCount)
     {

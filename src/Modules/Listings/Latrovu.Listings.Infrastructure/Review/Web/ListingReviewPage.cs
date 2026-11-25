@@ -248,11 +248,12 @@ public static class ListingReviewPage
         return model.Review.IsApproved
             ? $"<button type=\"button\" class=\"ghost caution\" data-dialog-open=\"withdraw-dialog\">{ReviewIcons.EyeOff}Zurückziehen</button>"
                 + "<dialog id=\"withdraw-dialog\" class=\"dialog\" aria-labelledby=\"withdraw-title\">"
-                + "<h2 id=\"withdraw-title\">Inserat zurückziehen?</h2>"
-                + "<p>Alle Links für Suchende werden sofort ungültig. Sie können das Inserat später wieder freigeben.</p>"
+                + "<h2 id=\"withdraw-title\">Inserat zurückziehen und löschen?</h2>"
+                + "<p>Das Inserat wird mit allen Bildern, Fragen, Besichtigungsterminen und Links für Suchende sofort gelöscht. "
+                + "Das lässt sich nicht rückgängig machen. Möchten Sie es später wieder anbieten, senden Sie das Exposé einfach erneut.</p>"
                 + "<div class=\"dialog-actions\"><button type=\"button\" class=\"ghost\" data-dialog-close>Abbrechen</button>"
                 + $"<button class=\"caution-solid\" hx-post=\"/review/{token}/withdraw\" hx-target=\"#approve-status\" hx-disabled-elt=\"this\">"
-                + $"<span class=\"spinner\" aria-hidden=\"true\"></span>{ReviewIcons.EyeOff}Ja, zurückziehen</button></div></dialog>"
+                + $"<span class=\"spinner\" aria-hidden=\"true\"></span>{ReviewIcons.EyeOff}Ja, zurückziehen und löschen</button></div></dialog>"
             : $"<button class=\"primary\" hx-post=\"/review/{token}/approve\" hx-target=\"#approve-status\">{ReviewIcons.Confirm}Inserat freigeben</button>";
     }
 

@@ -30,9 +30,10 @@ public sealed class ListingViewServiceTests
         await listings.ApproveAsync(ListingId, CancellationToken.None);
         string token = (await service.CreateLinkAsync(ListingId, searchId: null, CancellationToken.None))!;
 
-        ListingReview? listing = await service.OpenAsync(token, CancellationToken.None);
+        ListingView? view = await service.OpenAsync(token, CancellationToken.None);
 
-        Assert.NotNull(listing);
+        Assert.NotNull(view);
+        Assert.False(view.IsShared);
         Assert.Equal(1, links.Views[token]);
     }
 
@@ -65,5 +66,66 @@ public sealed class ListingViewServiceTests
         time.Advance(ListingViewService.LinkValidity + TimeSpan.FromMinutes(1));
 
         Assert.Null(await service.OpenAsync(token, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Share_PersonalLink_CreatesReadOnlyLink()
+    {
+        string token = await ApprovedLinkAsync();
+
+        string shared = (await service.ShareAsync(token, CancellationToken.None))!;
+
+        Assert.NotEqual(token, shared);
+        Assert.True((await service.OpenAsync(shared, CancellationToken.None))!.IsShared);
+    }
+
+    [Fact]
+    public async Task Share_SharedLink_PassesOnTheSameLink()
+    {
+        string shared = (await service.ShareAsync(await ApprovedLinkAsync(), CancellationToken.None))!;
+
+        Assert.Equal(shared, await service.ShareAsync(shared, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Share_UnknownLink_ReturnsNull()
+    {
+        Assert.Null(await service.ShareAsync("unknown", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SharedLink_ExpiresAfterSevenDays()
+    {
+        string shared = (await service.ShareAsync(await ApprovedLinkAsync(), CancellationToken.None))!;
+        time.Advance(ListingViewService.SharedLinkValidity + TimeSpan.FromMinutes(1));
+
+        Assert.Null(await service.OpenAsync(shared, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SharedLink_ExpiresWithTheOriginal()
+    {
+        string token = await ApprovedLinkAsync();
+        time.Advance(ListingViewService.LinkValidity - TimeSpan.FromDays(1));
+        string shared = (await service.ShareAsync(token, CancellationToken.None))!;
+        time.Advance(TimeSpan.FromDays(1) + TimeSpan.FromMinutes(1));
+
+        Assert.Null(await service.OpenAsync(shared, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task FindPersonal_SharedLink_ReturnsNull()
+    {
+        string token = await ApprovedLinkAsync();
+        string shared = (await service.ShareAsync(token, CancellationToken.None))!;
+
+        Assert.NotNull(await service.FindPersonalAsync(token, CancellationToken.None));
+        Assert.Null(await service.FindPersonalAsync(shared, CancellationToken.None));
+    }
+
+    private async Task<string> ApprovedLinkAsync()
+    {
+        await listings.ApproveAsync(ListingId, CancellationToken.None);
+        return (await service.CreateLinkAsync(ListingId, searchId: null, CancellationToken.None))!;
     }
 }

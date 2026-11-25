@@ -28,6 +28,9 @@ internal static class ListingViewPage
         a { color:inherit; }
         .site { max-width:1360px; margin:0 auto; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; }
         .tagline { font-size:13px; color:var(--muted); }
+        .share { display:inline-flex; align-items:center; gap:7px; font:inherit; font-size:14px; font-weight:600; padding:8px 16px 8px 13px; border:1px solid var(--ink); border-radius:18px; background:var(--paper); color:var(--ink); cursor:pointer; }
+        .share .icon { width:17px; height:17px; }
+        .share[disabled] { opacity:0.6; cursor:progress; }
         main { max-width:1360px; margin:0 auto; padding:0 32px 48px; }
         .gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:190px 190px; gap:4px; border-radius:8px; overflow:hidden; }
         .gallery a { position:relative; display:block; background:var(--well); }
@@ -64,17 +67,41 @@ internal static class ListingViewPage
         }
         """;
 
-    public static string Render(string token, ListingReview listing, ChatResult chat, ViewingResult viewings)
+    private const string ShareScript = """
+        <script>
+        document.getElementById('share')?.addEventListener('click', async event => {
+            const button = event.currentTarget;
+            const label = button.querySelector('.share-label');
+            button.disabled = true;
+            try {
+                const response = await fetch(button.dataset.share, { method: 'POST' });
+                if (!response.ok) { throw new Error('share failed'); }
+                const url = location.origin + (await response.json()).path;
+                if (navigator.share) { await navigator.share({ title: document.title, url }); }
+                else { await navigator.clipboard.writeText(url); label.textContent = 'Link kopiert'; }
+            } catch (error) {
+                if (error?.name !== 'AbortError') { label.textContent = 'Nicht geklappt'; }
+            } finally {
+                button.disabled = false;
+            }
+        });
+        </script>
+        """;
+
+    public static string Render(string token, ListingView view, ChatResult chat, ViewingResult viewings)
     {
+        ListingReview listing = view.Listing;
         JsonObject data = JsonNode.Parse(listing.DataJson) as JsonObject ?? [];
         string title = ListingValues.Text(data, "title") ?? "Inserat";
 
         StringBuilder html = new();
-        AppendHead(html, title);
+        html.Append(Head(PreviewTitle(data)))
+            .Append($"<header class=\"site\">{SiteAssets.LogoImage(36)}")
+            .Append($"<button type=\"button\" class=\"share\" id=\"share\" data-share=\"/i/{Encode(token)}/share\">{ReviewIcons.Share}<span class=\"share-label\">Teilen</span></button></header>");
         html.Append("<main>");
         AppendGallery(html, token, listing.Images);
         html.Append("<div class=\"content\"><div>");
-        AppendIntro(html, data, title, SeekerViewingPanel.Render(token, viewings));
+        AppendIntro(html, data, title, SeekerViewingPanel.Render(token, viewings, view.IsShared));
         AppendFeatures(html, data);
         AppendDetails(html, data);
         if (listing.PublishContact)
@@ -83,34 +110,45 @@ internal static class ListingViewPage
         }
 
         html.Append("</div>");
-        html.Append(ListingChatPanel.Render(token, chat));
+        html.Append(view.IsShared ? ListingChatPanel.RenderLocked() : ListingChatPanel.Render(token, chat));
         html.Append("</div>");
         AppendAllImages(html, token, listing.Images);
-        html.Append("</main><footer>Diese Seite ist nur über Ihren persönlichen Link erreichbar. Vermittelt durch Latrovu.</footer>")
-            .Append(ListingChatPanel.Script)
-            .Append("</body></html>");
-        return html.ToString();
+        html.Append("</main><footer>")
+            .Append(view.IsShared
+                ? "Mit Ihnen geteilter Link, nur zum Ansehen und 7 Tage gültig. Vermittelt durch Latrovu."
+                : "Diese Seite ist nur über Ihren persönlichen Link erreichbar. Vermittelt durch Latrovu.")
+            .Append("</footer>");
+        AppendInteraction(html, token, view.IsShared);
+        return html.Append("</body></html>").ToString();
+    }
+
+    private static void AppendInteraction(StringBuilder html, string token, bool isShared)
+    {
+        html.Append(isShared ? UnlockDialog.Render(token) + UnlockDialog.Script : ListingChatPanel.Script)
+            .Append(ShareScript);
     }
 
     public static string RenderUnavailable()
     {
         StringBuilder html = new();
-        AppendHead(html, "Inserat nicht verfügbar");
+        html.Append(Head("Inserat nicht verfügbar"))
+            .Append($"<header class=\"site\">{SiteAssets.LogoImage(36)}<span class=\"tagline\">Te la trovo.</span></header>");
         return html.Append("<div class=\"message\"><h1>Dieser Link ist nicht mehr gültig</h1>")
             .Append("<p>Das Inserat wurde zurückgezogen oder der Link ist abgelaufen. ")
             .Append("Neue passende Wohnungen schicken wir Ihnen weiterhin direkt.</p></div></body></html>")
             .ToString();
     }
 
-    private static void AppendHead(StringBuilder html, string title) =>
-        html.Append(Head(title))
-            .Append($"<header class=\"site\">{SiteAssets.LogoImage(36)}<span class=\"tagline\">Te la trovo.</span></header>");
+    private static string PreviewTitle(JsonObject data) =>
+        ListingValues.Text(data, "location.city") is { } city ? $"Wohnungsangebot in {city}" : "Wohnungsangebot";
 
     private static string Head(string title) =>
         "<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">"
         + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"robots\" content=\"noindex, nofollow\">"
-        + $"<title>{Encode(title)} – Latrovu</title>{SiteAssets.HeadLinks}<script src=\"{SiteAssets.HtmxScript}\"></script>"
-        + $"<style>{SiteAssets.FontFaces}{Styles}{ListingChatPanel.Styles}{SeekerViewingPanel.Styles}</style></head><body>";
+        + $"<title>{Encode(title)} – Latrovu</title><meta property=\"og:title\" content=\"{Encode(title)} auf Latrovu\">"
+        + "<meta property=\"og:description\" content=\"Persönlich vermittelt, ohne öffentliches Inserat.\">"
+        + $"{SiteAssets.HeadLinks}<script src=\"{SiteAssets.HtmxScript}\"></script>"
+        + $"<style>{SiteAssets.FontFaces}{Styles}{ListingChatPanel.Styles}{SeekerViewingPanel.Styles}{UnlockDialog.Styles}</style></head><body>";
 
     private static void AppendGallery(StringBuilder html, string token, IReadOnlyList<ListingImageRef> images)
     {

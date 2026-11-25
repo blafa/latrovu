@@ -17,6 +17,7 @@ internal static class SeekerViewingPanel
         .viewings-text small { font-size:13px; color:var(--muted); }
         .viewings-action { flex:none; font-size:13px; font-weight:600; padding:7px 14px; border-radius:16px; background:var(--lime); color:var(--ink); }
         .viewings[open] .viewings-action { background:var(--well); }
+        .viewings .unlock-action, .viewings[open] .unlock-action { font:inherit; font-size:13px; font-weight:600; border:none; background:var(--lime); cursor:pointer; }
         .viewings.booked { background:#EEF8D2; color:#27500A; }
         .viewings.booked .viewings-text small { color:#3B6D11; }
         .viewings.booked .viewings-action { background:none; padding:7px 4px; text-decoration:underline; font-weight:500; color:#27500A; }
@@ -32,7 +33,7 @@ internal static class SeekerViewingPanel
         .viewings-note { margin:8px 0 0; font-size:12px; color:#7A4A07; }
         """;
 
-    public static string Render(string token, ViewingResult result)
+    public static string Render(string token, ViewingResult result, bool locked = false)
     {
         if (result.Slots.Count == 0)
         {
@@ -42,10 +43,12 @@ internal static class SeekerViewingPanel
         ViewingSlot? mine = result.Slots.FirstOrDefault(slot => slot.BookedByMe);
         bool open = result.Outcome == BookingOutcome.Full;
         StringBuilder html = new($"<section id=\"viewings\"><details class=\"viewings{(mine is null ? string.Empty : " booked")}\"{(open ? " open" : string.Empty)}>");
-        html.Append(Summary(result.Slots, mine))
+        html.Append(Summary(result.Slots, mine, locked))
             .Append("<div class=\"viewings-list\">")
-            .Append("<p class=\"viewings-hint\">Bei der Buchung teilen wir dem Anbieter Ihre E-Mail-Adresse für diesen Termin mit.</p>")
-            .AppendJoin(string.Empty, result.Slots.Select(slot => Slot(token, slot)));
+            .Append(locked
+                ? string.Empty
+                : "<p class=\"viewings-hint\">Bei der Buchung teilen wir dem Anbieter Ihre E-Mail-Adresse für diesen Termin mit.</p>")
+            .AppendJoin(string.Empty, result.Slots.Select(slot => locked ? LockedSlot(slot) : Slot(token, slot)));
         if (open)
         {
             html.Append("<p class=\"viewings-note\">Dieser Termin ist leider schon voll. Bitte wählen Sie einen anderen.</p>");
@@ -54,7 +57,7 @@ internal static class SeekerViewingPanel
         return html.Append("</div></details></section>").ToString();
     }
 
-    private static string Summary(IReadOnlyList<ViewingSlot> slots, ViewingSlot? mine)
+    private static string Summary(IReadOnlyList<ViewingSlot> slots, ViewingSlot? mine, bool locked)
     {
         if (mine is not null)
         {
@@ -69,8 +72,11 @@ internal static class SeekerViewingPanel
             1 => $"1 Termin: {SwissTime.Day(free[0])}",
             _ => $"{free.Count} Termine ab {SwissTime.Day(free[0])}"
         };
+        string action = locked
+            ? "<button type=\"button\" class=\"viewings-action unlock-action\" data-unlock>Persönlichen Link anfordern</button>"
+            : "<span class=\"viewings-action\">Termin wählen</span>";
         return $"<summary>{ReviewIcons.Calendar}<span class=\"viewings-text\"><strong>Besichtigung</strong><small>{Encode(detail)}</small></span>"
-            + "<span class=\"viewings-action\">Termin wählen</span></summary>";
+            + $"{action}</summary>";
     }
 
     private static string Slot(string token, ViewingSlot slot)
@@ -83,6 +89,14 @@ internal static class SeekerViewingPanel
             { FreePlaces: 0 } => "<button disabled>Ausgebucht</button>",
             _ => $"<button class=\"book\" hx-post=\"/i/{encodedToken}/viewings/{slot.Id}/book\" hx-target=\"#viewings\" hx-swap=\"outerHTML\" hx-disabled-elt=\"this\">Buchen</button>"
         };
+        return SlotRow(slot, action);
+    }
+
+    private static string LockedSlot(ViewingSlot slot) =>
+        SlotRow(slot, slot.FreePlaces == 0 ? "<span class=\"slot-free\">Ausgebucht</span>" : string.Empty);
+
+    private static string SlotRow(ViewingSlot slot, string action)
+    {
         string free = slot.FreePlaces == 1 ? "1 Platz frei" : $"{slot.FreePlaces} Plätze frei";
         return $"<div class=\"slot\"><div><div class=\"slot-when\">{Encode(SwissTime.Describe(slot))}</div><div class=\"slot-free\">{free}</div></div><div>{action}</div></div>";
     }

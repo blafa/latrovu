@@ -31,7 +31,7 @@ public sealed class ListingChatService(
 
     public async Task<ChatResult> AskAsync(string token, string question, CancellationToken ct)
     {
-        ListingReview? listing = await views.FindAsync(token, ct);
+        ListingReview? listing = await views.FindPersonalAsync(token, ct);
         if (listing is null)
         {
             return new ChatResult(ChatOutcome.NotFound, []);
@@ -65,7 +65,7 @@ public sealed class ListingChatService(
 
     public async Task<ChatResult> ForwardAsync(string token, long answerId, CancellationToken ct)
     {
-        ListingReview? listing = await views.FindAsync(token, ct);
+        ListingReview? listing = await views.FindPersonalAsync(token, ct);
         if (listing is null)
         {
             return new ChatResult(ChatOutcome.NotFound, []);

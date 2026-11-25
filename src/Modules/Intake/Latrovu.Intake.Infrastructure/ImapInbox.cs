@@ -11,6 +11,8 @@ namespace Latrovu.Intake.Infrastructure;
 
 public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> logger) : IMailInbox
 {
+    private const string MessageIdHeader = "Message-ID";
+
     private readonly MailOptions settings = options.Value;
 
     public async Task ProcessPendingAsync(Func<InboundMail, CancellationToken, Task> handleMail, CancellationToken ct)
@@ -32,6 +34,30 @@ public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> 
         }
 
         await client.DisconnectAsync(true, ct);
+    }
+
+    public async Task<int> DeleteProcessedAsync(IReadOnlyCollection<string> messageIds, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(messageIds);
+
+        using ImapClient client = await ConnectAsync(ct);
+        IMailFolder processed = await ProcessedFolderAsync(await OpenFolderAsync(client, ct), ct);
+        await processed.OpenAsync(FolderAccess.ReadWrite, ct);
+        List<UniqueId> matches = [];
+        foreach (string messageId in messageIds)
+        {
+            matches.AddRange(await processed.SearchAsync(SearchQuery.HeaderContains(MessageIdHeader, messageId), ct));
+        }
+
+        if (matches.Count > 0)
+        {
+            await processed.AddFlagsAsync(matches, MessageFlags.Deleted, true, ct);
+            await processed.ExpungeAsync(matches, ct);
+        }
+
+        await client.DisconnectAsync(true, ct);
+        logger.LogInformation("Deleted {DeletedCount} of {RequestedCount} processed mails", matches.Count, messageIds.Count);
+        return matches.Count;
     }
 
     private async Task<IMailFolder> ProcessedFolderAsync(IMailFolder folder, CancellationToken ct)

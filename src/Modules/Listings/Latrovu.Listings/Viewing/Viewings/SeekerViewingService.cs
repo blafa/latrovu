@@ -18,7 +18,7 @@ public sealed class SeekerViewingService(
 
     public async Task<ViewingResult> BookAsync(string token, long slotId, CancellationToken ct)
     {
-        ListingReview? listing = await views.FindAsync(token, ct);
+        ListingReview? listing = await views.FindPersonalAsync(token, ct);
         if (listing is null)
         {
             return ViewingResult.Missing;
@@ -38,7 +38,7 @@ public sealed class SeekerViewingService(
 
     public async Task<ViewingResult> CancelAsync(string token, CancellationToken ct)
     {
-        ListingReview? listing = await views.FindAsync(token, ct);
+        ListingReview? listing = await views.FindPersonalAsync(token, ct);
         if (listing is null)
         {
             return ViewingResult.Missing;

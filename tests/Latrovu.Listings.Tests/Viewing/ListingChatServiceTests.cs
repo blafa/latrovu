@@ -49,6 +49,17 @@ public sealed class ListingChatServiceTests
     }
 
     [Fact]
+    public async Task Ask_SharedLink_IsRefusedAndStoresNothing()
+    {
+        string shared = (await views.ShareAsync(await ApprovedLinkAsync(), CancellationToken.None))!;
+
+        ChatResult result = await service.AskAsync(shared, "Sind Haustiere erlaubt?", CancellationToken.None);
+
+        Assert.Equal(ChatOutcome.NotFound, result.Outcome);
+        Assert.Empty(await chats.GetMessagesAsync(shared, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task Ask_BlankQuestion_IsInvalid()
     {
         string token = await ApprovedLinkAsync();

@@ -29,4 +29,8 @@ public sealed record SeekerTexts(
     string MatchSentOne,
     string MatchesSent,
     string MatchesAlreadySent,
-    string NoMatchesYet);
+    string NoMatchesYet,
+    string AccessSubject,
+    string AccessIntro,
+    string AccessButton,
+    string AccessNote);

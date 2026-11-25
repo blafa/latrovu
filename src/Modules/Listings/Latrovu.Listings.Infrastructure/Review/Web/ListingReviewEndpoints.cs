@@ -18,6 +18,10 @@ public static class ListingReviewEndpoints
     private const string LabelFormKey = "label";
     private const string HtmxRedirectHeader = "HX-Redirect";
     private const string HtmxRefreshHeader = "HX-Refresh";
+    private const string HtmxRetargetHeader = "HX-Retarget";
+    private const string HtmxReswapHeader = "HX-Reswap";
+    private const string WholePageTarget = "body";
+    private const string ReplaceContent = "innerHTML";
     private const string HtmxTrue = "true";
     private const string CheckedFormValue = "true";
     private const string DateFormKey = "date";
@@ -279,13 +283,27 @@ public static class ListingReviewEndpoints
         CancellationToken ct) =>
         ChangeStatusAsync(token, context, access, () => reviews.ApproveAsync(token, ct), ct);
 
-    private static Task<IResult> WithdrawAsync(
+    private static async Task<IResult> WithdrawAsync(
         string token,
         HttpContext context,
         IReviewAccessService access,
         IListingReviewService reviews,
-        CancellationToken ct) =>
-        ChangeStatusAsync(token, context, access, () => reviews.WithdrawAsync(token, ct), ct);
+        CancellationToken ct)
+    {
+        if (!await HasSessionAsync(token, context.Request, access, ct))
+        {
+            return Results.Unauthorized();
+        }
+
+        if (!await reviews.WithdrawAsync(token, ct))
+        {
+            return Html(ListingReviewPage.RenderStatusChange(false));
+        }
+
+        context.Response.Headers[HtmxRetargetHeader] = WholePageTarget;
+        context.Response.Headers[HtmxReswapHeader] = ReplaceContent;
+        return Html(WithdrawnNotice.Render());
+    }
 
     private static async Task<IResult> ChangeStatusAsync(
         string token,

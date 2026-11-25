@@ -10,5 +10,5 @@ public interface IListingReviewStore
 
     Task<bool> ApproveAsync(Guid listingId, CancellationToken ct);
 
-    Task<bool> WithdrawAsync(Guid listingId, CancellationToken ct);
+    Task<WithdrawnListing?> WithdrawAsync(Guid listingId, CancellationToken ct);
 }

@@ -74,6 +74,28 @@ public sealed class EmailSeekerNotifier(
         return messageId;
     }
 
+    public async Task<string?> SendAccessLinkAsync(SeekerAccessLink link, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(link);
+
+        if (link.Channel != EmailChannel)
+        {
+            logger.LogWarning("Channel {Channel} is not supported yet, personal link not sent", link.Channel);
+            return null;
+        }
+
+        SeekerTexts texts = SeekerTextCatalog.For(link.Language);
+        string url = $"{alertOptions.Value.ViewBaseUrl.TrimEnd('/')}{ViewPath}{link.Token}";
+        string messageId = await SendAsync(
+            link.Address,
+            SeekerAccessLinkMail.Subject(link, texts),
+            SeekerAccessLinkMail.Text(link, texts, url),
+            SeekerAccessLinkMail.Html(link, texts, url),
+            ct);
+        logger.LogInformation("Personal link sent in {Language}", link.Language);
+        return messageId;
+    }
+
     public async Task<string?> SendReplyAsync(SeekerReply reply, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(reply);

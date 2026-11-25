@@ -56,6 +56,13 @@ internal static class ReviewIcons
 
     public static readonly string Send = Outline("M10 14l11 -11", "M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5");
 
+    public static readonly string Share = Outline(
+        "M3 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0",
+        "M15 6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0",
+        "M15 18a3 3 0 1 0 6 0a3 3 0 1 0 -6 0",
+        "M8.7 10.7l6.6 -3.4",
+        "M8.7 13.3l6.6 3.4");
+
     public static readonly string CollapseDown = Outline("M6 9l6 6l6 -6");
 
     public static readonly string Trash = Outline(

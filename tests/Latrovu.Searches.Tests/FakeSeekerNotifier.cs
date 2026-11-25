@@ -6,6 +6,14 @@ internal sealed class FakeSeekerNotifier : ISeekerNotifier
 
     public List<SeekerViewingConfirmation> ViewingConfirmations { get; } = [];
 
+    public List<SeekerAccessLink> AccessLinks { get; } = [];
+
+    public Task<string?> SendAccessLinkAsync(SeekerAccessLink link, CancellationToken ct)
+    {
+        AccessLinks.Add(link);
+        return Task.FromResult<string?>(SentReference);
+    }
+
     public Task<string?> SendViewingConfirmationAsync(SeekerViewingConfirmation confirmation, CancellationToken ct)
     {
         ViewingConfirmations.Add(confirmation);

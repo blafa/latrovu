@@ -23,6 +23,14 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource, IOutbox outb
 
     private const string ChangeStatusSql = "UPDATE listings SET status = $2 WHERE id = $1 AND status = ANY($3)";
 
+    private const string LockApprovedSql = "SELECT 1 FROM listings WHERE id = $1 AND status = 'approved' FOR UPDATE";
+
+    private const string ImageKeysSql = "SELECT storage_key FROM listing_images WHERE listing_id = $1";
+
+    private const string SourceMailsSql = "SELECT message_id FROM listing_source_mails WHERE listing_id = $1";
+
+    private const string DeleteSql = "DELETE FROM listings WHERE id = $1";
+
     public async Task<ListingReview?> GetAsync(Guid listingId, CancellationToken ct)
     {
         await using NpgsqlCommand command = dataSource.CreateCommand(SelectListingSql);
@@ -66,8 +74,45 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource, IOutbox outb
     public Task<bool> ApproveAsync(Guid listingId, CancellationToken ct) =>
         ChangeStatusAsync(listingId, ListingReview.ApprovedStatus, [DraftStatus, ListingReview.WithdrawnStatus], new ListingApproved(listingId), ct);
 
-    public Task<bool> WithdrawAsync(Guid listingId, CancellationToken ct) =>
-        ChangeStatusAsync(listingId, ListingReview.WithdrawnStatus, [ListingReview.ApprovedStatus], new ListingWithdrawn(listingId), ct);
+    public async Task<WithdrawnListing?> WithdrawAsync(Guid listingId, CancellationToken ct)
+    {
+        await using NpgsqlConnection connection = await dataSource.OpenConnectionAsync(ct);
+        await using NpgsqlTransaction transaction = await connection.BeginTransactionAsync(ct);
+        if (!await ExistsAsync(connection, transaction, LockApprovedSql, listingId, ct))
+        {
+            return null;
+        }
+
+        List<string> imageKeys = await ReadStringsAsync(connection, transaction, ImageKeysSql, listingId, ct);
+        List<string> sourceMails = await ReadStringsAsync(connection, transaction, SourceMailsSql, listingId, ct);
+        await using NpgsqlCommand delete = new(DeleteSql, connection, transaction);
+        delete.Parameters.Add(new NpgsqlParameter { Value = listingId });
+        await delete.ExecuteNonQueryAsync(ct);
+        await outbox.AddAsync([new ListingWithdrawn(listingId, sourceMails)], transaction, ct);
+        await transaction.CommitAsync(ct);
+        return new WithdrawnListing(imageKeys);
+    }
+
+    private static async Task<bool> ExistsAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string sql, Guid listingId, CancellationToken ct)
+    {
+        await using NpgsqlCommand command = new(sql, connection, transaction);
+        command.Parameters.Add(new NpgsqlParameter { Value = listingId });
+        return await command.ExecuteScalarAsync(ct) is not null;
+    }
+
+    private static async Task<List<string>> ReadStringsAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string sql, Guid listingId, CancellationToken ct)
+    {
+        await using NpgsqlCommand command = new(sql, connection, transaction);
+        command.Parameters.Add(new NpgsqlParameter { Value = listingId });
+        await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(ct);
+        List<string> values = [];
+        while (await reader.ReadAsync(ct))
+        {
+            values.Add(reader.GetString(0));
+        }
+
+        return values;
+    }
 
     private async Task<bool> ChangeStatusAsync(
         Guid listingId,

@@ -87,6 +87,21 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
         CREATE INDEX IF NOT EXISTS ix_listing_chat_messages_pending ON listing_chat_messages (forwarded_at) WHERE forward_status = 'pending';
         ALTER TABLE listing_chat_messages ADD COLUMN IF NOT EXISTS original_text text;
         ALTER TABLE listing_view_links ADD COLUMN IF NOT EXISTS seeker_address varchar(320);
+        ALTER TABLE listing_view_links ADD COLUMN IF NOT EXISTS kind varchar(10) NOT NULL DEFAULT 'personal';
+        CREATE TABLE IF NOT EXISTS listing_access_requests (
+            id          bigserial PRIMARY KEY,
+            token_hash  char(64) NOT NULL,
+            listing_id  uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            address     varchar(320) NOT NULL,
+            created_at  timestamptz NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ix_listing_access_requests_token ON listing_access_requests (token_hash);
+        CREATE INDEX IF NOT EXISTS ix_listing_access_requests_address ON listing_access_requests (lower(address), created_at);
+        CREATE TABLE IF NOT EXISTS listing_source_mails (
+            listing_id  uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            message_id  text NOT NULL,
+            PRIMARY KEY (listing_id, message_id)
+        );
         CREATE TABLE IF NOT EXISTS listing_knowledge (
             id          bigserial PRIMARY KEY,
             listing_id  uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,

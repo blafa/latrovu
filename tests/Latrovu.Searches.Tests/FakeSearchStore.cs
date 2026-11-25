@@ -2,9 +2,15 @@ using Latrovu.Core.Listings;
 
 namespace Latrovu.Searches.Tests;
 
-internal sealed class FakeSearchStore(params Search[] searches) : ISearchStore
+internal sealed class FakeSearchStore(params Search[] initial) : ISearchStore
 {
+    private readonly List<Search> searches = [.. initial];
+
     public Dictionary<string, Guid> SentMessages { get; } = [];
+
+    public List<ViewLinkRequested> PublishedLinks { get; } = [];
+
+    public IReadOnlyList<Search> Searches => searches;
 
     public Task RecordSentMessageAsync(string reference, Guid searchId, CancellationToken ct)
     {
@@ -22,10 +28,20 @@ internal sealed class FakeSearchStore(params Search[] searches) : ISearchStore
         Task.FromResult(searches.FirstOrDefault(search => search.Id == searchId));
 
     public Task<IReadOnlyList<Search>> FindBySeekerAsync(string seekerAddress, CancellationToken ct) =>
-        throw new NotSupportedException();
+        Task.FromResult<IReadOnlyList<Search>>(searches.Where(search => search.SeekerAddress == seekerAddress).ToList());
 
-    public Task SaveAsync(Search search, CancellationToken ct) =>
-        throw new NotSupportedException();
+    public Task SaveAsync(Search search, CancellationToken ct)
+    {
+        searches.RemoveAll(existing => existing.Id == search.Id);
+        searches.Add(search);
+        return Task.CompletedTask;
+    }
+
+    public Task PublishViewLinkAsync(ViewLinkRequested linkRequest, CancellationToken ct)
+    {
+        PublishedLinks.Add(linkRequest);
+        return Task.CompletedTask;
+    }
 
     public Task SetAreaAsync(Guid searchId, IReadOnlyList<PlaceRef> places, CancellationToken ct) =>
         throw new NotSupportedException();
@@ -40,6 +56,9 @@ internal sealed class FakeSearchStore(params Search[] searches) : ISearchStore
         throw new NotSupportedException();
 
     public Task RemoveCandidateAsync(Guid listingId, CancellationToken ct) =>
+        throw new NotSupportedException();
+
+    public Task RemoveAlertsAsync(Guid listingId, CancellationToken ct) =>
         throw new NotSupportedException();
 
     public Task<IReadOnlyList<ListingReadyForMatching>> FindCandidatesForSearchAsync(Guid searchId, int limit, CancellationToken ct) =>
