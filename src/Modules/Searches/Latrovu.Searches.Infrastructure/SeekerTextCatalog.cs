@@ -25,7 +25,10 @@ public static class SeekerTextCatalog
             "Zimmer",
             "Beendet: {0}. Sie erhalten dafür keine Angebote mehr.",
             "Pausiert: {0}. Schreiben Sie uns, wenn es weitergehen soll.",
-            "Wieder aktiv: {0}."),
+            "Wieder aktiv: {0}.",
+            "Antwort zu «{0}»",
+            "Der Anbieter hat Ihre Anfrage zu «{0}» beantwortet:",
+            "Sie können direkt auf diese E-Mail antworten, wir leiten Ihre Nachricht an den Anbieter weiter. Die Antwort finden Sie auch im Chat Ihres Angebots-Links."),
         ["fr"] = new SeekerTexts(
             "Votre recherche de logement avec Latrovu",
             "Bonjour",
@@ -45,7 +48,10 @@ public static class SeekerTextCatalog
             "pièces",
             "Terminé : {0}. Vous ne recevrez plus d’offres pour cela.",
             "En pause : {0}. Écrivez-nous lorsque vous souhaitez reprendre.",
-            "De nouveau actif : {0}."),
+            "De nouveau actif : {0}.",
+            "Réponse concernant « {0} »",
+            "Le fournisseur a répondu à votre demande concernant « {0} » :",
+            "Vous pouvez répondre directement à cet e-mail, nous transmettons votre message au fournisseur. La réponse figure aussi dans le chat de votre lien."),
         ["it"] = new SeekerTexts(
             "La sua ricerca di casa con Latrovu",
             "Buongiorno",
@@ -65,7 +71,10 @@ public static class SeekerTextCatalog
             "locali",
             "Terminato: {0}. Non riceverà più offerte per questo.",
             "In pausa: {0}. Ci scriva quando vuole riprendere.",
-            "Di nuovo attivo: {0}."),
+            "Di nuovo attivo: {0}.",
+            "Risposta su «{0}»",
+            "L'offerente ha risposto alla sua richiesta su «{0}»:",
+            "Può rispondere direttamente a questa e-mail, inoltreremo il suo messaggio all'offerente. La risposta si trova anche nella chat del suo link."),
         ["en"] = new SeekerTexts(
             "Your home search with Latrovu",
             "Hello",
@@ -85,7 +94,10 @@ public static class SeekerTextCatalog
             "rooms",
             "Stopped: {0}. You will no longer receive listings for it.",
             "Paused: {0}. Write to us when you want to continue.",
-            "Active again: {0}.")
+            "Active again: {0}.",
+            "Answer about “{0}”",
+            "The provider has answered your request about “{0}”:",
+            "You can reply directly to this email and we'll pass your message on to the provider. The answer is also in the chat of your listing link.")
     };
 
     public static SeekerTexts For(string language) =>

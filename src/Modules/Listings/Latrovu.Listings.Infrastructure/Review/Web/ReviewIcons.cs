@@ -58,6 +58,22 @@ internal static class ReviewIcons
 
     public static readonly string CollapseDown = Outline("M6 9l6 6l6 -6");
 
+    public static readonly string Trash = Outline(
+        "M4 7l16 0",
+        "M10 11l0 6",
+        "M14 11l0 6",
+        "M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12",
+        "M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3");
+
+    public static readonly string Calendar = Outline(
+        "M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z",
+        "M16 3v4",
+        "M8 3v4",
+        "M4 11h16");
+
+    public static readonly string Conversation = Outline(
+        "M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1");
+
     public static readonly string Document = Outline(
         "M14 3v4a1 1 0 0 0 1 1h4",
         "M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2",

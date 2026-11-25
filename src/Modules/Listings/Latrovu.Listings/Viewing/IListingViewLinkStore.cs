@@ -4,7 +4,7 @@ public interface IListingViewLinkStore
 {
     Task<string> CreateAsync(Guid listingId, Guid? searchId, DateTimeOffset expiresAt, CancellationToken ct);
 
-    Task CreateFromHashAsync(Guid listingId, Guid searchId, string tokenHash, DateTimeOffset expiresAt, CancellationToken ct);
+    Task CreateFromHashAsync(Guid listingId, Guid searchId, string tokenHash, DateTimeOffset expiresAt, string? seekerAddress, CancellationToken ct);
 
     Task<Guid?> FindListingIdAsync(string token, DateTimeOffset now, CancellationToken ct);
 

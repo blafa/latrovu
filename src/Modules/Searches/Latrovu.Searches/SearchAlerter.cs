@@ -17,7 +17,7 @@ public sealed class SearchAlerter(
         ArgumentNullException.ThrowIfNull(listing);
 
         string token = SecureTokens.Create();
-        ViewLinkRequested linkRequest = new(listing.ListingId, search.Id, SecureTokens.Hash(token), timeProvider.GetUtcNow() + LinkValidity);
+        ViewLinkRequested linkRequest = new(listing.ListingId, search.Id, SecureTokens.Hash(token), timeProvider.GetUtcNow() + LinkValidity, search.SeekerAddress);
         if (!await searches.RecordAlertAsync(linkRequest, ct))
         {
             logger.LogInformation("Search {SearchId} was already alerted for listing {ListingId}", search.Id, listing.ListingId);

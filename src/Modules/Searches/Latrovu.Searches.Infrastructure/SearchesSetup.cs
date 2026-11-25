@@ -28,6 +28,7 @@ public static class SearchesSetup
         services.AddMessageHandler<SearchRequestReceived, SearchRequestHandler>();
         services.AddMessageHandler<ListingReadyForMatching, ListingMatchingHandler>();
         services.AddMessageHandler<ListingWithdrawn, ListingWithdrawnHandler>();
+        services.AddMessageHandler<AgentAnswered, AgentAnsweredHandler>();
         return services;
     }
 }

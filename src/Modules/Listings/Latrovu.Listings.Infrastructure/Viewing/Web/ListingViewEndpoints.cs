@@ -1,5 +1,6 @@
 using Latrovu.BuildingBlocks.Storage;
 using Latrovu.Listings.Viewing.Chat;
+using Latrovu.Listings.Viewing.Viewings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -9,6 +10,8 @@ namespace Latrovu.Listings.Infrastructure.Viewing.Web;
 public static class ListingViewEndpoints
 {
     public const string RateLimitPolicy = "listing-views";
+    public const string ImageRateLimitPolicy = "listing-images";
+    private const string ImageCacheControl = "private, max-age=86400";
     private const string HtmlContentType = "text/html; charset=utf-8";
     private const string RobotsHeader = "X-Robots-Tag";
     private const string NoIndex = "noindex, nofollow";
@@ -23,7 +26,9 @@ public static class ListingViewEndpoints
         views.MapGet(string.Empty, ShowAsync);
         views.MapPost("/chat", AskAsync);
         views.MapPost("/forward", ForwardAsync);
-        views.MapGet("/images/{position:int}", ImageAsync);
+        views.MapPost("/viewings/{slotId:long}/book", BookViewingAsync);
+        views.MapPost("/viewings/cancel", CancelViewingAsync);
+        app.MapGroup("/i/{token}/images").RequireRateLimiting(ImageRateLimitPolicy).MapGet("/{position:int}", ImageAsync);
         return app;
     }
 
@@ -32,6 +37,7 @@ public static class ListingViewEndpoints
         HttpResponse response,
         IListingViewService views,
         ListingChatService chat,
+        SeekerViewingService viewings,
         CancellationToken ct)
     {
         response.Headers[RobotsHeader] = NoIndex;
@@ -41,17 +47,56 @@ public static class ListingViewEndpoints
             return Results.Content(ListingViewPage.RenderUnavailable(), HtmlContentType, statusCode: StatusCodes.Status404NotFound);
         }
 
-        return Results.Content(ListingViewPage.Render(token, listing, await chat.GetAsync(token, ct)), HtmlContentType);
+        return Results.Content(
+            ListingViewPage.Render(token, listing, await chat.GetAsync(token, ct), await viewings.GetAsync(token, ct)),
+            HtmlContentType);
     }
 
-    private static async Task<IResult> AskAsync(string token, HttpRequest request, ListingChatService chat, CancellationToken ct)
+    private static async Task<IResult> BookViewingAsync(
+        string token,
+        long slotId,
+        HttpResponse response,
+        SeekerViewingService viewings,
+        ListingChatService chat,
+        CancellationToken ct)
+    {
+        response.Headers[RobotsHeader] = NoIndex;
+        ViewingResult result = await viewings.BookAsync(token, slotId, ct);
+        if (!result.Found)
+        {
+            return Results.NotFound();
+        }
+
+        string chatUpdate = ListingChatPanel.Render(token, await chat.GetAsync(token, ct))
+            .Replace("<section id=\"chat\"", "<section hx-swap-oob=\"true\" id=\"chat\"", StringComparison.Ordinal);
+        return Results.Content(SeekerViewingPanel.Render(token, result) + chatUpdate, HtmlContentType);
+    }
+
+    private static async Task<IResult> CancelViewingAsync(string token, HttpResponse response, SeekerViewingService viewings, CancellationToken ct)
+    {
+        response.Headers[RobotsHeader] = NoIndex;
+        ViewingResult result = await viewings.CancelAsync(token, ct);
+        return result.Found ? Results.Content(SeekerViewingPanel.Render(token, result), HtmlContentType) : Results.NotFound();
+    }
+
+    private static async Task<IResult> AskAsync(
+        string token,
+        HttpRequest request,
+        ListingChatService chat,
+        SeekerViewingService viewings,
+        CancellationToken ct)
     {
         request.HttpContext.Response.Headers[RobotsHeader] = NoIndex;
         IFormCollection form = await request.ReadFormAsync(ct);
         ChatResult result = await chat.AskAsync(token, form[QuestionFormKey].ToString(), ct);
-        return result.Outcome == ChatOutcome.NotFound
-            ? Results.NotFound()
-            : Results.Content(ListingChatPanel.Render(token, result), HtmlContentType);
+        if (result.Outcome == ChatOutcome.NotFound)
+        {
+            return Results.NotFound();
+        }
+
+        string viewingsUpdate = SeekerViewingPanel.Render(token, await viewings.GetAsync(token, ct))
+            .Replace("<section id=\"viewings\"", "<section hx-swap-oob=\"true\" id=\"viewings\"", StringComparison.Ordinal);
+        return Results.Content(ListingChatPanel.Render(token, result) + viewingsUpdate, HtmlContentType);
     }
 
     private static async Task<IResult> ForwardAsync(string token, HttpRequest request, ListingChatService chat, CancellationToken ct)
@@ -81,6 +126,12 @@ public static class ListingViewEndpoints
         ListingReview? listing = await views.FindAsync(token, ct);
         ListingImageRef? image = listing?.Images.FirstOrDefault(candidate => candidate.Position == position);
         StoredObject? stored = image is null ? null : await storage.GetAsync(image.StorageKey, ct);
-        return stored is null ? Results.NotFound() : Results.File(stored.Content, stored.ContentType);
+        if (stored is null)
+        {
+            return Results.NotFound();
+        }
+
+        response.Headers.CacheControl = ImageCacheControl;
+        return Results.File(stored.Content, stored.ContentType);
     }
 }

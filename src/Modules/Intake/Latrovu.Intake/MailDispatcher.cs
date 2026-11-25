@@ -4,11 +4,20 @@ public sealed class MailDispatcher(
     IMailRouter router,
     ISubmissionForwarder forwarder,
     ISearchRequestForwarder searchForwarder,
+    IAgentReplyForwarder agentReplyForwarder,
     ILogger<MailDispatcher> logger) : IMailDispatcher
 {
     public async Task DispatchAsync(InboundMail mail, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(mail);
+
+        string? reference = AgentReplyReference.Find(mail.Subject);
+        if (reference is not null)
+        {
+            logger.LogInformation("Dispatching mail {MessageId} as agent reply {Reference}", mail.MessageId, reference);
+            await agentReplyForwarder.ForwardAsync(mail, reference, ct);
+            return;
+        }
 
         MailKind kind = router.Classify(mail.Recipients);
         logger.LogInformation(

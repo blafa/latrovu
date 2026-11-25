@@ -13,24 +13,38 @@ public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> 
 {
     private readonly MailOptions settings = options.Value;
 
-    public async Task ProcessUnreadAsync(Func<InboundMail, CancellationToken, Task> handleMail, CancellationToken ct)
+    public async Task ProcessPendingAsync(Func<InboundMail, CancellationToken, Task> handleMail, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(handleMail);
 
         using ImapClient client = await ConnectAsync(ct);
         IMailFolder folder = await OpenFolderAsync(client, ct);
-        IList<UniqueId> unread = await folder.SearchAsync(SearchQuery.NotSeen, ct);
-        logger.LogDebug("Found {UnreadCount} unread mails in {Folder}", unread.Count, settings.Folder);
+        IMailFolder processed = await ProcessedFolderAsync(folder, ct);
+        IList<UniqueId> pending = await folder.SearchAsync(SearchQuery.All, ct);
+        logger.LogDebug("Found {PendingCount} pending mails in {Folder}", pending.Count, settings.Folder);
 
-        foreach (UniqueId uid in unread)
+        foreach (UniqueId uid in pending)
         {
             MimeMessage message = await folder.GetMessageAsync(uid, ct);
             InboundMail mail = await ToInboundMailAsync(message, ct);
             await handleMail(mail, ct);
-            await folder.AddFlagsAsync(uid, MessageFlags.Seen, true, ct);
+            await folder.MoveToAsync(uid, processed, ct);
         }
 
         await client.DisconnectAsync(true, ct);
+    }
+
+    private async Task<IMailFolder> ProcessedFolderAsync(IMailFolder folder, CancellationToken ct)
+    {
+        try
+        {
+            return await folder.GetSubfolderAsync(settings.ProcessedFolder, ct);
+        }
+        catch (FolderNotFoundException)
+        {
+            logger.LogInformation("Creating folder {Folder}/{ProcessedFolder}", settings.Folder, settings.ProcessedFolder);
+            return await folder.CreateAsync(settings.ProcessedFolder, true, ct);
+        }
     }
 
     private async Task<ImapClient> ConnectAsync(CancellationToken ct)

@@ -17,6 +17,10 @@ public sealed record ChatMessage(
     public const string DataSource = "data";
     public const string LatrovuSource = "latrovu";
     public const string RequestSource = "request";
+    public const string TranslatedSource = "translated";
+    public const string ProviderSource = "provider";
+    public const string ViewingsSource = "viewings";
+    public const string BookingSource = "booking";
     public const string UnknownSource = "unknown";
 
     public const string ForwardPending = "pending";

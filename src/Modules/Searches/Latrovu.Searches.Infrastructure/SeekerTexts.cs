@@ -19,4 +19,7 @@ public sealed record SeekerTexts(
     string Rooms,
     string StoppedSummary,
     string PausedSummary,
-    string ResumedSummary);
+    string ResumedSummary,
+    string AgentAnswerSubject,
+    string AgentAnswerIntro,
+    string AgentAnswerNote);

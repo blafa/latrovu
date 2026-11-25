@@ -22,6 +22,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapDevImport();
     app.MapDevSearch();
+    app.MapDevMail();
 }
 
 app.Run();

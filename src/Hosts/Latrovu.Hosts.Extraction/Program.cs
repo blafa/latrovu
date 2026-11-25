@@ -27,7 +27,8 @@ builder.Services
     .AddMessageConsuming(
         builder.Configuration,
         InputQueue,
-        [typeof(SubmissionReceived), typeof(SearchRequestReceived), typeof(ListingApproved), typeof(ListingReadyForMatching), typeof(ViewLinkRequested), typeof(ListingWithdrawn)]);
+        [typeof(SubmissionReceived), typeof(SearchRequestReceived), typeof(ListingApproved), typeof(ListingReadyForMatching), typeof(ViewLinkRequested), typeof(ListingWithdrawn),
+            typeof(AgentReplyReceived), typeof(AgentAnswered)]);
 
 IHost host = builder.Build();
 host.Run();

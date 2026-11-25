@@ -12,6 +12,8 @@ public sealed class SearchStore(NpgsqlDataSource dataSource, IOutbox outbox) : I
 
     private const string SelectSql = $"SELECT {SearchColumns} FROM searches s WHERE s.seeker_address = $1 ORDER BY s.created_at";
 
+    private const string SelectByIdSql = $"SELECT {SearchColumns} FROM searches s WHERE s.id = $1";
+
     private static readonly string MatchSql = $"""
         SELECT {SearchColumns}
         FROM searches s
@@ -110,6 +112,13 @@ public sealed class SearchStore(NpgsqlDataSource dataSource, IOutbox outbox) : I
         command.Parameters.Add(Nullable(listing.LivingAreaM2, NpgsqlDbType.Numeric));
         command.Parameters.Add(new NpgsqlParameter { Value = listing.ListingId });
         return await ReadSearchesAsync(command, ct);
+    }
+
+    public async Task<Search?> FindByIdAsync(Guid searchId, CancellationToken ct)
+    {
+        await using NpgsqlCommand command = dataSource.CreateCommand(SelectByIdSql);
+        command.Parameters.Add(new NpgsqlParameter { Value = searchId });
+        return (await ReadSearchesAsync(command, ct)).FirstOrDefault();
     }
 
     public async Task<bool> RecordAlertAsync(ViewLinkRequested linkRequest, CancellationToken ct)

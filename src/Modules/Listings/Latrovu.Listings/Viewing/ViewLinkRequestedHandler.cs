@@ -11,7 +11,7 @@ public sealed class ViewLinkRequestedHandler(
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        await links.CreateFromHashAsync(message.ListingId, message.SearchId, message.TokenHash, message.ExpiresAt, ct);
+        await links.CreateFromHashAsync(message.ListingId, message.SearchId, message.TokenHash, message.ExpiresAt, message.SeekerAddress, ct);
         logger.LogInformation("View link stored for listing {ListingId} and search {SearchId}", message.ListingId, message.SearchId);
     }
 }

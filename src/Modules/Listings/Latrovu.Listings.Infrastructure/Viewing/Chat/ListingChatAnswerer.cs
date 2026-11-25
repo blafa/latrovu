@@ -14,26 +14,34 @@ public sealed class ListingChatAnswerer(ILlmClient llm, ILogger<ListingChatAnswe
     private const int MaxAnswerTokens = 400;
     private const string RequestKind = "request";
     private const string ContactKind = "contact";
+    private const string BookKind = "book";
 
     private const string SystemPrompt = """
         You answer questions from a person interested in one property listing in Switzerland, on behalf of Latrovu.
-        You receive the listing data as JSON and the text of the agent's exposé, page by page.
+        You receive the listing data as JSON, earlier answers of the provider, and the text of the agent's exposé.
 
         First decide the kind of message:
         - "request": the person asks us to do something: contact the provider, arrange or request a viewing, pass on a
           message, an offer or documents, call back. Even if the exposé explains how viewings work, it is a request.
+          Exception: if the provider's earlier answers list free viewing slots, a wish to visit is a "question": answer
+          with the free slots and say that they can be booked directly on this page.
+        - "book": the person clearly picks one of the listed free viewing slots (by day, time or number). Set slot to
+          that slot's number (the digits after #) and write one short sentence confirming that the viewing at that time
+          is booked and the provider is informed. If it is unclear which slot is meant, use "question" instead.
         - "contact": the person asks for names, phone numbers, email addresses or other contact details.
         - "question": everything else.
 
         For "question":
-        - Answer only from the listing data and the exposé text. Never invent or guess facts.
+        - Answer only from the provider's earlier answers, the listing data and the exposé text. Never invent or guess.
+          Prefer the provider's earlier answers when they cover the question.
         - If the answer is not clearly there, set source to "unknown" and write one short sentence saying that this is
           not mentioned in the exposé.
         - Never name the provider, the agency, a company or a person; say "the provider". Never tell the person to
           contact anyone directly.
         - No legal, tax or financial advice.
-        - source: "expose" (then page = page number), "data", or "unknown".
-        For "request" and "contact" leave answer empty, source "unknown", page null.
+        - source: "viewings" (the answer lists viewing slots; name them by day and time, never by number), "provider"
+          (from an earlier answer of the provider), "expose" (then page = page number), "data", or "unknown".
+        For "request" and "contact" leave answer empty, source "unknown", page null. slot is null unless kind is "book".
 
         language: ISO 639-1 code of the message language. Answer in that language, briefly (one to three sentences),
         formally (Sie, vous, Lei).
@@ -43,25 +51,27 @@ public sealed class ListingChatAnswerer(ILlmClient llm, ILogger<ListingChatAnswe
         {
           "type": "object",
           "properties": {
-            "kind": { "enum": ["question", "request", "contact"] },
+            "kind": { "enum": ["question", "request", "contact", "book"] },
             "language": { "type": "string" },
             "answer": { "type": "string", "maxLength": 600 },
-            "source": { "enum": ["expose", "data", "unknown"] },
-            "page": { "type": ["integer", "null"] }
+            "source": { "enum": ["viewings", "provider", "expose", "data", "unknown"] },
+            "page": { "type": ["integer", "null"] },
+            "slot": { "type": ["integer", "null"] }
           },
-          "required": ["kind", "language", "answer", "source", "page"]
+          "required": ["kind", "language", "answer", "source", "page", "slot"]
         }
         """), MaxAnswerTokens);
 
     public async Task<ChatAnswer?> AnswerAsync(
         string listingDataJson,
         IReadOnlyList<string> pages,
+        IReadOnlyList<KnowledgeEntry> knowledge,
         IReadOnlyList<ChatMessage> history,
         string question,
         CancellationToken ct)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        string? reply = await llm.CompleteAsync(SystemPrompt, UserContent(listingDataJson, pages, history, question), Schema, ct);
+        string? reply = await llm.CompleteAsync(SystemPrompt, UserContent(listingDataJson, pages, knowledge, history, question), Schema, ct);
         logger.LogInformation("Chat answer generated in {ElapsedMs} ms", stopwatch.ElapsedMilliseconds);
         return reply is null ? null : Parse(reply, pages.Count, ContactRedactor.FromListingData(listingDataJson));
     }
@@ -91,6 +101,9 @@ public sealed class ListingChatAnswerer(ILlmClient llm, ILogger<ListingChatAnswe
         {
             RequestKind => new ChatAnswer(ChatReplyTexts.RequestForwarded(language), ChatMessage.RequestSource, null),
             ContactKind => new ChatAnswer(ChatReplyTexts.ContactViaLatrovu(language), ChatMessage.LatrovuSource, null),
+            BookKind when root["slot"]?.GetValue<long>() is { } slot => Answer(root, pageCount, redactor, language) is { } confirmation
+                ? confirmation with { Source = ChatMessage.BookingSource, Page = null, SlotId = slot }
+                : null,
             _ => Answer(root, pageCount, redactor, language)
         };
     }
@@ -107,9 +120,20 @@ public sealed class ListingChatAnswerer(ILlmClient llm, ILogger<ListingChatAnswe
         return new ChatAnswer(redactor.Redact(text.Trim(), ChatReplyTexts.Provider(language)), source, page is >= 1 && page <= pageCount ? page : null);
     }
 
-    private static string UserContent(string listingDataJson, IReadOnlyList<string> pages, IReadOnlyList<ChatMessage> history, string question)
+    private static string UserContent(
+        string listingDataJson,
+        IReadOnlyList<string> pages,
+        IReadOnlyList<KnowledgeEntry> knowledge,
+        IReadOnlyList<ChatMessage> history,
+        string question)
     {
-        StringBuilder content = new($"Listing data:\n{listingDataJson}\n\nExposé:\n");
+        StringBuilder content = new($"Listing data:\n{listingDataJson}\n\nEarlier answers of the provider:\n");
+        foreach (KnowledgeEntry entry in knowledge)
+        {
+            content.Append(CultureInfo.InvariantCulture, $"Q: {entry.Question}\nA: {entry.Answer}\n");
+        }
+
+        content.Append("\nExposé:\n");
         for (int index = 0; index < pages.Count; index++)
         {
             content.Append(CultureInfo.InvariantCulture, $"=== Page {index + 1} ===\n{pages[index]}\n");

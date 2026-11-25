@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Latrovu.BuildingBlocks.Pdf;
 using Latrovu.Core.Submissions;
 
@@ -48,6 +49,13 @@ public sealed class ListingIntake(
     private async Task<Guid?> ProcessPdfAsync(Submission message, SubmittedFile pdf, CancellationToken ct)
     {
         IReadOnlyList<string> pages = pdfReader.ReadPages(pdf.Content);
+        string sourceHash = Convert.ToHexString(SHA256.HashData(pdf.Content));
+        if (await store.FindActiveBySourceAsync(message.Sender, sourceHash, ct) is { } existingId)
+        {
+            await ReuseExistingAsync(existingId, pdf, pages, ct);
+            return null;
+        }
+
         DocumentClassification classification = await classifier.ClassifyAsync(string.Join(PageSeparator, pages), ct);
         if (!classification.IsListing)
         {
@@ -60,13 +68,20 @@ public sealed class ListingIntake(
             logger.LogWarning("{FileName} contains several units, extracting it as one listing for now", pdf.FileName);
         }
 
-        return await ExtractAndStoreAsync(message, pdf, pages, ct);
+        return await ExtractAndStoreAsync(message, pdf, pages, sourceHash, ct);
     }
 
-    private async Task<Guid> ExtractAndStoreAsync(Submission message, SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
+    private async Task ReuseExistingAsync(Guid listingId, SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
+    {
+        await store.FillMissingSourcePagesAsync(listingId, pages, ct);
+        string token = await accessTokens.CreateAsync(listingId, ct);
+        logger.LogInformation("{FileName} is already listing {ListingId}, no copy created, review at /review/{Token}", pdf.FileName, listingId, token);
+    }
+
+    private async Task<Guid> ExtractAndStoreAsync(Submission message, SubmittedFile pdf, IReadOnlyList<string> pages, string sourceHash, CancellationToken ct)
     {
         ListingExtraction? extraction = await extractor.ExtractAsync(pages, ct);
-        NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction, pages);
+        NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction, pages, sourceHash);
         Guid listingId = await store.AddAsync(listing, ct);
         string token = await accessTokens.CreateAsync(listingId, ct);
         logger.LogInformation("Stored listing {ListingId} from {FileName}, review at /review/{Token}", listingId, pdf.FileName, token);

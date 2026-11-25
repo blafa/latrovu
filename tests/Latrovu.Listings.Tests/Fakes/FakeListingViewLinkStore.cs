@@ -14,7 +14,7 @@ internal sealed class FakeListingViewLinkStore : IListingViewLinkStore
         return Task.FromResult(token);
     }
 
-    public Task CreateFromHashAsync(Guid listingId, Guid searchId, string tokenHash, DateTimeOffset expiresAt, CancellationToken ct)
+    public Task CreateFromHashAsync(Guid listingId, Guid searchId, string tokenHash, DateTimeOffset expiresAt, string? seekerAddress, CancellationToken ct)
     {
         links[tokenHash] = (listingId, expiresAt);
         return Task.CompletedTask;

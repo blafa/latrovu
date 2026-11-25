@@ -7,6 +7,7 @@ public sealed class MailOptions
     public const string SectionName = "Mail";
     public const int DefaultImapsPort = 993;
     public const string DefaultFolder = "Latrovu-Bot";
+    public const string DefaultProcessedFolder = "Erledigt";
     public const int DefaultPollIntervalSeconds = 60;
     public const int MinPollIntervalSeconds = 5;
     public const int MaxPollIntervalSeconds = 3600;
@@ -23,6 +24,9 @@ public sealed class MailOptions
     public string Password { get; init; } = string.Empty;
 
     public string Folder { get; init; } = DefaultFolder;
+
+    [Required]
+    public string ProcessedFolder { get; init; } = DefaultProcessedFolder;
 
     [Range(MinPollIntervalSeconds, MaxPollIntervalSeconds)]
     public int PollIntervalSeconds { get; init; } = DefaultPollIntervalSeconds;

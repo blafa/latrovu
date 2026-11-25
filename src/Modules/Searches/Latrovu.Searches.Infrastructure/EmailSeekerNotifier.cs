@@ -40,6 +40,29 @@ public sealed class EmailSeekerNotifier(
         logger.LogInformation("Alert for listing {ListingId} sent in {Language}", alert.Listing.ListingId, alert.Language);
     }
 
+    public async Task SendAgentAnswerAsync(SeekerAgentAnswer answer, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(answer);
+
+        if (answer.Channel != EmailChannel)
+        {
+            logger.LogWarning("Channel {Channel} is not supported yet, agent answer not sent", answer.Channel);
+            return;
+        }
+
+        SeekerTexts texts = SeekerTextCatalog.For(answer.Language);
+        await emailSender.SendAsync(
+            new EmailMessage(
+                answer.Address,
+                SeekerAgentAnswerMail.Subject(answer, texts),
+                SeekerAgentAnswerMail.Text(answer, texts),
+                SeekerAgentAnswerMail.Html(answer, texts),
+                alertOptions.Value.ReplyToAddress,
+                EmailBranding.InlineImages),
+            ct);
+        logger.LogInformation("Agent answer sent in {Language}", answer.Language);
+    }
+
     public async Task SendReplyAsync(SeekerReply reply, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(reply);

@@ -12,6 +12,8 @@ public interface ISearchStore
 
     Task<IReadOnlyList<Search>> FindMatchesAsync(ListingReadyForMatching listing, CancellationToken ct);
 
+    Task<Search?> FindByIdAsync(Guid searchId, CancellationToken ct);
+
     Task<bool> RecordAlertAsync(ViewLinkRequested linkRequest, CancellationToken ct);
 
     Task SaveCandidateAsync(ListingReadyForMatching listing, CancellationToken ct);

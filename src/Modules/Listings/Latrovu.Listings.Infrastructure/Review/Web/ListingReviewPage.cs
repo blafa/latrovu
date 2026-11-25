@@ -1,11 +1,58 @@
 using System.Net;
 using System.Text;
+using Latrovu.Listings.Viewing.Chat;
+using Latrovu.Listings.Viewing.Viewings;
 
 namespace Latrovu.Listings.Infrastructure.Review.Web;
 
 public static class ListingReviewPage
 {
     private const string PageTitle = "Inserat prüfen";
+
+    private const string TabStyles = """
+        <style>
+        .tabs-bar { position:sticky; top:var(--topbar); z-index:4; background:var(--canvas); border-bottom:1px solid var(--line); }
+        .tabs-inner { max-width:1360px; margin:0 auto; padding:0 24px; display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; }
+        .tabs-inner::-webkit-scrollbar { display:none; }
+        .tab { flex:none; display:inline-flex; align-items:center; gap:6px; padding:12px 14px 10px; border:none; border-bottom:2px solid transparent;
+               background:none; font-size:14px; font-weight:500; color:var(--muted); }
+        .tab[aria-selected="true"] { color:var(--ink); border-bottom-color:var(--ink); }
+        .tab .icon { width:18px; height:18px; }
+        .tab-count { min-width:18px; padding:0 6px; border-radius:9px; background:var(--lime); color:#173404; font-size:11px; font-weight:600; line-height:18px; text-align:center; }
+        .tab-panel { max-width:1360px; margin:0 auto; padding:16px 24px 48px; }
+        </style>
+        """;
+
+    private const string TabScript = """
+        <script>
+        function showTab(name) {
+            const panels = [...document.querySelectorAll('[data-tab-panel]')];
+            const target = panels.find(panel => panel.dataset.tabPanel === name) ? name : 'details';
+            panels.forEach(panel => panel.hidden = panel.dataset.tabPanel !== target);
+            document.querySelectorAll('[data-tab]').forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.tab === target)));
+            const url = new URL(location.href);
+            if (target === 'details') { url.searchParams.delete('tab'); } else { url.searchParams.set('tab', target); }
+            history.replaceState(null, '', url);
+        }
+        document.addEventListener('click', event => { const tab = event.target.closest('[data-tab]'); if (tab) { showTab(tab.dataset.tab); } });
+        document.addEventListener('click', event => {
+            const pick = event.target.closest('.date-pick');
+            if (!pick) { return; }
+            event.preventDefault();
+            const native = pick.parentElement.querySelector('.date-native');
+            native.min = new Date().toISOString().slice(0, 10);
+            native.showPicker ? native.showPicker() : native.click();
+        });
+        function fillPickedDate(event) {
+            if (!event.target.matches('.date-native') || !event.target.value) { return; }
+            const [year, month, day] = event.target.value.split('-');
+            event.target.parentElement.querySelector('input[name=date]').value = `${day}.${month}.${year}`;
+        }
+        document.addEventListener('change', fillPickedDate);
+        document.addEventListener('input', fillPickedDate);
+        showTab(new URLSearchParams(location.search).get('tab') || 'details');
+        </script>
+        """;
 
     private const string PageScript = """
         <script>
@@ -100,17 +147,22 @@ public static class ListingReviewPage
         </script>
         """;
 
-    public static string Render(string token, ListingReview review)
+    public static string Render(string token, ListingReview review, IReadOnlyList<KnowledgeEntry> knowledge, ViewingResult viewings)
     {
         ReviewModel model = ReviewModel.From(token, review);
 
         StringBuilder html = new();
         ReviewLayout.AppendHead(html, PageTitle);
         AppendTopBar(html, model);
-        html.Append("<main class=\"workspace\">");
+        AppendTabs(html, viewings.Slots.Sum(slot => slot.Booked), knowledge.Count);
+        html.Append("<main class=\"workspace\" id=\"tab-details\" data-tab-panel=\"details\">");
         ReviewSummary.Append(html, model);
         ReviewContextPane.Append(html, model);
-        html.Append("</main>").Append(PageScript);
+        html.Append("</main>")
+            .Append("<div class=\"tab-panel\" data-tab-panel=\"viewings\" hidden>").Append(AgentViewingPanel.Render(token, viewings)).Append("</div>")
+            .Append("<div class=\"tab-panel\" data-tab-panel=\"answers\" hidden>").Append(ReviewKnowledgePanel.Render(token, knowledge)).Append("</div>")
+            .Append(TabScript)
+            .Append(PageScript);
         ReviewLayout.AppendEnd(html);
         return html.ToString();
     }
@@ -125,6 +177,19 @@ public static class ListingReviewPage
 
     public static string RenderStatusChange(bool changed) =>
         changed ? "Gespeichert" : "Der Status konnte nicht geändert werden";
+
+    private static void AppendTabs(StringBuilder html, int bookings, int answers) =>
+        html.Append(TabStyles)
+            .Append("<nav class=\"tabs-bar\" aria-label=\"Bereiche\"><div class=\"tabs-inner\" role=\"tablist\">")
+            .Append(Tab("details", ReviewIcons.Document, "Angaben", 0))
+            .Append(Tab("viewings", ReviewIcons.Calendar, "Besichtigungen", bookings))
+            .Append(Tab("answers", ReviewIcons.Conversation, "Fragen & Antworten", answers))
+            .Append("</div></nav>");
+
+    private static string Tab(string name, string icon, string label, int count) =>
+        $"<button type=\"button\" class=\"tab\" role=\"tab\" data-tab=\"{name}\" aria-selected=\"false\">{icon}{Encode(label)}"
+        + (count > 0 ? $"<span class=\"tab-count\">{count}</span>" : string.Empty)
+        + "</button>";
 
     private static void AppendTopBar(StringBuilder html, ReviewModel model)
     {

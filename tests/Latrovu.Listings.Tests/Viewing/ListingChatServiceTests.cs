@@ -12,13 +12,14 @@ public sealed class ListingChatServiceTests
     private readonly FakeListingViewLinkStore links = new();
     private readonly FakeListingChatStore chats = new();
     private readonly FakeChatAnswerer answerer = new();
+    private readonly FakeViewingStore viewingSlots = new();
     private readonly ListingChatService service;
     private readonly ListingViewService views;
 
     public ListingChatServiceTests()
     {
         views = new ListingViewService(links, listings, time, NullLogger<ListingViewService>.Instance);
-        service = new ListingChatService(views, chats, answerer, answerer, time, NullLogger<ListingChatService>.Instance);
+        service = new ListingChatService(views, chats, answerer, answerer, viewingSlots, viewingSlots, answerer, time, NullLogger<ListingChatService>.Instance);
     }
 
     [Fact]
@@ -100,6 +101,56 @@ public sealed class ListingChatServiceTests
         ChatResult result = await service.AskAsync(token, "Bitte vereinbaren Sie eine Besichtigung", CancellationToken.None);
 
         Assert.Equal(ChatMessage.ForwardPending, result.Messages[1].ForwardStatus);
+    }
+
+    [Fact]
+    public async Task Ask_ProviderKnowledge_IsPassedToAnswerer()
+    {
+        string token = await ApprovedLinkAsync();
+        answerer.Knowledge.Add(new KnowledgeEntry(1, "Haustiere?", "Katzen sind erlaubt.", time.GetUtcNow()));
+
+        await service.AskAsync(token, "Dürfen Katzen mit?", CancellationToken.None);
+
+        Assert.Single(answerer.LastKnowledge);
+    }
+
+    [Fact]
+    public async Task Ask_WithFreeViewingSlots_PassesThemAsKnowledge()
+    {
+        string token = await ApprovedLinkAsync();
+        await viewingSlots.AddSlotAsync(ListingId, time.GetUtcNow().AddDays(1), time.GetUtcNow().AddDays(1).AddMinutes(30), 3, CancellationToken.None);
+
+        await service.AskAsync(token, "Wann kann ich besichtigen?", CancellationToken.None);
+
+        Assert.Contains("Freie Besichtigungstermine", answerer.LastKnowledge.Single().Answer, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Ask_BookingAFreeSlot_BooksAndNotifiesAgent()
+    {
+        string token = await ApprovedLinkAsync();
+        long slotId = await viewingSlots.AddSlotAsync(ListingId, time.GetUtcNow().AddDays(1), time.GetUtcNow().AddDays(1).AddMinutes(30), 3, CancellationToken.None);
+        answerer.Answer = new ChatAnswer("Ihre Besichtigung ist gebucht.", ChatMessage.BookingSource, null, slotId);
+
+        ChatResult result = await service.AskAsync(token, "Ich nehme morgen um 13 Uhr", CancellationToken.None);
+
+        Assert.True(result.Slots.Single().BookedByMe);
+        Assert.Equal([slotId], viewingSlots.NotifiedSlots);
+        Assert.Equal(ChatMessage.BookingSource, result.Messages[1].Source);
+    }
+
+    [Fact]
+    public async Task Ask_BookingAFullSlot_ExplainsInsteadOfConfirming()
+    {
+        string token = await ApprovedLinkAsync();
+        long slotId = await viewingSlots.AddSlotAsync(ListingId, time.GetUtcNow().AddDays(1), time.GetUtcNow().AddDays(1).AddMinutes(30), 1, CancellationToken.None);
+        await viewingSlots.BookAsync(ListingId, slotId, "someone-else", time.GetUtcNow(), CancellationToken.None);
+        answerer.Answer = new ChatAnswer("Ihre Besichtigung ist gebucht.", ChatMessage.BookingSource, null, slotId);
+
+        ChatResult result = await service.AskAsync(token, "Ich nehme morgen um 13 Uhr", CancellationToken.None);
+
+        Assert.Equal(ChatMessage.ViewingsSource, result.Messages[1].Source);
+        Assert.Empty(viewingSlots.NotifiedSlots);
     }
 
     private async Task<string> ApprovedLinkAsync()

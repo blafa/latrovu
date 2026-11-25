@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 using Latrovu.BuildingBlocks.Storage;
+using Latrovu.Listings.Viewing.Chat;
+using Latrovu.Listings.Viewing.Viewings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -18,6 +20,10 @@ public static class ListingReviewEndpoints
     private const string HtmxRefreshHeader = "HX-Refresh";
     private const string HtmxTrue = "true";
     private const string CheckedFormValue = "true";
+    private const string DateFormKey = "date";
+    private const string FromFormKey = "from";
+    private const string ToFormKey = "to";
+    private const string PlacesFormKey = "places";
 
     public static IEndpointRouteBuilder MapListingReview(this IEndpointRouteBuilder app)
     {
@@ -33,6 +39,9 @@ public static class ListingReviewEndpoints
         review.MapPost("/publish-contact", SetPublishContactAsync);
         review.MapPost("/approve", ApproveAsync);
         review.MapPost("/withdraw", WithdrawAsync);
+        review.MapPost("/knowledge/{entryId:long}/remove", RemoveKnowledgeAsync);
+        review.MapPost("/viewings", AddViewingAsync);
+        review.MapPost("/viewings/{slotId:long}/remove", RemoveViewingAsync);
         review.MapGet("/images/{position:int}", ImageAsync);
         return app;
     }
@@ -42,6 +51,8 @@ public static class ListingReviewEndpoints
         HttpRequest request,
         IReviewAccessService access,
         IListingReviewService reviews,
+        IListingKnowledgeStore knowledge,
+        AgentViewingService viewings,
         CancellationToken ct)
     {
         if (!await HasSessionAsync(token, request, access, ct))
@@ -50,7 +61,68 @@ public static class ListingReviewEndpoints
         }
 
         ListingReview? review = await reviews.GetByTokenAsync(token, ct);
-        return review is null ? Results.NotFound() : Html(ListingReviewPage.Render(token, review));
+        return review is null
+            ? Results.NotFound()
+            : Html(ListingReviewPage.Render(token, review, await knowledge.GetAsync(review.Id, ct), await viewings.GetAsync(token, ct)));
+    }
+
+    private static async Task<IResult> AddViewingAsync(
+        string token,
+        HttpRequest request,
+        IReviewAccessService access,
+        AgentViewingService viewings,
+        CancellationToken ct)
+    {
+        if (!await HasSessionAsync(token, request, access, ct))
+        {
+            return Results.Unauthorized();
+        }
+
+        IFormCollection form = await request.ReadFormAsync(ct);
+        SlotFormValues posted = new(form[DateFormKey].ToString(), form[FromFormKey].ToString(), form[ToFormKey].ToString(), form[PlacesFormKey].ToString());
+        DateTimeOffset? startsAt = SwissTime.ToUtc(posted.Date, posted.From);
+        DateTimeOffset? endsAt = SwissTime.ToUtc(posted.Date, posted.To);
+        _ = int.TryParse(posted.Places.Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int places);
+        ViewingResult result = startsAt is { } start && endsAt is { } end
+            ? await viewings.AddAsync(token, start, end, places, ct)
+            : (await viewings.GetAsync(token, ct)) with { Outcome = BookingOutcome.NotFound };
+        SlotFormValues? keep = result.Outcome == BookingOutcome.NotFound ? posted : null;
+        return result.Found ? Html(AgentViewingPanel.Render(token, result, keep)) : Results.NotFound();
+    }
+
+    private static async Task<IResult> RemoveViewingAsync(
+        string token,
+        long slotId,
+        HttpRequest request,
+        IReviewAccessService access,
+        AgentViewingService viewings,
+        CancellationToken ct)
+    {
+        if (!await HasSessionAsync(token, request, access, ct))
+        {
+            return Results.Unauthorized();
+        }
+
+        ViewingResult result = await viewings.RemoveAsync(token, slotId, ct);
+        return result.Found ? Html(AgentViewingPanel.Render(token, result)) : Results.NotFound();
+    }
+
+    private static async Task<IResult> RemoveKnowledgeAsync(
+        string token,
+        long entryId,
+        HttpRequest request,
+        IReviewAccessService access,
+        IListingReviewService reviews,
+        IListingKnowledgeStore knowledge,
+        CancellationToken ct)
+    {
+        if (!await HasSessionAsync(token, request, access, ct))
+        {
+            return Results.Unauthorized();
+        }
+
+        ListingReview? review = await reviews.GetByTokenAsync(token, ct);
+        return review is not null && await knowledge.RemoveAsync(review.Id, entryId, ct) ? Html(string.Empty) : Results.NotFound();
     }
 
     private static async Task<IResult> RequestCodeAsync(string token, IReviewAccessService access, CancellationToken ct)

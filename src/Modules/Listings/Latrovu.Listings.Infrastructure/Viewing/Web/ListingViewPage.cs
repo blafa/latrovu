@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Latrovu.Listings.Infrastructure.Review.Web;
 using Latrovu.Listings.Viewing.Chat;
+using Latrovu.Listings.Viewing.Viewings;
 
 namespace Latrovu.Listings.Infrastructure.Viewing.Web;
 
@@ -26,11 +27,9 @@ internal static class ListingViewPage
         img { display:block; max-width:100%; }
         a { color:inherit; }
         .site { max-width:1360px; margin:0 auto; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; }
-        .brand { font-weight:700; font-size:20px; letter-spacing:-0.02em; text-decoration:none; }
-        .brand span { color:#8FB61E; }
         .tagline { font-size:13px; color:var(--muted); }
         main { max-width:1360px; margin:0 auto; padding:0 32px 48px; }
-        .gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:240px 240px; gap:4px; border-radius:8px; overflow:hidden; }
+        .gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:190px 190px; gap:4px; border-radius:8px; overflow:hidden; }
         .gallery a { position:relative; display:block; background:var(--well); }
         .gallery a:first-child { grid-row:span 2; }
         .gallery img { width:100%; height:100%; object-fit:cover; }
@@ -38,7 +37,7 @@ internal static class ListingViewPage
         .content { display:grid; grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr); gap:32px; margin-top:24px; align-items:start; }
         .address { margin:0; font-size:14px; color:var(--muted); }
         .price-line { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin:4px 0 2px; }
-        .price { font-size:30px; font-weight:700; letter-spacing:-0.01em; margin:0; }
+        .price { font-size:26px; font-weight:700; letter-spacing:-0.01em; margin:0; color:#3B6D11; }
         .price-label { font-size:13px; color:var(--muted); }
         .side-lines { display:flex; flex-wrap:wrap; gap:2px 16px; font-size:13px; color:var(--muted); margin:0; }
         .side-lines div { display:flex; gap:5px; } .side-lines dd { margin:0; color:var(--ink); }
@@ -65,7 +64,7 @@ internal static class ListingViewPage
         }
         """;
 
-    public static string Render(string token, ListingReview listing, ChatResult chat)
+    public static string Render(string token, ListingReview listing, ChatResult chat, ViewingResult viewings)
     {
         JsonObject data = JsonNode.Parse(listing.DataJson) as JsonObject ?? [];
         string title = ListingValues.Text(data, "title") ?? "Inserat";
@@ -75,7 +74,7 @@ internal static class ListingViewPage
         html.Append("<main>");
         AppendGallery(html, token, listing.Images);
         html.Append("<div class=\"content\"><div>");
-        AppendIntro(html, data, title);
+        AppendIntro(html, data, title, SeekerViewingPanel.Render(token, viewings));
         AppendFeatures(html, data);
         AppendDetails(html, data);
         if (listing.PublishContact)
@@ -111,7 +110,7 @@ internal static class ListingViewPage
         "<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">"
         + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"robots\" content=\"noindex, nofollow\">"
         + $"<title>{Encode(title)} – Latrovu</title>{SiteAssets.HeadLinks}<script src=\"{SiteAssets.HtmxScript}\"></script>"
-        + $"<style>{SiteAssets.FontFaces}{Styles}{ListingChatPanel.Styles}</style></head><body>";
+        + $"<style>{SiteAssets.FontFaces}{Styles}{ListingChatPanel.Styles}{SeekerViewingPanel.Styles}</style></head><body>";
 
     private static void AppendGallery(StringBuilder html, string token, IReadOnlyList<ListingImageRef> images)
     {
@@ -133,7 +132,7 @@ internal static class ListingViewPage
         html.Append("</section>");
     }
 
-    private static void AppendIntro(StringBuilder html, JsonObject data, string title)
+    private static void AppendIntro(StringBuilder html, JsonObject data, string title, string viewingsPanel)
     {
         html.Append($"<p class=\"address\">{Encode(ListingValues.Address(data))}</p>");
         AppendPrice(html, data);
@@ -148,6 +147,7 @@ internal static class ListingViewPage
         }
 
         html.Append("</div>");
+        html.Append(viewingsPanel);
         string? description = ListingValues.Text(data, "description.summary") ?? ListingValues.Text(data, "description.original");
         if (description is not null)
         {

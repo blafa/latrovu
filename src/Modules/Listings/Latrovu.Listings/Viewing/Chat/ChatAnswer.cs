@@ -1,3 +1,3 @@
 namespace Latrovu.Listings.Viewing.Chat;
 
-public sealed record ChatAnswer(string Text, string Source, int? Page);
+public sealed record ChatAnswer(string Text, string Source, int? Page, long? SlotId = null);

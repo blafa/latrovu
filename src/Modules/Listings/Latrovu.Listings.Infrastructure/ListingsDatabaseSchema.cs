@@ -25,6 +25,8 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS location geometry(Point, 2056);
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS location_precision text;
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS source_pages jsonb;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS source_hash char(64);
+        CREATE INDEX IF NOT EXISTS ix_listings_source ON listings (source_email, source_hash);
         CREATE TABLE IF NOT EXISTS listing_images (
             listing_id   uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
             position     int NOT NULL,
@@ -83,6 +85,31 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
         ALTER TABLE listing_chat_messages ADD COLUMN IF NOT EXISTS forwarded_at timestamptz;
         ALTER TABLE listing_chat_messages ADD COLUMN IF NOT EXISTS forward_batch uuid;
         CREATE INDEX IF NOT EXISTS ix_listing_chat_messages_pending ON listing_chat_messages (forwarded_at) WHERE forward_status = 'pending';
+        ALTER TABLE listing_chat_messages ADD COLUMN IF NOT EXISTS original_text text;
+        ALTER TABLE listing_view_links ADD COLUMN IF NOT EXISTS seeker_address varchar(320);
+        CREATE TABLE IF NOT EXISTS listing_knowledge (
+            id          bigserial PRIMARY KEY,
+            listing_id  uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            question    text NOT NULL,
+            answer      text NOT NULL,
+            created_at  timestamptz NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ix_listing_knowledge_listing ON listing_knowledge (listing_id);
+        CREATE TABLE IF NOT EXISTS listing_viewing_slots (
+            id          bigserial PRIMARY KEY,
+            listing_id  uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            starts_at   timestamptz NOT NULL,
+            ends_at     timestamptz NOT NULL,
+            capacity    int NOT NULL,
+            created_at  timestamptz NOT NULL DEFAULT now()
+        );
+        CREATE INDEX IF NOT EXISTS ix_listing_viewing_slots_listing ON listing_viewing_slots (listing_id, starts_at);
+        CREATE TABLE IF NOT EXISTS listing_viewing_bookings (
+            slot_id     bigint NOT NULL REFERENCES listing_viewing_slots (id) ON DELETE CASCADE,
+            token_hash  char(64) NOT NULL,
+            created_at  timestamptz NOT NULL,
+            PRIMARY KEY (slot_id, token_hash)
+        );
         """;
 
     public async Task StartAsync(CancellationToken cancellationToken)

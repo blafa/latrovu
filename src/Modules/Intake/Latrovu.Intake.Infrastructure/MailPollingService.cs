@@ -35,7 +35,7 @@ public sealed class MailPollingService(
         {
             await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
             IMailDispatcher dispatcher = scope.ServiceProvider.GetRequiredService<IMailDispatcher>();
-            await inbox.ProcessUnreadAsync(dispatcher.DispatchAsync, ct);
+            await inbox.ProcessPendingAsync(dispatcher.DispatchAsync, ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

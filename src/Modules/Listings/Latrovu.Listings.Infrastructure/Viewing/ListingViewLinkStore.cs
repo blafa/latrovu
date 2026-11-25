@@ -5,8 +5,8 @@ namespace Latrovu.Listings.Infrastructure.Viewing;
 public sealed class ListingViewLinkStore(NpgsqlDataSource dataSource, TimeProvider timeProvider) : IListingViewLinkStore
 {
     private const string InsertSql = """
-        INSERT INTO listing_view_links (token_hash, listing_id, search_id, created_at, expires_at)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO listing_view_links (token_hash, listing_id, search_id, created_at, expires_at, seeker_address)
+        VALUES ($1, $2, $3, $4, $5, $6)
         ON CONFLICT (token_hash) DO NOTHING
         """;
 
@@ -21,14 +21,14 @@ public sealed class ListingViewLinkStore(NpgsqlDataSource dataSource, TimeProvid
     public async Task<string> CreateAsync(Guid listingId, Guid? searchId, DateTimeOffset expiresAt, CancellationToken ct)
     {
         string token = AccessTokens.Create();
-        await InsertAsync(AccessTokens.Hash(token), listingId, searchId, expiresAt, ct);
+        await InsertAsync(AccessTokens.Hash(token), listingId, searchId, expiresAt, null, ct);
         return token;
     }
 
-    public Task CreateFromHashAsync(Guid listingId, Guid searchId, string tokenHash, DateTimeOffset expiresAt, CancellationToken ct) =>
-        InsertAsync(tokenHash, listingId, searchId, expiresAt, ct);
+    public Task CreateFromHashAsync(Guid listingId, Guid searchId, string tokenHash, DateTimeOffset expiresAt, string? seekerAddress, CancellationToken ct) =>
+        InsertAsync(tokenHash, listingId, searchId, expiresAt, seekerAddress, ct);
 
-    private async Task InsertAsync(string tokenHash, Guid listingId, Guid? searchId, DateTimeOffset expiresAt, CancellationToken ct)
+    private async Task InsertAsync(string tokenHash, Guid listingId, Guid? searchId, DateTimeOffset expiresAt, string? seekerAddress, CancellationToken ct)
     {
         await using NpgsqlCommand command = dataSource.CreateCommand(InsertSql);
         command.Parameters.Add(new NpgsqlParameter { Value = tokenHash });
@@ -36,6 +36,7 @@ public sealed class ListingViewLinkStore(NpgsqlDataSource dataSource, TimeProvid
         command.Parameters.Add(new NpgsqlParameter { Value = (object?)searchId ?? DBNull.Value });
         command.Parameters.Add(new NpgsqlParameter { Value = timeProvider.GetUtcNow() });
         command.Parameters.Add(new NpgsqlParameter { Value = expiresAt });
+        command.Parameters.Add(new NpgsqlParameter { Value = (object?)seekerAddress ?? DBNull.Value, NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar });
         await command.ExecuteNonQueryAsync(ct);
     }
 

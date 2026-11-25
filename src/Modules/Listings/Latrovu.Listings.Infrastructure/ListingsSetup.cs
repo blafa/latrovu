@@ -4,8 +4,10 @@ using Latrovu.Core.Listings;
 using Latrovu.Core.Submissions;
 using Latrovu.Listings.Infrastructure.Matching;
 using Latrovu.Listings.Infrastructure.Viewing.Chat;
+using Latrovu.Listings.Infrastructure.Viewing.Viewings;
 using Latrovu.Listings.Matching;
 using Latrovu.Listings.Viewing.Chat;
+using Latrovu.Listings.Viewing.Viewings;
 using Latrovu.Listings.Infrastructure.Viewing.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -19,6 +21,7 @@ namespace Latrovu.Listings.Infrastructure;
 public static class ListingsSetup
 {
     private const int ViewRequestsPerMinute = 120;
+    private const int ImageRequestsPerMinute = 1200;
     private const string UnknownClient = "unknown";
 
     public static IServiceCollection AddListingsReview(this IServiceCollection services)
@@ -27,6 +30,7 @@ public static class ListingsSetup
         services.AddSingleton<IVerificationCodeSender, EmailVerificationCodeSender>();
         services.AddScoped<IListingReviewService, ListingReviewService>();
         services.AddScoped<IReviewAccessService, ReviewAccessService>();
+        services.AddScoped<AgentViewingService>();
         return services;
     }
 
@@ -38,11 +42,14 @@ public static class ListingsSetup
         services.TryAddSingleton<IListingSourceTextStore, ListingSourceTextStore>();
         services.AddScoped<IListingChatAnswerer, ListingChatAnswerer>();
         services.AddScoped<ListingChatService>();
+        services.AddScoped<IViewingNotifier, EmailViewingNotifier>();
+        services.AddScoped<SeekerViewingService>();
         services.AddScoped<IListingViewService, ListingViewService>();
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            options.AddPolicy(ListingViewEndpoints.RateLimitPolicy, PerClientLimit);
+            options.AddPolicy(ListingViewEndpoints.RateLimitPolicy, context => PerClientLimit(context, ViewRequestsPerMinute));
+            options.AddPolicy(ListingViewEndpoints.ImageRateLimitPolicy, context => PerClientLimit(context, ImageRequestsPerMinute));
         });
         return services;
     }
@@ -57,6 +64,9 @@ public static class ListingsSetup
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddHostedService<QuestionForwardingService>();
+        services.AddScoped<IAgentReplyStore, AgentReplyStore>();
+        services.AddScoped<IAnswerTranslator, LlmAnswerTranslator>();
+        services.AddMessageHandler<AgentReplyReceived, AgentReplyHandler>();
         services.AddScoped<IDocumentClassifier, DocumentClassifier>();
         services.AddScoped<IListingExtractor, ListingExtractor>();
         services.AddScoped<IListingImageService, ListingImageService>();
@@ -70,10 +80,10 @@ public static class ListingsSetup
         return services;
     }
 
-    private static RateLimitPartition<string> PerClientLimit(HttpContext context) =>
+    private static RateLimitPartition<string> PerClientLimit(HttpContext context, int permitsPerMinute) =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? UnknownClient,
-            _ => new FixedWindowRateLimiterOptions { PermitLimit = ViewRequestsPerMinute, Window = TimeSpan.FromMinutes(1) });
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = permitsPerMinute, Window = TimeSpan.FromMinutes(1) });
 
     private static void AddListingsStorage(IServiceCollection services)
     {
@@ -88,5 +98,7 @@ public static class ListingsSetup
         services.TryAddSingleton<IVerificationCodeStore, VerificationCodeStore>();
         services.TryAddSingleton<IReviewSessionStore, ReviewSessionStore>();
         services.TryAddSingleton<IProcessedSubmissionStore, ProcessedSubmissionStore>();
+        services.TryAddSingleton<IListingKnowledgeStore, ListingKnowledgeStore>();
+        services.TryAddSingleton<IViewingStore, ViewingStore>();
     }
 }

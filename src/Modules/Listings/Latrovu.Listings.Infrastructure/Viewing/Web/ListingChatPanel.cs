@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using Latrovu.Listings.Infrastructure.Review.Web;
 using Latrovu.Listings.Viewing.Chat;
+using Latrovu.Listings.Viewing.Viewings;
 
 namespace Latrovu.Listings.Infrastructure.Viewing.Web;
 
@@ -30,7 +31,7 @@ internal static class ListingChatPanel
         .chat-messages::-webkit-scrollbar-thumb, .chat-form textarea::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
         .chat-messages::-webkit-scrollbar-button, .chat-form textarea::-webkit-scrollbar-button { display:none; }
         .chat-hint { margin:auto 0; text-align:center; font-size:13px; color:var(--muted); }
-        .bubble { max-width:85%; padding:8px 12px; border-radius:14px; font-size:14px; line-height:1.45; }
+        .bubble { max-width:85%; padding:8px 12px; border-radius:14px; font-size:14px; line-height:1.45; white-space:pre-line; }
         .bubble.seeker { align-self:flex-end; background:#EEF8D2; border-bottom-right-radius:4px; }
         .bubble.answer { align-self:flex-start; background:var(--well); border-bottom-left-radius:4px; }
         .bubble-source { display:flex; align-items:center; gap:4px; margin-top:4px; font-size:11px; color:var(--muted); }
@@ -45,6 +46,10 @@ internal static class ListingChatPanel
         .forward { margin-top:8px; font:inherit; font-size:13px; font-weight:600; padding:6px 12px; border:1px solid var(--ink); border-radius:16px; background:var(--paper); cursor:pointer; }
         .forward[disabled] { opacity:0.6; cursor:progress; }
         .forward-note { margin:4px 0 0; font-size:11px; color:var(--muted); }
+        .slot-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; white-space:normal; }
+        .slot-chip { font:inherit; font-size:13px; padding:6px 11px; border-radius:16px; border:1px solid var(--ink); background:var(--paper); color:var(--ink); cursor:pointer; }
+        .slot-chip.mine { border-color:#EEF8D2; background:#EEF8D2; color:#27500A; cursor:default; }
+        .slot-chip[disabled] { opacity:0.6; cursor:progress; }
         .chat-suggestions { display:flex; gap:6px; overflow-x:auto; padding:10px 12px 0; scrollbar-width:none; }
         .chat-suggestions::-webkit-scrollbar { display:none; }
         .suggestion { flex:none; font:inherit; font-size:13px; padding:6px 11px; border:1px solid var(--line); border-radius:16px; background:var(--paper); color:var(--ink); cursor:pointer; }
@@ -171,7 +176,7 @@ internal static class ListingChatPanel
             html.Append("<p class=\"chat-hint\">Fragen Sie in Ihrer Sprache, zum Beispiel:<br>«Sind Haustiere erlaubt?»</p>");
         }
 
-        html.AppendJoin(string.Empty, result.Messages.Select(message => Bubble(message, token)))
+        html.AppendJoin(string.Empty, result.Messages.Select((message, index) => Bubble(message, token, index == LastViewingsIndex(result) ? result.Slots : [])))
             .Append("<div class=\"bubble answer typing\" id=\"chat-typing\" aria-hidden=\"true\"><span></span><span></span><span></span></div>")
             .Append("</div>");
         AppendNote(html, result.Outcome);
@@ -192,7 +197,10 @@ internal static class ListingChatPanel
             .Append("</div>");
     }
 
-    private static string Bubble(ChatMessage message, string token)
+    private static int LastViewingsIndex(ChatResult result) =>
+        result.Messages.ToList().FindLastIndex(message => message.Source == ChatMessage.ViewingsSource);
+
+    private static string Bubble(ChatMessage message, string token, IReadOnlyList<ViewingSlot> slots)
     {
         if (message.Role == ChatMessage.SeekerRole)
         {
@@ -200,7 +208,19 @@ internal static class ListingChatPanel
         }
 
         string text = string.IsNullOrWhiteSpace(message.Text) ? UnknownFallback : message.Text;
-        return $"<div class=\"bubble answer\">{Encode(text)}<div class=\"bubble-source\">{SourceLabel(message)}</div>{ForwardAction(message, token)}</div>";
+        return $"<div class=\"bubble answer\">{Encode(text)}<div class=\"bubble-source\">{SourceLabel(message)}</div>{SlotChips(token, slots)}{ForwardAction(message, token)}</div>";
+    }
+
+    private static string SlotChips(string token, IReadOnlyList<ViewingSlot> slots)
+    {
+        List<string> chips = slots
+            .Where(slot => slot.BookedByMe || slot.FreePlaces > 0)
+            .Select(slot => slot.BookedByMe
+                ? $"<span class=\"slot-chip mine\">✓ {Encode(SwissTime.Describe(slot))}</span>"
+                : $"<button class=\"slot-chip\" hx-post=\"/i/{Encode(token)}/viewings/{slot.Id}/book\" hx-target=\"#viewings\" hx-swap=\"outerHTML\" "
+                    + $"hx-disabled-elt=\"this\">{Encode(SwissTime.Describe(slot))} buchen</button>")
+            .ToList();
+        return chips.Count == 0 ? string.Empty : $"<div class=\"slot-chips\">{string.Join(string.Empty, chips)}</div>";
     }
 
     private static string ForwardAction(ChatMessage message, string token) => message.CanBeForwarded
@@ -212,7 +232,11 @@ internal static class ListingChatPanel
     private static string SourceLabel(ChatMessage message) => message switch
     {
         { ForwardStatus: not null } => "An den Anbieter weitergeleitet",
+        { Role: ChatMessage.AgentRole, Source: ChatMessage.TranslatedSource } => "Vom Anbieter beantwortet, übersetzt",
         { Role: ChatMessage.AgentRole } => "Vom Anbieter beantwortet",
+        { Source: ChatMessage.ProviderSource } => "Vom Anbieter beantwortet",
+        { Source: ChatMessage.ViewingsSource } => $"{ReviewIcons.Calendar}Besichtigungstermine",
+        { Source: ChatMessage.BookingSource } => $"{ReviewIcons.Calendar}Besichtigung gebucht",
         { Source: ChatMessage.ExposeSource, Page: { } page } => $"{ReviewIcons.Document}Aus dem Exposé, Seite {page}",
         { Source: ChatMessage.ExposeSource } => $"{ReviewIcons.Document}Aus dem Exposé",
         { Source: ChatMessage.DataSource } => $"{ReviewIcons.Document}Aus den Angaben zum Inserat",

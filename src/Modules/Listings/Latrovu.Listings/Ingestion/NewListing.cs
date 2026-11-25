@@ -5,4 +5,5 @@ public sealed record NewListing(
     string? Subject,
     string? FileName,
     ListingExtraction? Extraction,
-    IReadOnlyList<string> SourcePages);
+    IReadOnlyList<string> SourcePages,
+    string? SourceHash = null);
