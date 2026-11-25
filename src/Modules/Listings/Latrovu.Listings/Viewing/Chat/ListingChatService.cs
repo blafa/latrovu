@@ -44,7 +44,8 @@ public sealed class ListingChatService(
         }
 
         IReadOnlyList<ChatMessage> history = await chats.GetMessagesAsync(token, ct);
-        ChatAnswer answer = await AnswerAsync(listing, history, question.Trim(), ct);
+        ChatAnswer answer = await ChosenSlotAsync(listing.Id, history, question.Trim(), ct)
+            ?? await AnswerAsync(listing, history, question.Trim(), ct);
         await chats.AddAsync(token, listing.Id, new ChatMessage(ChatMessage.SeekerRole, question.Trim(), null, null, timeProvider.GetUtcNow()), ct);
         ChatAnswer final = answer switch
         {
@@ -80,6 +81,22 @@ public sealed class ListingChatService(
 
         logger.LogInformation("Chat question for listing {ListingId} marked for forwarding", listing.Id);
         return await ResultAsync(ChatOutcome.Answered, token, listing.Id, ct);
+    }
+
+    private async Task<ChatAnswer?> ChosenSlotAsync(Guid listingId, IReadOnlyList<ChatMessage> history, string question, CancellationToken ct)
+    {
+        if (history.LastOrDefault(message => message.Role == ChatMessage.AssistantRole)?.Source != ChatMessage.ViewingsSource)
+        {
+            return null;
+        }
+
+        List<ViewingSlot> free = (await viewings.GetSlotsAsync(listingId, null, timeProvider.GetUtcNow(), ct))
+            .Where(slot => slot.FreePlaces > 0)
+            .ToList();
+        ViewingSlot? chosen = SlotChoice.Match(question, free);
+        return chosen is null
+            ? null
+            : new ChatAnswer($"Ihre Besichtigung am {SwissTime.Describe(chosen)} ist gebucht. Der Anbieter wurde informiert.", ChatMessage.BookingSource, null, chosen.Id);
     }
 
     private async Task<ChatAnswer> ViewingAnswerAsync(Guid listingId, ChatAnswer answer, CancellationToken ct)

@@ -22,6 +22,8 @@ public static class SwissTime
         return new DateTimeOffset(local, Zone.GetUtcOffset(local)).ToUniversalTime();
     }
 
+    public static DateTimeOffset ToLocal(DateTimeOffset moment) => TimeZoneInfo.ConvertTime(moment, Zone);
+
     public static string Describe(ViewingSlot slot) => $"{Day(slot)} · {Hours(slot)}";
 
     public static string Day(ViewingSlot slot)

@@ -179,6 +179,21 @@ public sealed class ListingChatServiceTests
         Assert.Equal(ChatMessage.ForwardPending, result.Messages[1].ForwardStatus);
     }
 
+    [Fact]
+    public async Task Ask_ChoiceAfterDatesAnswer_BooksWithoutTheAi()
+    {
+        string token = await ApprovedLinkAsync();
+        long slotId = await viewingSlots.AddSlotAsync(ListingId, time.GetUtcNow().AddDays(1), time.GetUtcNow().AddDays(1).AddMinutes(30), 3, CancellationToken.None);
+        answerer.Answer = new ChatAnswer(string.Empty, ChatMessage.ViewingsSource, null);
+        await service.AskAsync(token, "Wann kann ich besichtigen?", CancellationToken.None);
+        answerer.Answer = new ChatAnswer("Das steht nicht im Exposé.", ChatMessage.UnknownSource, null);
+
+        ChatResult result = await service.AskAsync(token, "1", CancellationToken.None);
+
+        Assert.Equal(ChatMessage.BookingSource, result.Messages[^1].Source);
+        Assert.Equal([slotId], viewingSlots.NotifiedSlots);
+    }
+
     private async Task<string> ApprovedLinkAsync()
     {
         await listings.ApproveAsync(ListingId, CancellationToken.None);

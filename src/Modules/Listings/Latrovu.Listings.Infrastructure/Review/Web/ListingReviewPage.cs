@@ -20,6 +20,23 @@ public static class ListingReviewPage
         .tab .icon { width:18px; height:18px; }
         .tab-count { min-width:18px; padding:0 6px; border-radius:9px; background:var(--lime); color:#173404; font-size:11px; font-weight:600; line-height:18px; text-align:center; }
         .tab-panel { max-width:1360px; margin:0 auto; padding:16px 24px 48px; }
+        @media (max-width: 960px) {
+            .pane.inline { grid-column:1 / -1; flex-basis:100%; width:100%; margin:2px 0 8px; padding:14px; background:var(--paper);
+                           border:1px solid var(--line); border-radius:8px; }
+            #pane-intro { display:none !important; }
+            aside.context:not(:has(.pane:not([hidden]):not(#pane-intro))) { display:none; }
+        }
+        @media (max-width: 760px) {
+            body { padding-bottom:calc(68px + env(safe-area-inset-bottom)); }
+            .tabs-bar { position:fixed; top:auto; bottom:0; left:0; right:0; z-index:20; background:var(--paper); border-bottom:none;
+                        border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
+            .tabs-inner { padding:0; gap:0; }
+            .tab { position:relative; flex:1; flex-direction:column; gap:3px; padding:8px 4px 7px; font-size:11px; border-bottom:none;
+                   border-top:2px solid transparent; }
+            .tab[aria-selected="true"] { border-top-color:var(--ink); }
+            .tab .icon { width:22px; height:22px; }
+            .tab-count { position:absolute; top:4px; left:calc(50% + 6px); min-width:16px; line-height:16px; font-size:10px; }
+        }
         </style>
         """;
 
@@ -74,7 +91,26 @@ public static class ListingReviewPage
             if (close) { close.closest('dialog')?.close(); }
             if (event.target.tagName === 'DIALOG') { event.target.close(); }
         });
-        select(location.hash.slice(1) || firstSpec?.dataset.select || 'intro');
+        const narrowScreen = window.matchMedia('(max-width: 960px)');
+        function placePane(trigger) {
+            const spec = trigger.closest('.spec, .chip');
+            const pane = document.getElementById('pane-' + trigger.dataset.select);
+            if (narrowScreen.matches && spec && pane && !pane.hidden && pane.previousElementSibling === spec) {
+                select('intro');
+                return;
+            }
+            const shown = select(trigger.dataset.select);
+            if (narrowScreen.matches && spec) {
+                spec.after(shown);
+                shown.classList.add('inline');
+                spec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+            document.querySelector('aside.context').append(shown);
+            shown.classList.remove('inline');
+            if (narrowScreen.matches) { shown.scrollIntoView({ behavior: 'smooth' }); }
+        }
+        select(location.hash.slice(1) || (narrowScreen.matches ? 'intro' : firstSpec?.dataset.select) || 'intro');
 
         const thumbs = [...document.querySelectorAll('.thumb')];
         let photoIndex = 0;
@@ -114,8 +150,7 @@ public static class ListingReviewPage
         document.addEventListener('click', event => {
             const target = event.target.closest('[data-select]');
             if (target) {
-                const pane = select(target.dataset.select);
-                if (window.matchMedia('(max-width: 960px)').matches) { pane.scrollIntoView({ behavior: 'smooth' }); }
+                placePane(target);
             }
             const thumb = event.target.closest('.thumb');
             if (thumb) { showPhoto(thumbs.indexOf(thumb)); }

@@ -55,7 +55,7 @@ public sealed class SeekerViewingService(
     private async Task ConfirmAsync(string token, Guid listingId, ViewingSlot slot, string tokenHash, CancellationToken ct)
     {
         string text = $"Ihre Besichtigung am {SwissTime.Describe(slot)} ist gebucht. Der Anbieter wurde informiert.";
-        await chats.AddAsync(token, listingId, new ChatMessage(ChatMessage.AssistantRole, text, ChatMessage.LatrovuSource, null, timeProvider.GetUtcNow()), ct);
+        await chats.AddAsync(token, listingId, new ChatMessage(ChatMessage.AssistantRole, text, ChatMessage.BookingSource, null, timeProvider.GetUtcNow()), ct);
         await notifier.NotifyAgentOfBookingAsync(listingId, slot, tokenHash, ct);
     }
 }
