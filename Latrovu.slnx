@@ -15,6 +15,7 @@
   <Folder Name="/src/Hosts/">
     <Project Path="src/Hosts/Latrovu.Hosts.Extraction/Latrovu.Hosts.Extraction.csproj" />
     <Project Path="src/Hosts/Latrovu.Hosts.Intake/Latrovu.Hosts.Intake.csproj" />
+    <Project Path="src/Hosts/Latrovu.Hosts.Scheduler/Latrovu.Hosts.Scheduler.csproj" />
     <Project Path="src/Hosts/Latrovu.Hosts.Web/Latrovu.Hosts.Web.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />

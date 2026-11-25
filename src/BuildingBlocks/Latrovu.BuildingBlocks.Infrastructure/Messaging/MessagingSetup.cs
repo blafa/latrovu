@@ -48,6 +48,13 @@ public static class MessagingSetup
         return services;
     }
 
+    public static IServiceCollection AddOutboxCleanup(this IServiceCollection services)
+    {
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddHostedService<OutboxCleanupWorker>();
+        return services;
+    }
+
     private static IServiceCollection AddOutbox(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);

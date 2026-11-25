@@ -15,7 +15,8 @@ public sealed class ListingReviewServiceTests
     public ListingReviewServiceTests()
     {
         FakeListingAccessTokenStore tokens = new(Token, Guid.NewGuid());
-        service = new ListingReviewService(tokens, reviews, storage, NullLogger<ListingReviewService>.Instance);
+        ListingRemover remover = new(reviews, storage, NullLogger<ListingRemover>.Instance);
+        service = new ListingReviewService(tokens, reviews, remover, NullLogger<ListingReviewService>.Instance);
     }
 
     [Fact]

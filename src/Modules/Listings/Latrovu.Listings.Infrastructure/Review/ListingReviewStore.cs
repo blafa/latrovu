@@ -21,7 +21,10 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource, IOutbox outb
 
     private const string PublishContactSql = "UPDATE listings SET publish_contact = $2 WHERE id = $1";
 
-    private const string ChangeStatusSql = "UPDATE listings SET status = $2 WHERE id = $1 AND status = ANY($3)";
+    private const string ChangeStatusSql = """
+        UPDATE listings SET status = $2, renewed_at = now(), reminders_sent = 0, last_reminder_at = NULL
+        WHERE id = $1 AND status = ANY($3)
+        """;
 
     private const string LockApprovedSql = "SELECT 1 FROM listings WHERE id = $1 AND status = 'approved' FOR UPDATE";
 

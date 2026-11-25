@@ -102,6 +102,14 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
             message_id  text NOT NULL,
             PRIMARY KEY (listing_id, message_id)
         );
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS renewed_at timestamptz;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS reminders_sent int NOT NULL DEFAULT 0;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS last_reminder_at timestamptz;
+        CREATE TABLE IF NOT EXISTS listing_renewal_tokens (
+            token_hash  char(64) PRIMARY KEY,
+            listing_id  uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            expires_at  timestamptz NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS listing_knowledge (
             id          bigserial PRIMARY KEY,
             listing_id  uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,

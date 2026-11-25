@@ -25,9 +25,10 @@ src/Modules/Listings (+Infrastructure)     Ingestion, Classification, Extraction
 src/Hosts/Latrovu.Hosts.Web        :5082   review pages, view links, dev view-link endpoint
 src/Hosts/Latrovu.Hosts.Intake     :5083   mail polling, dev import endpoint
 src/Hosts/Latrovu.Hosts.Extraction        consumes SubmissionReceived (queue latrovu-extraction)
+src/Hosts/Latrovu.Hosts.Scheduler         time-based jobs (renewal reminders, outbox cleanup)
 tests/*                                    xUnit per project, fakes in tests/Latrovu.Listings.Tests/Fakes
 docker/postgres/Dockerfile                 pgvector image + PostGIS (being built)
-scripts/dev-run.sh                         builds, starts 3 hosts in tmux, logs in /tmp/latrovu/*.log
+scripts/dev-run.sh                         builds, starts 4 hosts in tmux, logs in /tmp/latrovu/*.log
 ```
 Setup extensions per area: `AddPostgres`, `AddAiExtraction`, `AddObjectStorage`, `AddEmailSending`, `AddPdfReading`, `AddMessagePublishing`, `AddMessageConsuming`, `AddIntakeModule`, `AddListingsReview`, `AddListingsViewing`, `AddListingsProcessing`.
 
@@ -79,7 +80,7 @@ Static site in `site/` (served by Caddy later, no .NET): `index.html` (de) and `
 
 ## Next
 1. Deletion. Step A done: withdrawing (review page, dialog "zurückziehen und löschen") deletes the listing in one transaction (`ListingReviewStore.WithdrawAsync`, all child tables cascade), then its S3 images (`ListingReviewService`); `ListingWithdrawn` carries the Message-Ids from `listing_source_mails` (exposé mail and agent replies, recorded by `ListingIntake` and `AgentReplyHandler`). Searches removes `matchable_listings` and `search_alerts`; Intake (now consuming, queue `latrovu-intake`) deletes those mails from the processed folder (`ListingMailCleanupHandler`, `IMailInbox.DeleteProcessedAsync`). Listings created before this change have no recorded mails. Dev: review link for an existing listing = insert into `listing_access_tokens` with `upper(encode(sha256(convert_to(token,'UTF8')),'hex'))`.
-   Step B next: new host `Latrovu.Hosts.Scheduler` with reminders to the agent after 1, 2 and 3 months ("Ja, weiterhin aktiv" resets, "Zurückziehen"), withdraw and delete after the 3rd without reaction, and cleanup of delivered outbox rows.
+   Step B done: host `Latrovu.Hosts.Scheduler` (worker, same user secrets, `Renewal:BaseUrl`) runs `ListingRenewalWorker` (at start, then hourly) and `OutboxCleanupWorker` (delivered outbox rows older than 7 days, every 6 h). `RenewalReminderService`: reminders 30/60/90 days after approval or renewal (`listings.renewed_at`, `reminders_sent`, `last_reminder_at`), the 3rd announces deletion one day later, then `ListingRemover` withdraws and deletes (same path as the button). Mail buttons: "Ja, weiterhin aktiv" → `/renew/{token}` (token in `listing_renewal_tokens`, page with POST button, no code) and "Inserat zurückziehen" → review page. Dev test: backdate `renewed_at`/`last_reminder_at` and restart the Scheduler pane.
 2. Small items: booking mail to the agent without link to the review page; cancellation mail to seeker and agent; refinement box asks for things already given; demos in fr/it/en.
 3. Data inventory → privacy statement draft → lawyer review. All processors are Infomaniak (hosting, S3, AI, mail), no transfer abroad.
 4. Deployment (Dockerfiles, compose with Caddy for `site/` and the hosts, Infomaniak VM, disk encryption, closed ports, encrypted backups, retention).

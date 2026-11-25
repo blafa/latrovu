@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Latrovu.Hosts.Scheduler": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

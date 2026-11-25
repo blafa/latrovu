@@ -3,10 +3,12 @@ using Latrovu.BuildingBlocks.Infrastructure.Messaging;
 using Latrovu.Core.Listings;
 using Latrovu.Core.Submissions;
 using Latrovu.Listings.Infrastructure.Matching;
+using Latrovu.Listings.Infrastructure.Renewal;
 using Latrovu.Listings.Infrastructure.Viewing.Access;
 using Latrovu.Listings.Infrastructure.Viewing.Chat;
 using Latrovu.Listings.Infrastructure.Viewing.Viewings;
 using Latrovu.Listings.Matching;
+using Latrovu.Listings.Renewal;
 using Latrovu.Listings.Viewing.Access;
 using Latrovu.Listings.Viewing.Chat;
 using Latrovu.Listings.Viewing.Viewings;
@@ -32,7 +34,32 @@ public static class ListingsSetup
         services.AddSingleton<IVerificationCodeSender, EmailVerificationCodeSender>();
         services.AddScoped<IListingReviewService, ListingReviewService>();
         services.AddScoped<IReviewAccessService, ReviewAccessService>();
+        services.TryAddScoped<ListingRemover>();
         services.AddScoped<AgentViewingService>();
+        return services;
+    }
+
+    public static IServiceCollection AddListingsRenewal(this IServiceCollection services)
+    {
+        AddListingsStorage(services);
+        services.TryAddSingleton<IListingRenewalStore, ListingRenewalStore>();
+        services.TryAddScoped<ListingRenewalService>();
+        return services;
+    }
+
+    public static IServiceCollection AddListingsRenewalReminders(this IServiceCollection services, IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        AddListingsRenewal(services);
+        services.AddOptions<RenewalOptions>()
+            .Bind(configuration.GetSection(RenewalOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.TryAddScoped<ListingRemover>();
+        services.AddScoped<IRenewalNotifier, EmailRenewalNotifier>();
+        services.AddScoped<RenewalReminderService>();
+        services.AddHostedService<ListingRenewalWorker>();
         return services;
     }
 

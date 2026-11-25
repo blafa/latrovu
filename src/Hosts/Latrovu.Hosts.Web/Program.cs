@@ -5,6 +5,7 @@ using Latrovu.BuildingBlocks.Infrastructure.Persistence;
 using Latrovu.BuildingBlocks.Infrastructure.Storage;
 using Latrovu.Hosts.Web.Dev;
 using Latrovu.Listings.Infrastructure;
+using Latrovu.Listings.Infrastructure.Renewal;
 using Latrovu.Listings.Infrastructure.Review.Web;
 using Latrovu.Listings.Infrastructure.Viewing.Web;
 
@@ -17,6 +18,7 @@ builder.Services
     .AddEmailSending(builder.Configuration)
     .AddListingsReview()
     .AddListingsViewing()
+    .AddListingsRenewal()
     .AddMessagePublishing(builder.Configuration);
 
 WebApplication app = builder.Build();
@@ -29,6 +31,7 @@ app.UseRateLimiter();
 app.MapGet("/", () => "Latrovu Web");
 app.MapListingReview();
 app.MapListingViews();
+app.MapListingRenewal();
 if (app.Environment.IsDevelopment())
 {
     app.MapDevViewLinks();

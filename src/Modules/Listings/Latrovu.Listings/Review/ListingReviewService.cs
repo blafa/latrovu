@@ -1,13 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Latrovu.BuildingBlocks.Storage;
 
 namespace Latrovu.Listings.Review;
 
 public sealed class ListingReviewService(
     IListingAccessTokenStore tokens,
     IListingReviewStore reviews,
-    IObjectStorage storage,
+    ListingRemover remover,
     ILogger<ListingReviewService> logger) : IListingReviewService
 {
     public const string ConfirmedScore = "confirmed";
@@ -90,31 +89,7 @@ public sealed class ListingReviewService(
     public async Task<bool> WithdrawAsync(string token, CancellationToken ct)
     {
         Guid? listingId = await tokens.FindListingIdAsync(token, ct);
-        WithdrawnListing? withdrawn = listingId is null ? null : await reviews.WithdrawAsync(listingId.Value, ct);
-        if (withdrawn is null)
-        {
-            logger.LogWarning("Withdrawal for listing {ListingId} refused, it is missing or not approved", listingId);
-            return false;
-        }
-
-        await DeleteImagesAsync(listingId!.Value, withdrawn.ImageKeys, ct);
-        logger.LogInformation("Listing {ListingId} withdrawn and deleted with {ImageCount} images", listingId, withdrawn.ImageKeys.Count);
-        return true;
-    }
-
-    private async Task DeleteImagesAsync(Guid listingId, IReadOnlyList<string> imageKeys, CancellationToken ct)
-    {
-        foreach (string key in imageKeys)
-        {
-            try
-            {
-                await storage.DeleteAsync(key, ct);
-            }
-            catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException or IOException)
-            {
-                logger.LogError(ex, "Image {StorageKey} of deleted listing {ListingId} could not be removed from storage", key, listingId);
-            }
-        }
+        return listingId is not null && await remover.RemoveAsync(listingId.Value, ct);
     }
 
     private async Task<FieldUpdateResult> ChangeAsync(
