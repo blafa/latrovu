@@ -2,7 +2,7 @@
 
 ## Outfit font
 
-Used in: `src/Hosts/Latrovu.Hosts.Web/wwwroot/assets/fonts`, brand wordmark
+Used in: `src/Hosts/Latrovu.Hosts.Web/wwwroot/assets/fonts`, `site/assets/fonts`, brand wordmark
 Source: https://github.com/Outfitio/Outfit-Fonts (via Fontsource)
 License: SIL Open Font License 1.1, https://openfontlicense.org
 
@@ -14,7 +14,7 @@ License: Zero-Clause BSD
 
 ## Tabler Icons
 
-Used in: `src/Modules/Listings/Latrovu.Listings.Infrastructure/Review/Web/ReviewIcons.cs`
+Used in: `src/Modules/Listings/Latrovu.Listings.Infrastructure/Review/Web/ReviewIcons.cs`, `site/beispiel/`
 Source: https://github.com/tabler/tabler-icons
 
 MIT License

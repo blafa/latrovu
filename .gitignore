@@ -427,3 +427,6 @@ FodyWeavers.xsd
 
 # Test exposés contain personal data and are never committed
 tests/exposes/
+
+# Saved app pages used as templates for the site demos contain real listing data
+site/beispiel/*-raw.html
