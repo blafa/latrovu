@@ -41,6 +41,11 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
         }
 
         mime.Subject = message.Subject;
+        if (!string.IsNullOrWhiteSpace(message.MessageId))
+        {
+            mime.MessageId = message.MessageId;
+        }
+
         mime.Body = BuildBody(message);
         return mime;
     }

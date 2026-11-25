@@ -6,4 +6,5 @@ public sealed record EmailMessage(
     string TextBody,
     string? HtmlBody = null,
     string? ReplyTo = null,
-    IReadOnlyList<EmailInlineImage>? InlineImages = null);
+    IReadOnlyList<EmailInlineImage>? InlineImages = null,
+    string? MessageId = null);

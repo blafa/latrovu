@@ -9,4 +9,5 @@ public sealed record SeekerReply(
     IReadOnlyList<Search> OpenSearches,
     bool Understood,
     PlaceResolution Places,
-    IReadOnlyList<Search>? StatusChanges = null);
+    IReadOnlyList<Search>? StatusChanges = null,
+    SearchMatchSummary? Matches = null);

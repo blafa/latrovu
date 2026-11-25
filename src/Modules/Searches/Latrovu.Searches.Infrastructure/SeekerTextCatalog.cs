@@ -28,7 +28,14 @@ public static class SeekerTextCatalog
             "Wieder aktiv: {0}.",
             "Antwort zu «{0}»",
             "Der Anbieter hat Ihre Anfrage zu «{0}» beantwortet:",
-            "Sie können direkt auf diese E-Mail antworten, wir leiten Ihre Nachricht an den Anbieter weiter. Die Antwort finden Sie auch im Chat Ihres Angebots-Links."),
+            "Sie können direkt auf diese E-Mail antworten, wir leiten Ihre Nachricht an den Anbieter weiter. Die Antwort finden Sie auch im Chat Ihres Angebots-Links.",
+            "Besichtigung gebucht: «{0}»",
+            "Ihre Besichtigung für «{0}» ist gebucht:",
+            "Der Anbieter wurde informiert. Ändern oder absagen können Sie den Termin über Ihren Angebots-Link.",
+            "Ein passendes Angebot haben wir Ihnen soeben geschickt.",
+            "{0} passende Angebote haben wir Ihnen soeben geschickt.",
+            "Die passenden Angebote haben Sie bereits von uns erhalten. Neue schicken wir Ihnen, sobald sie erscheinen.",
+            "Zurzeit gibt es noch kein passendes Angebot. Wir melden uns, sobald eines erscheint."),
         ["fr"] = new SeekerTexts(
             "Votre recherche de logement avec Latrovu",
             "Bonjour",
@@ -51,7 +58,14 @@ public static class SeekerTextCatalog
             "De nouveau actif : {0}.",
             "Réponse concernant « {0} »",
             "Le fournisseur a répondu à votre demande concernant « {0} » :",
-            "Vous pouvez répondre directement à cet e-mail, nous transmettons votre message au fournisseur. La réponse figure aussi dans le chat de votre lien."),
+            "Vous pouvez répondre directement à cet e-mail, nous transmettons votre message au fournisseur. La réponse figure aussi dans le chat de votre lien.",
+            "Visite réservée : « {0} »",
+            "Votre visite pour « {0} » est réservée :",
+            "Le fournisseur a été informé. Vous pouvez modifier ou annuler le rendez-vous via votre lien.",
+            "Nous venons de vous envoyer une offre correspondante.",
+            "Nous venons de vous envoyer {0} offres correspondantes.",
+            "Vous avez déjà reçu les offres correspondantes. Nous vous enverrons les nouvelles dès leur parution.",
+            "Il n’y a pas encore d’offre correspondante. Nous vous écrivons dès qu’il y en a une."),
         ["it"] = new SeekerTexts(
             "La sua ricerca di casa con Latrovu",
             "Buongiorno",
@@ -74,7 +88,14 @@ public static class SeekerTextCatalog
             "Di nuovo attivo: {0}.",
             "Risposta su «{0}»",
             "L'offerente ha risposto alla sua richiesta su «{0}»:",
-            "Può rispondere direttamente a questa e-mail, inoltreremo il suo messaggio all'offerente. La risposta si trova anche nella chat del suo link."),
+            "Può rispondere direttamente a questa e-mail, inoltreremo il suo messaggio all'offerente. La risposta si trova anche nella chat del suo link.",
+            "Visita prenotata: «{0}»",
+            "La sua visita per «{0}» è prenotata:",
+            "L'offerente è stato informato. Può modificare o annullare l'appuntamento tramite il suo link.",
+            "Le abbiamo appena inviato un’offerta adatta.",
+            "Le abbiamo appena inviato {0} offerte adatte.",
+            "Ha già ricevuto da noi le offerte adatte. Le invieremo le nuove appena saranno disponibili.",
+            "Al momento non c’è ancora un’offerta adatta. Le scriveremo appena ce ne sarà una."),
         ["en"] = new SeekerTexts(
             "Your home search with Latrovu",
             "Hello",
@@ -97,7 +118,14 @@ public static class SeekerTextCatalog
             "Active again: {0}.",
             "Answer about “{0}”",
             "The provider has answered your request about “{0}”:",
-            "You can reply directly to this email and we'll pass your message on to the provider. The answer is also in the chat of your listing link.")
+            "You can reply directly to this email and we'll pass your message on to the provider. The answer is also in the chat of your listing link.",
+            "Viewing booked: “{0}”",
+            "Your viewing of “{0}” is booked:",
+            "The provider has been informed. You can change or cancel the appointment on your listing link.",
+            "We have just sent you one matching listing.",
+            "We have just sent you {0} matching listings.",
+            "You have already received the matching listings from us. We will send new ones as soon as they appear.",
+            "There is no matching listing yet. We will let you know as soon as one appears.")
     };
 
     public static SeekerTexts For(string language) =>

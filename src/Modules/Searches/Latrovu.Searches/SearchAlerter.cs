@@ -11,7 +11,7 @@ public sealed class SearchAlerter(
 {
     public static readonly TimeSpan LinkValidity = TimeSpan.FromDays(30);
 
-    public async Task AlertAsync(Search search, ListingReadyForMatching listing, CancellationToken ct)
+    public async Task<bool> AlertAsync(Search search, ListingReadyForMatching listing, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(search);
         ArgumentNullException.ThrowIfNull(listing);
@@ -21,10 +21,16 @@ public sealed class SearchAlerter(
         if (!await searches.RecordAlertAsync(linkRequest, ct))
         {
             logger.LogInformation("Search {SearchId} was already alerted for listing {ListingId}", search.Id, listing.ListingId);
-            return;
+            return false;
         }
 
-        await notifier.SendAlertAsync(new SeekerAlert(search.SeekerAddress, search.Channel, search.Language, search.Name, listing, token), ct);
+        string? reference = await notifier.SendAlertAsync(new SeekerAlert(search.SeekerAddress, search.Channel, search.Language, search.Name, listing, token), ct);
+        if (reference is not null)
+        {
+            await searches.RecordSentMessageAsync(reference, search.Id, ct);
+        }
+
         logger.LogInformation("Search {SearchId} alerted for listing {ListingId}", search.Id, listing.ListingId);
+        return true;
     }
 }

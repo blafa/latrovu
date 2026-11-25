@@ -26,21 +26,30 @@ public sealed class SearchRequestHandler(
         }
 
         IReadOnlyList<Search> existing = await searches.FindBySeekerAsync(message.SenderAddress, ct);
+        Guid? repliedSearchId = await RepliedSearchAsync(message, ct);
         SearchInterpretation? interpretation = await interpreter.InterpretAsync(message.Text, existing, ct);
         IReadOnlyList<Search> changed = interpretation is null
             ? []
-            : SearchRequestPlanner.Apply(existing, interpretation, message.SenderAddress, message.Channel);
+            : SearchRequestPlanner.Apply(existing, interpretation, message.SenderAddress, message.Channel, repliedSearchId);
         PlaceResolution places = await SaveAsync(changed, interpretation, ct);
+        LogInterpretation(message, interpretation, changed, places);
 
-        logger.LogInformation(
-            "Search request {RequestId} interpreted as {Action}, {ChangedCount} searches changed, {PlaceCount} places resolved",
-            message.RequestId,
-            interpretation?.Action,
-            changed.Count,
-            places.Places.Count);
-        await notifier.SendReplyAsync(BuildReply(message, interpretation, existing, changed, places), ct);
-        await AlertExistingListingsAsync(changed, ct);
+        SearchMatchSummary? matches = await AlertExistingListingsAsync(changed, ct);
+        string? reference = await notifier.SendReplyAsync(BuildReply(message, interpretation, existing, changed, places, matches), ct);
+        await RecordReplyAsync(reference, changed, ct);
         await searches.MarkProcessedAsync(message.SourceMessageId, ct);
+    }
+
+    private async Task<Guid?> RepliedSearchAsync(SearchRequestReceived message, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(message.ReplyToReference))
+        {
+            return null;
+        }
+
+        Guid? searchId = await searches.FindSearchBySentMessageAsync(message.ReplyToReference, ct);
+        logger.LogInformation("Search request {RequestId} replies to a message about search {SearchId}", message.RequestId, searchId);
+        return searchId;
     }
 
     private async Task<PlaceResolution> SaveAsync(IReadOnlyList<Search> changed, SearchInterpretation? interpretation, CancellationToken ct)
@@ -61,17 +70,58 @@ public sealed class SearchRequestHandler(
         return places;
     }
 
-    private async Task AlertExistingListingsAsync(IReadOnlyList<Search> changed, CancellationToken ct)
+    private void LogInterpretation(
+        SearchRequestReceived message,
+        SearchInterpretation? interpretation,
+        IReadOnlyList<Search> changed,
+        PlaceResolution places) =>
+        logger.LogInformation(
+            "Search request {RequestId} interpreted as {Action}, {ChangedCount} searches changed, {PlaceCount} places resolved",
+            message.RequestId,
+            interpretation?.Action,
+            changed.Count,
+            places.Places.Count);
+
+    private async Task<SearchMatchSummary?> AlertExistingListingsAsync(IReadOnlyList<Search> changed, CancellationToken ct)
     {
-        foreach (Search search in changed.Where(search => search.Status == Search.ActiveStatus))
+        List<Search> active = changed.Where(search => search.Status == Search.ActiveStatus).ToList();
+        if (active.Count == 0)
         {
-            IReadOnlyList<ListingReadyForMatching> candidates = await searches.FindCandidatesForSearchAsync(search.Id, MaxInitialAlerts, ct);
-            logger.LogInformation("Search {SearchId} matches {CandidateCount} existing listings", search.Id, candidates.Count);
-            foreach (ListingReadyForMatching candidate in candidates)
-            {
-                await alerter.AlertAsync(search, candidate, ct);
-            }
+            return null;
         }
+
+        int alreadySent = 0;
+        int sent = 0;
+        foreach (Search search in active)
+        {
+            alreadySent += await searches.CountAlertedMatchesAsync(search.Id, ct);
+            sent += await AlertCandidatesAsync(search, ct);
+        }
+
+        return new SearchMatchSummary(sent, alreadySent);
+    }
+
+    private async Task<int> AlertCandidatesAsync(Search search, CancellationToken ct)
+    {
+        IReadOnlyList<ListingReadyForMatching> candidates = await searches.FindCandidatesForSearchAsync(search.Id, MaxInitialAlerts, ct);
+        logger.LogInformation("Search {SearchId} matches {CandidateCount} existing listings", search.Id, candidates.Count);
+        int sent = 0;
+        foreach (ListingReadyForMatching candidate in candidates)
+        {
+            sent += await alerter.AlertAsync(search, candidate, ct) ? 1 : 0;
+        }
+
+        return sent;
+    }
+
+    private async Task RecordReplyAsync(string? reference, IReadOnlyList<Search> changed, CancellationToken ct)
+    {
+        if (reference is null || changed.Count != 1)
+        {
+            return;
+        }
+
+        await searches.RecordSentMessageAsync(reference, changed[0].Id, ct);
     }
 
     private static SeekerReply BuildReply(
@@ -79,7 +129,8 @@ public sealed class SearchRequestHandler(
         SearchInterpretation? interpretation,
         IReadOnlyList<Search> existing,
         IReadOnlyList<Search> changed,
-        PlaceResolution places)
+        PlaceResolution places,
+        SearchMatchSummary? matches)
     {
         HashSet<Guid> changedIds = changed.Select(search => search.Id).ToHashSet();
         List<Search> open = existing.Where(search => !changedIds.Contains(search.Id))
@@ -98,7 +149,8 @@ public sealed class SearchRequestHandler(
             open,
             understood,
             places,
-            changesStatus ? changed : []);
+            changesStatus ? changed : [],
+            matches);
     }
 
     private static string ReplyLanguage(SearchRequestReceived message, SearchInterpretation? interpretation, IReadOnlyList<Search> existing)

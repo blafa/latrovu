@@ -2,9 +2,11 @@ namespace Latrovu.Searches;
 
 public interface ISeekerNotifier
 {
-    Task SendReplyAsync(SeekerReply reply, CancellationToken ct);
+    Task<string?> SendReplyAsync(SeekerReply reply, CancellationToken ct);
 
-    Task SendAlertAsync(SeekerAlert alert, CancellationToken ct);
+    Task<string?> SendAlertAsync(SeekerAlert alert, CancellationToken ct);
 
     Task SendAgentAnswerAsync(SeekerAgentAnswer answer, CancellationToken ct);
+
+    Task<string?> SendViewingConfirmationAsync(SeekerViewingConfirmation confirmation, CancellationToken ct);
 }

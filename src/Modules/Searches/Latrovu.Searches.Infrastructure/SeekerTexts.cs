@@ -22,4 +22,11 @@ public sealed record SeekerTexts(
     string ResumedSummary,
     string AgentAnswerSubject,
     string AgentAnswerIntro,
-    string AgentAnswerNote);
+    string AgentAnswerNote,
+    string ViewingSubject,
+    string ViewingIntro,
+    string ViewingNote,
+    string MatchSentOne,
+    string MatchesSent,
+    string MatchesAlreadySent,
+    string NoMatchesYet);

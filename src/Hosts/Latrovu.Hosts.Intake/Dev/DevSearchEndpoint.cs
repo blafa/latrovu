@@ -26,7 +26,7 @@ public static class DevSearchEndpoint
         }
 
         string sender = request.Sender ?? config[SenderSettingKey] ?? DefaultSender;
-        InboundMail mail = new($"dev-search:{Guid.NewGuid()}", sender, null, [SearchRecipient], [], request.Text);
+        InboundMail mail = new($"dev-search:{Guid.NewGuid()}", sender, null, [SearchRecipient], [], request.Text, request.InReplyTo);
         await dispatcher.DispatchAsync(mail, ct);
         return Results.Accepted();
     }

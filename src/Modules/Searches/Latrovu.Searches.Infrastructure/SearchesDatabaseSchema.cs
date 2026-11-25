@@ -47,6 +47,11 @@ public sealed class SearchesDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
             source_id    text PRIMARY KEY,
             processed_at timestamptz NOT NULL DEFAULT now()
         );
+        CREATE TABLE IF NOT EXISTS search_sent_messages (
+            message_id text PRIMARY KEY,
+            search_id  uuid NOT NULL REFERENCES searches (id) ON DELETE CASCADE,
+            sent_at    timestamptz NOT NULL DEFAULT now()
+        );
         """;
 
     public async Task StartAsync(CancellationToken cancellationToken)

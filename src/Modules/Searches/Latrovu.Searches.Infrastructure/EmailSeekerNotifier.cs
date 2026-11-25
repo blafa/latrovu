@@ -15,29 +15,22 @@ public sealed class EmailSeekerNotifier(
     private const string ListPrefix = "– ";
     private const string ViewPath = "/i/";
 
-    public async Task SendAlertAsync(SeekerAlert alert, CancellationToken ct)
+    public async Task<string?> SendAlertAsync(SeekerAlert alert, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(alert);
 
         if (alert.Channel != EmailChannel)
         {
             logger.LogWarning("Channel {Channel} is not supported yet, alert for listing {ListingId} not sent", alert.Channel, alert.Listing.ListingId);
-            return;
+            return null;
         }
 
         SeekerTexts texts = SeekerTextCatalog.For(alert.Language);
         string url = $"{alertOptions.Value.ViewBaseUrl.TrimEnd('/')}{ViewPath}{alert.Token}";
         string subject = string.Format(CultureInfo.InvariantCulture, texts.AlertSubject, alert.SearchName);
-        await emailSender.SendAsync(
-            new EmailMessage(
-                alert.Address,
-                subject,
-                SeekerAlertMail.Text(alert, texts, url),
-                SeekerAlertMail.Html(alert, texts, url),
-                alertOptions.Value.ReplyToAddress,
-                EmailBranding.InlineImages),
-            ct);
+        string messageId = await SendAsync(alert.Address, subject, SeekerAlertMail.Text(alert, texts, url), SeekerAlertMail.Html(alert, texts, url), ct);
         logger.LogInformation("Alert for listing {ListingId} sent in {Language}", alert.Listing.ListingId, alert.Language);
+        return messageId;
     }
 
     public async Task SendAgentAnswerAsync(SeekerAgentAnswer answer, CancellationToken ct)
@@ -51,65 +44,70 @@ public sealed class EmailSeekerNotifier(
         }
 
         SeekerTexts texts = SeekerTextCatalog.For(answer.Language);
-        await emailSender.SendAsync(
-            new EmailMessage(
-                answer.Address,
-                SeekerAgentAnswerMail.Subject(answer, texts),
-                SeekerAgentAnswerMail.Text(answer, texts),
-                SeekerAgentAnswerMail.Html(answer, texts),
-                alertOptions.Value.ReplyToAddress,
-                EmailBranding.InlineImages),
+        await SendAsync(
+            answer.Address,
+            SeekerAgentAnswerMail.Subject(answer, texts),
+            SeekerAgentAnswerMail.Text(answer, texts),
+            SeekerAgentAnswerMail.Html(answer, texts),
             ct);
         logger.LogInformation("Agent answer sent in {Language}", answer.Language);
     }
 
-    public async Task SendReplyAsync(SeekerReply reply, CancellationToken ct)
+    public async Task<string?> SendViewingConfirmationAsync(SeekerViewingConfirmation confirmation, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(confirmation);
+
+        if (confirmation.Channel != EmailChannel)
+        {
+            logger.LogWarning("Channel {Channel} is not supported yet, viewing confirmation not sent", confirmation.Channel);
+            return null;
+        }
+
+        SeekerTexts texts = SeekerTextCatalog.For(confirmation.Language);
+        string messageId = await SendAsync(
+            confirmation.Address,
+            SeekerViewingConfirmationMail.Subject(confirmation, texts),
+            SeekerViewingConfirmationMail.Text(confirmation, texts),
+            SeekerViewingConfirmationMail.Html(confirmation, texts),
+            ct);
+        logger.LogInformation("Viewing confirmation sent in {Language}", confirmation.Language);
+        return messageId;
+    }
+
+    public async Task<string?> SendReplyAsync(SeekerReply reply, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(reply);
 
         if (reply.Channel != EmailChannel)
         {
             logger.LogWarning("Channel {Channel} is not supported yet, reply to {SearchCount} searches not sent", reply.Channel, reply.OpenSearches.Count);
-            return;
-        }
-
-        SeekerTexts texts = SeekerTextCatalog.For(reply.Language);
-        SeekerReply withPlaceQuestions = reply with
-        {
-            Refinements = [.. PlaceQuestions(reply.Places, texts), .. reply.Refinements],
-            Summary = StatusSummary(reply.StatusChanges, texts) ?? reply.Summary
-        };
-        await emailSender.SendAsync(
-            new EmailMessage(
-                reply.Address,
-                texts.Subject,
-                ComposeBody(withPlaceQuestions, texts),
-                SeekerReplyHtml.Render(withPlaceQuestions, texts),
-                alertOptions.Value.ReplyToAddress,
-                EmailBranding.InlineImages),
-            ct);
-        logger.LogInformation("Search reply sent in {Language} with {SearchCount} open searches", reply.Language, reply.OpenSearches.Count);
-    }
-
-    private static string? StatusSummary(IReadOnlyList<Search>? changes, SeekerTexts texts)
-    {
-        if (changes is not { Count: > 0 })
-        {
             return null;
         }
 
-        IEnumerable<string> sentences = changes
-            .GroupBy(search => search.Status)
-            .Select(group => string.Format(
-                CultureInfo.InvariantCulture,
-                group.Key switch
-                {
-                    Search.StoppedStatus => texts.StoppedSummary,
-                    Search.PausedStatus => texts.PausedSummary,
-                    _ => texts.ResumedSummary
-                },
-                string.Join(", ", group.Select(search => search.Name))));
-        return string.Join(' ', sentences);
+        SeekerTexts texts = SeekerTextCatalog.For(reply.Language);
+        SeekerReply composed = reply with
+        {
+            Refinements = [.. PlaceQuestions(reply.Places, texts), .. reply.Refinements],
+            Summary = SeekerReplySummary.Compose(reply, texts)
+        };
+        string messageId = await SendAsync(reply.Address, texts.Subject, ComposeBody(composed, texts), SeekerReplyHtml.Render(composed, texts), ct);
+        logger.LogInformation("Search reply sent in {Language} with {SearchCount} open searches", reply.Language, reply.OpenSearches.Count);
+        return messageId;
+    }
+
+    private async Task<string> SendAsync(string address, string subject, string text, string html, CancellationToken ct)
+    {
+        string messageId = NewMessageId();
+        await emailSender.SendAsync(
+            new EmailMessage(address, subject, text, html, alertOptions.Value.ReplyToAddress, EmailBranding.InlineImages, messageId),
+            ct);
+        return messageId;
+    }
+
+    private string NewMessageId()
+    {
+        string replyTo = alertOptions.Value.ReplyToAddress;
+        return $"{Guid.NewGuid():N}@{replyTo[(replyTo.IndexOf('@', StringComparison.Ordinal) + 1)..]}";
     }
 
     private static IEnumerable<string> PlaceQuestions(PlaceResolution places, SeekerTexts texts) =>

@@ -94,6 +94,54 @@ public sealed class SearchRequestPlannerTests
         Assert.Equal(Search.PausedStatus, result?.Status);
     }
 
+    [Fact]
+    public void Update_WithoutName_ReplyToSearch_UpdatesThatSearch()
+    {
+        Search albisrieden = Existing("Albisrieden");
+        Search zurich = Existing("Zürich");
+
+        Search? result = SearchRequestPlanner.Apply(
+            [albisrieden, zurich],
+            Interpretation(SearchAction.Update, null),
+            Address,
+            Channel,
+            albisrieden.Id).SingleOrDefault();
+
+        Assert.Equal(albisrieden.Id, result?.Id);
+    }
+
+    [Fact]
+    public void Update_WithName_ReplyToOtherSearch_NameWins()
+    {
+        Search albisrieden = Existing("Albisrieden");
+        Search zurich = Existing("Zürich");
+
+        Search? result = SearchRequestPlanner.Apply(
+            [albisrieden, zurich],
+            Interpretation(SearchAction.Update, "Zürich"),
+            Address,
+            Channel,
+            albisrieden.Id).SingleOrDefault();
+
+        Assert.Equal(zurich.Id, result?.Id);
+    }
+
+    [Fact]
+    public void Stop_WithoutName_ReplyToSearch_StopsThatSearch()
+    {
+        Search albisrieden = Existing("Albisrieden");
+
+        Search? result = SearchRequestPlanner.Apply(
+            [albisrieden, Existing("Zürich")],
+            Interpretation(SearchAction.Stop, null),
+            Address,
+            Channel,
+            albisrieden.Id).SingleOrDefault();
+
+        Assert.Equal(albisrieden.Id, result?.Id);
+        Assert.Equal(Search.StoppedStatus, result?.Status);
+    }
+
     private static Search? Single(IReadOnlyList<Search> existing, SearchInterpretation interpretation) =>
         SearchRequestPlanner.Apply(existing, interpretation, Address, Channel).SingleOrDefault();
 

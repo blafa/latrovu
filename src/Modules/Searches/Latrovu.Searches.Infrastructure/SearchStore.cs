@@ -67,6 +67,19 @@ public sealed class SearchStore(NpgsqlDataSource dataSource, IOutbox outbox) : I
 
     private const string MarkProcessedSql = "INSERT INTO processed_search_requests (source_id) VALUES ($1) ON CONFLICT DO NOTHING";
 
+    private const string RecordSentMessageSql = "INSERT INTO search_sent_messages (message_id, search_id) VALUES ($1, $2) ON CONFLICT DO NOTHING";
+
+    private const string FindBySentMessageSql = "SELECT search_id FROM search_sent_messages WHERE message_id = $1";
+
+    private static readonly string AlertedMatchesSql = $"""
+        SELECT count(*)
+        FROM matchable_listings m
+        JOIN searches s ON s.id = $1
+        WHERE s.area IS NOT NULL AND ST_Covers(s.area, m.location)
+          AND {SearchCriteria.Condition("m.offer_type", "m.rooms", "m.price_chf", "m.living_area_m2")}
+          AND EXISTS (SELECT 1 FROM search_alerts a WHERE a.search_id = s.id AND a.listing_id = m.listing_id)
+        """;
+
     private static readonly JsonSerializerOptions SnakeCase = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
     public async Task<IReadOnlyList<Search>> FindBySeekerAsync(string seekerAddress, CancellationToken ct)
@@ -193,6 +206,32 @@ public sealed class SearchStore(NpgsqlDataSource dataSource, IOutbox outbox) : I
         await using NpgsqlCommand command = dataSource.CreateCommand(MarkProcessedSql);
         command.Parameters.Add(new NpgsqlParameter { Value = sourceId });
         await command.ExecuteNonQueryAsync(ct);
+    }
+
+    public async Task RecordSentMessageAsync(string reference, Guid searchId, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reference);
+
+        await using NpgsqlCommand command = dataSource.CreateCommand(RecordSentMessageSql);
+        command.Parameters.Add(new NpgsqlParameter { Value = reference });
+        command.Parameters.Add(new NpgsqlParameter { Value = searchId });
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
+    public async Task<Guid?> FindSearchBySentMessageAsync(string reference, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reference);
+
+        await using NpgsqlCommand command = dataSource.CreateCommand(FindBySentMessageSql);
+        command.Parameters.Add(new NpgsqlParameter { Value = reference.Trim('<', '>', ' ') });
+        return await command.ExecuteScalarAsync(ct) is Guid searchId ? searchId : null;
+    }
+
+    public async Task<int> CountAlertedMatchesAsync(Guid searchId, CancellationToken ct)
+    {
+        await using NpgsqlCommand command = dataSource.CreateCommand(AlertedMatchesSql);
+        command.Parameters.Add(new NpgsqlParameter { Value = searchId });
+        return Convert.ToInt32((long)(await command.ExecuteScalarAsync(ct))!);
     }
 
     private static async Task<ListingReadyForMatching> ReadCandidateAsync(NpgsqlDataReader reader, CancellationToken ct) =>

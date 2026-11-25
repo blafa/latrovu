@@ -25,4 +25,10 @@ public interface ISearchStore
     Task<bool> IsProcessedAsync(string sourceId, CancellationToken ct);
 
     Task MarkProcessedAsync(string sourceId, CancellationToken ct);
+
+    Task RecordSentMessageAsync(string reference, Guid searchId, CancellationToken ct);
+
+    Task<Guid?> FindSearchBySentMessageAsync(string reference, CancellationToken ct);
+
+    Task<int> CountAlertedMatchesAsync(Guid searchId, CancellationToken ct);
 }

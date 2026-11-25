@@ -1,10 +1,12 @@
+using Latrovu.BuildingBlocks.Messaging;
+using Latrovu.Core.Listings;
 using Latrovu.Listings.Viewing.Viewings;
 using Npgsql;
 using NpgsqlTypes;
 
 namespace Latrovu.Listings.Infrastructure.Viewing.Viewings;
 
-public sealed class ViewingStore(NpgsqlDataSource dataSource) : IViewingStore
+public sealed class ViewingStore(NpgsqlDataSource dataSource, IOutbox outbox) : IViewingStore
 {
     private const string AnonymousAttendee = "Interessent ohne E-Mail-Adresse";
 
@@ -40,6 +42,14 @@ public sealed class ViewingStore(NpgsqlDataSource dataSource) : IViewingStore
         """;
 
     private const string InsertBookingSql = "INSERT INTO listing_viewing_bookings (slot_id, token_hash, created_at) VALUES ($1, $2, $3)";
+
+    private const string BookedSql = """
+        SELECT v.search_id, s.listing_id, coalesce(l.data->>'title', l.file_name, ''), s.starts_at, s.ends_at
+        FROM listing_viewing_slots s
+        JOIN listings l ON l.id = s.listing_id
+        JOIN listing_view_links v ON v.token_hash = $2
+        WHERE s.id = $1 AND v.search_id IS NOT NULL
+        """;
 
     public async Task<IReadOnlyList<ViewingSlot>> GetSlotsAsync(Guid listingId, string? tokenHash, DateTimeOffset from, CancellationToken ct)
     {
@@ -101,7 +111,7 @@ public sealed class ViewingStore(NpgsqlDataSource dataSource) : IViewingStore
         return await command.ExecuteNonQueryAsync(ct) > 0;
     }
 
-    private static async Task<BookingOutcome> TryBookAsync(
+    private async Task<BookingOutcome> TryBookAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         Guid listingId,
@@ -128,7 +138,41 @@ public sealed class ViewingStore(NpgsqlDataSource dataSource) : IViewingStore
 
         await ExecuteAsync(connection, transaction, CancelSql, [listingId, tokenHash], ct);
         await ExecuteAsync(connection, transaction, InsertBookingSql, [slotId, tokenHash, now], ct);
+        await PublishBookedAsync(connection, transaction, slotId, tokenHash, ct);
         return BookingOutcome.Booked;
+    }
+
+    private async Task PublishBookedAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, long slotId, string tokenHash, CancellationToken ct)
+    {
+        ViewingBooked? booked = await ReadBookedAsync(connection, transaction, slotId, tokenHash, ct);
+        if (booked is not null)
+        {
+            await outbox.AddAsync([booked], transaction, ct);
+        }
+    }
+
+    private static async Task<ViewingBooked?> ReadBookedAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        long slotId,
+        string tokenHash,
+        CancellationToken ct)
+    {
+        await using NpgsqlCommand command = new(BookedSql, connection, transaction);
+        command.Parameters.Add(new NpgsqlParameter { Value = slotId });
+        command.Parameters.Add(new NpgsqlParameter { Value = tokenHash });
+        await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(ct);
+        if (!await reader.ReadAsync(ct))
+        {
+            return null;
+        }
+
+        return new ViewingBooked(
+            reader.GetGuid(0),
+            reader.GetGuid(1),
+            reader.GetString(2),
+            reader.GetFieldValue<DateTimeOffset>(3),
+            reader.GetFieldValue<DateTimeOffset>(4));
     }
 
     private static async Task<(int Capacity, DateTimeOffset EndsAt)?> LockSlotAsync(

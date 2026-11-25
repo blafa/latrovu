@@ -8,7 +8,8 @@ public static class SearchRequestPlanner
         IReadOnlyList<Search> existing,
         SearchInterpretation interpretation,
         string seekerAddress,
-        string channel)
+        string channel,
+        Guid? repliedSearchId = null)
     {
         ArgumentNullException.ThrowIfNull(existing);
         ArgumentNullException.ThrowIfNull(interpretation);
@@ -19,19 +20,18 @@ public static class SearchRequestPlanner
             return existing.Where(search => search.IsOpen).Select(search => search with { Status = status }).ToList();
         }
 
-        Search? changed = ApplyToOne(existing, interpretation, seekerAddress, channel, status);
+        Search? target = FindTarget(existing, interpretation, repliedSearchId);
+        Search? changed = ApplyToOne(target, interpretation, seekerAddress, channel, status);
         return changed is null ? [] : [changed];
     }
 
     private static Search? ApplyToOne(
-        IReadOnlyList<Search> existing,
+        Search? target,
         SearchInterpretation interpretation,
         string seekerAddress,
         string channel,
-        string? status)
-    {
-        Search? target = FindTarget(existing, interpretation);
-        return interpretation.Action switch
+        string? status) =>
+        interpretation.Action switch
         {
             SearchAction.New or SearchAction.Update when target is null =>
                 Create(interpretation, seekerAddress, channel),
@@ -40,7 +40,6 @@ public static class SearchRequestPlanner
             _ when status is not null && target is not null => target with { Status = status },
             _ => null
         };
-    }
 
     private static string? StatusFor(SearchAction action) => action switch
     {
@@ -50,7 +49,7 @@ public static class SearchRequestPlanner
         _ => null
     };
 
-    private static Search? FindTarget(IReadOnlyList<Search> existing, SearchInterpretation interpretation)
+    private static Search? FindTarget(IReadOnlyList<Search> existing, SearchInterpretation interpretation, Guid? repliedSearchId)
     {
         List<Search> open = existing.Where(search => search.IsOpen).ToList();
         Search? byName = open.FirstOrDefault(search =>
@@ -60,7 +59,8 @@ public static class SearchRequestPlanner
             return byName;
         }
 
-        return open.Count == 1 ? open[0] : null;
+        Search? replied = open.FirstOrDefault(search => search.Id == repliedSearchId);
+        return replied ?? (open.Count == 1 ? open[0] : null);
     }
 
     private static Search Create(SearchInterpretation interpretation, string seekerAddress, string channel)
