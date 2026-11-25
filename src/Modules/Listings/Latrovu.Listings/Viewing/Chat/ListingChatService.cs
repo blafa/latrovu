@@ -18,6 +18,7 @@ public sealed class ListingChatService(
     private const string ViewingQuestion = "Wann sind Besichtigungen möglich?";
     private const string SlotFull = "Dieser Termin ist leider schon voll. Bitte wählen Sie einen anderen.";
     private const string SlotGone = "Diesen Termin gibt es nicht mehr. Bitte wählen Sie einen der aktuellen Termine.";
+    private const string NoSlotsForwarded = "Zurzeit sind keine Besichtigungstermine offen. Wir haben Ihren Wunsch an den Anbieter weitergeleitet.";
     private static readonly TimeSpan LimitWindow = TimeSpan.FromDays(1);
 
     public async Task<ChatResult> GetAsync(string token, CancellationToken ct)
@@ -45,9 +46,12 @@ public sealed class ListingChatService(
         IReadOnlyList<ChatMessage> history = await chats.GetMessagesAsync(token, ct);
         ChatAnswer answer = await AnswerAsync(listing, history, question.Trim(), ct);
         await chats.AddAsync(token, listing.Id, new ChatMessage(ChatMessage.SeekerRole, question.Trim(), null, null, timeProvider.GetUtcNow()), ct);
-        ChatAnswer final = answer is { Source: ChatMessage.BookingSource, SlotId: { } slotId }
-            ? await BookAsync(token, listing.Id, slotId, answer, ct)
-            : answer;
+        ChatAnswer final = answer switch
+        {
+            { Source: ChatMessage.BookingSource, SlotId: { } slotId } => await BookAsync(token, listing.Id, slotId, answer, ct),
+            { Source: ChatMessage.ViewingsSource } => await ViewingAnswerAsync(listing.Id, answer, ct),
+            _ => answer
+        };
         await chats.AddAsync(token, listing.Id, new ChatMessage(ChatMessage.AssistantRole, final.Text, final.Source, final.Page, timeProvider.GetUtcNow()), ct);
         if (final.Source == ChatMessage.RequestSource)
         {
@@ -76,6 +80,22 @@ public sealed class ListingChatService(
 
         logger.LogInformation("Chat question for listing {ListingId} marked for forwarding", listing.Id);
         return await ResultAsync(ChatOutcome.Answered, token, listing.Id, ct);
+    }
+
+    private async Task<ChatAnswer> ViewingAnswerAsync(Guid listingId, ChatAnswer answer, CancellationToken ct)
+    {
+        List<ViewingSlot> free = (await viewings.GetSlotsAsync(listingId, null, timeProvider.GetUtcNow(), ct))
+            .Where(slot => slot.FreePlaces > 0)
+            .ToList();
+        if (free.Count == 0)
+        {
+            return new ChatAnswer(NoSlotsForwarded, ChatMessage.RequestSource, null);
+        }
+
+        string text = string.IsNullOrWhiteSpace(answer.Text)
+            ? $"Freie Besichtigungstermine: {string.Join(", ", free.Select(SwissTime.Describe))}. Wählen Sie unten einen Termin oder schreiben Sie, welcher passt."
+            : answer.Text;
+        return new ChatAnswer(text, ChatMessage.ViewingsSource, null);
     }
 
     private async Task<ChatAnswer> BookAsync(string token, Guid listingId, long slotId, ChatAnswer answer, CancellationToken ct)

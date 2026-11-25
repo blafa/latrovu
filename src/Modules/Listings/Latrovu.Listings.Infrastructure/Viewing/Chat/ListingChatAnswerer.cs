@@ -15,16 +15,18 @@ public sealed class ListingChatAnswerer(ILlmClient llm, ILogger<ListingChatAnswe
     private const string RequestKind = "request";
     private const string ContactKind = "contact";
     private const string BookKind = "book";
+    private const string ViewingKind = "viewing";
 
     private const string SystemPrompt = """
         You answer questions from a person interested in one property listing in Switzerland, on behalf of Latrovu.
         You receive the listing data as JSON, earlier answers of the provider, and the text of the agent's exposé.
 
         First decide the kind of message:
-        - "request": the person asks us to do something: contact the provider, arrange or request a viewing, pass on a
-          message, an offer or documents, call back. Even if the exposé explains how viewings work, it is a request.
-          Exception: if the provider's earlier answers list free viewing slots, a wish to visit is a "question": answer
-          with the free slots and say that they can be booked directly on this page.
+        - "viewing": the person asks when viewings are possible, or wants to visit or see the property, without picking
+          one specific listed slot. Write one short sentence in their language listing the free viewing slots from the
+          provider's earlier answers by day and time; leave answer empty if none are listed.
+        - "request": the person asks us to do something else: contact the provider, pass on a message, an offer or
+          documents, call back.
         - "book": the person clearly picks one of the listed free viewing slots (by day, time or number). Set slot to
           that slot's number (the digits after #) and write one short sentence confirming that the viewing at that time
           is booked and the provider is informed. If it is unclear which slot is meant, use "question" instead.
@@ -51,7 +53,7 @@ public sealed class ListingChatAnswerer(ILlmClient llm, ILogger<ListingChatAnswe
         {
           "type": "object",
           "properties": {
-            "kind": { "enum": ["question", "request", "contact", "book"] },
+            "kind": { "enum": ["viewing", "book", "request", "contact", "question"] },
             "language": { "type": "string" },
             "answer": { "type": "string", "maxLength": 600 },
             "source": { "enum": ["viewings", "provider", "expose", "data", "unknown"] },
@@ -101,6 +103,7 @@ public sealed class ListingChatAnswerer(ILlmClient llm, ILogger<ListingChatAnswe
         {
             RequestKind => new ChatAnswer(ChatReplyTexts.RequestForwarded(language), ChatMessage.RequestSource, null),
             ContactKind => new ChatAnswer(ChatReplyTexts.ContactViaLatrovu(language), ChatMessage.LatrovuSource, null),
+            ViewingKind => new ChatAnswer(redactor.Redact(root["answer"]?.GetValue<string>()?.Trim() ?? string.Empty, ChatReplyTexts.Provider(language)), ChatMessage.ViewingsSource, null),
             BookKind when root["slot"]?.GetValue<long>() is { } slot => Answer(root, pageCount, redactor, language) is { } confirmation
                 ? confirmation with { Source = ChatMessage.BookingSource, Page = null, SlotId = slot }
                 : null,

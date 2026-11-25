@@ -153,6 +153,32 @@ public sealed class ListingChatServiceTests
         Assert.Empty(viewingSlots.NotifiedSlots);
     }
 
+    [Fact]
+    public async Task Ask_ViewingWithFreeSlots_ListsThem()
+    {
+        string token = await ApprovedLinkAsync();
+        await viewingSlots.AddSlotAsync(ListingId, time.GetUtcNow().AddDays(1), time.GetUtcNow().AddDays(1).AddMinutes(30), 3, CancellationToken.None);
+        answerer.Answer = new ChatAnswer(string.Empty, ChatMessage.ViewingsSource, null);
+
+        ChatResult result = await service.AskAsync(token, "Wann kann ich besichtigen?", CancellationToken.None);
+
+        Assert.Equal(ChatMessage.ViewingsSource, result.Messages[1].Source);
+        Assert.StartsWith("Freie Besichtigungstermine", result.Messages[1].Text, StringComparison.Ordinal);
+        Assert.Single(result.Slots);
+    }
+
+    [Fact]
+    public async Task Ask_ViewingWithoutSlots_IsForwardedToTheAgent()
+    {
+        string token = await ApprovedLinkAsync();
+        answerer.Answer = new ChatAnswer(string.Empty, ChatMessage.ViewingsSource, null);
+
+        ChatResult result = await service.AskAsync(token, "Wann kann ich besichtigen?", CancellationToken.None);
+
+        Assert.Equal(ChatMessage.RequestSource, result.Messages[1].Source);
+        Assert.Equal(ChatMessage.ForwardPending, result.Messages[1].ForwardStatus);
+    }
+
     private async Task<string> ApprovedLinkAsync()
     {
         await listings.ApproveAsync(ListingId, CancellationToken.None);
