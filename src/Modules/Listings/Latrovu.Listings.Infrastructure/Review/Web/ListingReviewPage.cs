@@ -27,6 +27,11 @@ public static class ListingReviewPage
             aside.context:not(:has(.pane:not([hidden]):not(#pane-intro))) { display:none; }
         }
         @media (max-width: 760px) {
+            .topbar { height:auto; }
+            .topbar-inner { flex-wrap:wrap; gap:8px 12px; padding:10px 16px; }
+            .topbar .brand { border-right:none; padding-right:0; }
+            .listing-id { order:3; flex-basis:100%; padding-top:8px; border-top:1px solid var(--well); }
+            .listing-id h1 { font-size:15px; }
             body { padding-bottom:calc(68px + env(safe-area-inset-bottom)); }
             .tabs-bar { position:fixed; top:auto; bottom:0; left:0; right:0; z-index:20; background:var(--paper); border-bottom:none;
                         border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
