@@ -8,8 +8,13 @@ namespace Latrovu.Listings.Infrastructure.Ingestion;
 public sealed class ListingStore(NpgsqlDataSource dataSource, ILogger<ListingStore> logger) : IListingStore
 {
     private const string InsertSql = """
-        INSERT INTO listings (id, source_email, subject, file_name, data, extracted_data, field_scores, field_evidence, source_pages, source_hash)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10)
+        INSERT INTO listings (id, source_email, subject, file_name, data, extracted_data, field_scores, field_evidence, source_pages, source_hash, project_id, unit_label)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10, $11, $12)
+        """;
+
+    private const string InsertProjectSql = """
+        INSERT INTO listing_projects (id, source_email, file_name, source_hash, title, unit_count, rented_count)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         """;
 
     private const string FindSql = """
@@ -37,10 +42,29 @@ public sealed class ListingStore(NpgsqlDataSource dataSource, ILogger<ListingSto
         command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(listing.Extraction?.FieldEvidenceJson) });
         command.Parameters.Add(new NpgsqlParameter { Value = JsonSerializer.Serialize(listing.SourcePages) });
         command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(listing.SourceHash), NpgsqlDbType = NpgsqlDbType.Char });
+        command.Parameters.Add(new NpgsqlParameter { Value = (object?)listing.ProjectId ?? DBNull.Value, NpgsqlDbType = NpgsqlDbType.Uuid });
+        command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(listing.UnitLabel), NpgsqlDbType = NpgsqlDbType.Text });
         await command.ExecuteNonQueryAsync(ct);
 
         logger.LogDebug("Inserted listing {ListingId} in {ElapsedMs} ms", listingId, stopwatch.ElapsedMilliseconds);
         return listingId;
+    }
+
+    public async Task<Guid> AddProjectAsync(NewProject project, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        Guid projectId = Guid.NewGuid();
+        await using NpgsqlCommand command = dataSource.CreateCommand(InsertProjectSql);
+        command.Parameters.Add(new NpgsqlParameter { Value = projectId });
+        command.Parameters.Add(new NpgsqlParameter { Value = project.SourceEmail });
+        command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(project.FileName), NpgsqlDbType = NpgsqlDbType.Text });
+        command.Parameters.Add(new NpgsqlParameter { Value = ToDbValue(project.SourceHash), NpgsqlDbType = NpgsqlDbType.Char });
+        command.Parameters.Add(new NpgsqlParameter { Value = project.Title });
+        command.Parameters.Add(new NpgsqlParameter { Value = project.UnitCount });
+        command.Parameters.Add(new NpgsqlParameter { Value = project.RentedCount });
+        await command.ExecuteNonQueryAsync(ct);
+        return projectId;
     }
 
     public async Task<Guid?> FindActiveBySourceAsync(string sourceEmail, string sourceHash, CancellationToken ct)

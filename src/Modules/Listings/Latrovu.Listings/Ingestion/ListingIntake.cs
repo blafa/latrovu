@@ -35,54 +35,82 @@ public sealed class ListingIntake(
         List<CreatedListing> createdListings = [];
         foreach (SubmittedFile pdf in pdfs)
         {
-            (IntakeFileOutcome outcome, Guid? listingId) = await ProcessPdfAsync(message, pdf, ct);
+            (IntakeFileOutcome outcome, IReadOnlyList<Guid> listingIds) = await ProcessPdfAsync(message, pdf, ct);
             outcomes.Add(outcome);
-            if (listingId is not null)
-            {
-                createdListings.Add(new CreatedListing(listingId.Value, pdf.Content));
-            }
+            createdListings.AddRange(listingIds.Select(listingId => new CreatedListing(listingId, pdf.Content)));
         }
 
         await imageCollector.CollectAsync(message, files, createdListings, ct);
         await replies.SendAsync(new IntakeReport(message.Sender, message.Subject, outcomes), ct);
     }
 
-    private async Task<(IntakeFileOutcome Outcome, Guid? ListingId)> ProcessPdfAsync(Submission message, SubmittedFile pdf, CancellationToken ct)
+    private async Task<(IntakeFileOutcome Outcome, IReadOnlyList<Guid> ListingIds)> ProcessPdfAsync(Submission message, SubmittedFile pdf, CancellationToken ct)
     {
         IReadOnlyList<string> pages = pdfReader.ReadPages(pdf.Content);
         string sourceHash = Convert.ToHexString(SHA256.HashData(pdf.Content));
         if (await store.FindActiveBySourceAsync(message.Sender, sourceHash, ct) is { } existingId)
         {
             string reviewToken = await ReuseExistingAsync(existingId, pdf, pages, ct);
-            return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.AlreadyKnown, reviewToken, ListingId: existingId), null);
+            return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.AlreadyKnown, reviewToken, ListingId: existingId), []);
         }
 
         DocumentClassification classification = await classifier.ClassifyAsync(string.Join(PageSeparator, pages), ct);
         if (!classification.IsListing)
         {
             logger.LogInformation("Skipped {FileName}, it is a {DocumentType}", pdf.FileName, classification.Type);
-            return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.NotAListing, DocumentType: classification.Type), null);
+            return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.NotAListing, DocumentType: classification.Type), []);
         }
 
-        if (classification.Type == DocumentType.MultiUnitListing)
+        IReadOnlyList<ListingUnit> units = classification.Type == DocumentType.MultiUnitListing ? await unitExtractor.ExtractAsync(pages, ct) : [];
+        if (units.Count > 0)
         {
-            await LogUnitsAsync(pdf, pages, ct);
+            return await StoreProjectAsync(message, pdf, pages, sourceHash, units, ct);
         }
 
         (Guid listingId, string token) = await ExtractAndStoreAsync(message, pdf, pages, sourceHash, ct);
-        return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.Created, token, ListingId: listingId), listingId);
+        return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.Created, token, ListingId: listingId), [listingId]);
     }
 
-    private async Task LogUnitsAsync(SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
+    private async Task<(IntakeFileOutcome Outcome, IReadOnlyList<Guid> ListingIds)> StoreProjectAsync(
+        Submission message,
+        SubmittedFile pdf,
+        IReadOnlyList<string> pages,
+        string sourceHash,
+        IReadOnlyList<ListingUnit> units,
+        CancellationToken ct)
     {
-        IReadOnlyList<ListingUnit> units = await unitExtractor.ExtractAsync(pages, ct);
-        logger.LogWarning("{FileName} contains {UnitCount} units, still stored as one listing until projects exist", pdf.FileName, units.Count);
-        foreach (ListingUnit unit in units)
+        ListingExtraction? building = await extractor.ExtractAsync(pages, ct);
+        List<ListingUnit> available = units.Where(unit => unit.Status != UnitStatus.Rented).ToList();
+        string title = ProjectTitles.From(building, pdf.FileName);
+        Guid projectId = await store.AddProjectAsync(new NewProject(message.Sender, pdf.FileName, sourceHash, title, units.Count, units.Count - available.Count), ct);
+        ProjectIntakeContext context = new(message, pdf, pages, sourceHash, projectId, building);
+        List<IntakeUnitOutcome> stored = [];
+        foreach (ListingUnit unit in available)
         {
-            logger.LogInformation(
-                "Unit {Label}: {Rooms} rooms, floor {Floor}, {Area} m2, net {Net}, charges {Charges}, gross {Gross}, from {From}, {Status}",
-                unit.Label, unit.Rooms, unit.Floor, unit.LivingAreaM2, unit.NetRentChf, unit.ChargesChf, unit.GrossRentChf, unit.AvailableFrom, unit.Status);
+            stored.Add(await StoreUnitAsync(context, unit, ct));
         }
+
+        logger.LogInformation("Stored project {ProjectId} from {FileName} with {StoredCount} of {UnitCount} units", projectId, pdf.FileName, stored.Count, units.Count);
+        IntakeProjectOutcome project = new(title, units.Count - available.Count, stored);
+        return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.Created, stored.FirstOrDefault()?.ReviewToken, ListingId: stored.FirstOrDefault()?.ListingId, Project: project),
+            stored.Select(unit => unit.ListingId).ToList());
+    }
+
+    private async Task<IntakeUnitOutcome> StoreUnitAsync(ProjectIntakeContext context, ListingUnit unit, CancellationToken ct)
+    {
+        ListingExtraction? extraction = context.Building is null ? null : UnitListingComposer.Compose(context.Building, unit);
+        NewListing listing = new(
+            context.Message.Sender,
+            context.Message.Subject,
+            context.Pdf.FileName,
+            extraction,
+            context.Pages,
+            context.SourceHash,
+            context.ProjectId,
+            unit.Label);
+        Guid listingId = await store.AddAsync(listing, ct);
+        string token = await accessTokens.CreateAsync(listingId, ct);
+        return new IntakeUnitOutcome(unit.Label, unit.Rooms, unit.GrossRentChf, token, listingId);
     }
 
     private async Task<string> ReuseExistingAsync(Guid listingId, SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)

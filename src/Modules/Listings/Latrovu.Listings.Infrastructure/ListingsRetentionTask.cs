@@ -28,6 +28,13 @@ public sealed class ListingsRetentionTask(NpgsqlDataSource dataSource) : IRetent
 
     private const string ProcessedSubmissionsSql = "DELETE FROM processed_submissions WHERE processed_at < $1";
 
+    private const string EmptyProjectsSql = """
+        DELETE FROM listing_projects p
+        WHERE p.created_at < $1 AND NOT EXISTS (SELECT 1 FROM listings l WHERE l.project_id = p.id)
+        """;
+
+    public static readonly TimeSpan EmptyProjectGrace = TimeSpan.FromDays(1);
+
     public string Name => "Listings";
 
     public async Task<int> RunAsync(DateTimeOffset now, CancellationToken ct)
@@ -41,6 +48,7 @@ public sealed class ListingsRetentionTask(NpgsqlDataSource dataSource) : IRetent
         deleted += await DeleteExpiredLinksAsync(now - ExpiredLinkGrace, ct);
         deleted += await DeleteAsync(AccessRequestsSql, now - AccessRequestRetention, ct);
         deleted += await DeleteAsync(ProcessedSubmissionsSql, now - ProcessedIdRetention, ct);
+        deleted += await DeleteAsync(EmptyProjectsSql, now - EmptyProjectGrace, ct);
         return deleted;
     }
 

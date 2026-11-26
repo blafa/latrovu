@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Net;
 using Latrovu.BuildingBlocks.Infrastructure.Email;
+using Latrovu.Listings.Extraction.Units;
 using Latrovu.Listings.Infrastructure.Review.Web;
 
 namespace Latrovu.Listings.Infrastructure.Ingestion;
@@ -9,6 +11,7 @@ internal static class IntakeReplyMail
     private const string FontStack = "Outfit,Helvetica,Arial,sans-serif";
     private const string IntakeAddress = "inserat@latrovu.com";
     private const int MaxOpenLabels = 5;
+    private static readonly CultureInfo SwissGerman = CultureInfo.GetCultureInfo("de-CH");
 
     public static string Subject(IntakeReport report)
     {
@@ -49,6 +52,11 @@ internal static class IntakeReplyMail
 
     private static string FileCard(IntakeFileOutcome file, IntakeReplyContent content)
     {
+        if (file.Project is not null)
+        {
+            return ProjectCard(file, file.Project, content);
+        }
+
         if (file.Status == IntakeFileStatus.NotAListing)
         {
             return "<div style=\"border:1px solid #F2D8AE;background:#FCF6EC;border-radius:8px;padding:14px 16px;color:#633806;\">"
@@ -65,6 +73,32 @@ internal static class IntakeReplyMail
             + (summary is null ? string.Empty : SummaryHtml(summary))
             + Button(file, content) + "</div>";
     }
+
+    private static string ProjectCard(IntakeFileOutcome file, IntakeProjectOutcome project, IntakeReplyContent content)
+    {
+        string chips = Chips([Chip($"✓ {project.Units.Count} frei", "#E3F1D2", "#27500A"), Chip($"{project.RentedCount} vermietet", "#EFF0EC", "#444441")]);
+        string units = project.Units.Count == 0
+            ? "<p style=\"margin:10px 0 0;font-size:13px;color:#5E6660;\">Alle Wohnungen sind bereits vermietet.</p>"
+            : string.Join(string.Empty, project.Units.Select(unit => UnitRow(unit, content)));
+        return "<div style=\"border:1px solid #E1E4DD;border-radius:8px;padding:14px 16px;\">"
+            + $"<p style=\"margin:0;font-weight:600;\">{Encode(project.Title)}</p>"
+            + $"<p style=\"margin:2px 0 0;color:#5E6660;font-size:12px;\">📄 {Encode(file.FileName)}</p>"
+            + chips + units + "</div>";
+    }
+
+    private static string UnitRow(IntakeUnitOutcome unit, IntakeReplyContent content) =>
+        "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:8px;border-top:1px solid #EFF0EC;\"><tr>"
+        + $"<td style=\"padding-top:8px;font-size:14px;\">{Encode(UnitLine(unit))}</td>"
+        + $"<td align=\"right\" style=\"padding-top:8px;\"><a href=\"{Encode(content.ReviewUrl(unit.ReviewToken))}\" style=\"display:inline-block;background:#B8E62E;color:#111418;font-weight:600;font-size:13px;text-decoration:none;padding:6px 12px;border-radius:6px;white-space:nowrap;\">Prüfen →</a></td>"
+        + "</tr></table>";
+
+    private static string UnitLine(IntakeUnitOutcome unit) =>
+        string.Join(" · ", new[]
+        {
+            unit.Rooms is { } rooms ? $"{UnitListingComposer.RoomsText(rooms)} Zi" : null,
+            unit.Label,
+            unit.GrossRentChf is { } gross ? $"CHF {gross.ToString("#,##0", SwissGerman)}" : null
+        }.OfType<string>());
 
     private static string SummaryHtml(IntakeListingSummary summary)
     {
@@ -98,6 +132,12 @@ internal static class IntakeReplyMail
 
     private static string FileText(IntakeFileOutcome file, IntakeReplyContent content)
     {
+        if (file.Project is not null)
+        {
+            IEnumerable<string> units = file.Project.Units.Select(unit => $"{UnitLine(unit)}: {content.ReviewUrl(unit.ReviewToken)}");
+            return $"{file.Project.Title} ({file.FileName})\n{file.Project.Units.Count} frei, {file.Project.RentedCount} vermietet\n{string.Join("\n", units)}";
+        }
+
         if (file.Status == IntakeFileStatus.NotAListing)
         {
             return $"{file.FileName}: {DocumentLabel(file.DocumentType)}, kein Exposé";

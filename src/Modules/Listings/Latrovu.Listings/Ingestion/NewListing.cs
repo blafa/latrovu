@@ -6,4 +6,6 @@ public sealed record NewListing(
     string? FileName,
     ListingExtraction? Extraction,
     IReadOnlyList<string> SourcePages,
-    string? SourceHash = null);
+    string? SourceHash = null,
+    Guid? ProjectId = null,
+    string? UnitLabel = null);

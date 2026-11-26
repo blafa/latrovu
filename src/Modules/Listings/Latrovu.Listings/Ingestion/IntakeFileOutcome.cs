@@ -5,4 +5,5 @@ public sealed record IntakeFileOutcome(
     IntakeFileStatus Status,
     string? ReviewToken = null,
     DocumentType? DocumentType = null,
-    Guid? ListingId = null);
+    Guid? ListingId = null,
+    IntakeProjectOutcome? Project = null);

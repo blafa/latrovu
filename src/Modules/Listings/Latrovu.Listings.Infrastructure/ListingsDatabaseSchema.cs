@@ -99,6 +99,19 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
         CREATE INDEX IF NOT EXISTS ix_listing_access_requests_token ON listing_access_requests (token_hash);
         CREATE INDEX IF NOT EXISTS ix_listing_access_requests_address ON listing_access_requests (lower(address), created_at);
         DROP TABLE IF EXISTS listing_source_mails;
+        CREATE TABLE IF NOT EXISTS listing_projects (
+            id            uuid PRIMARY KEY,
+            source_email  text NOT NULL,
+            file_name     text,
+            source_hash   char(64),
+            title         text NOT NULL,
+            unit_count    int NOT NULL,
+            rented_count  int NOT NULL,
+            created_at    timestamptz NOT NULL DEFAULT now()
+        );
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS project_id uuid REFERENCES listing_projects (id) ON DELETE SET NULL;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS unit_label text;
+        CREATE INDEX IF NOT EXISTS ix_listings_project ON listings (project_id);
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS renewed_at timestamptz;
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS reminders_sent int NOT NULL DEFAULT 0;
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS last_reminder_at timestamptz;
