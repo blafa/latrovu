@@ -12,7 +12,18 @@
 	}
 }
 
+(access-beta) {
+	basic_auth {
+		{$BETA_USER} {$BETA_PASSWORD_HASH}
+	}
+	header X-Robots-Tag "noindex, nofollow"
+}
+
+(access-public) {
+}
+
 {$SITE_DOMAIN} {
+	import access-{$SITE_ACCESS}
 	import security_headers
 	header Referrer-Policy "strict-origin-when-cross-origin"
 	encode zstd gzip
@@ -25,6 +36,7 @@ www.{$SITE_DOMAIN} {
 }
 
 {$APP_DOMAIN} {
+	import access-{$SITE_ACCESS}
 	import security_headers
 	header Referrer-Policy "no-referrer"
 	encode zstd gzip

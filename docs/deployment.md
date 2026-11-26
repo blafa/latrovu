@@ -59,6 +59,22 @@ sudo docker compose -f compose.prod.yml ps
 
 Check: all containers `running` (db and rabbitmq `healthy`), `https://latrovu.com` shows the site, `https://app.latrovu.com` answers "Latrovu Web".
 
+## Beta access
+
+Until launch, both domains ask for a username and password (`SITE_ACCESS=beta` in `.env`) and tell search engines not to index anything. Create the password hash interactively, so the password does not end up in the shell history:
+
+```bash
+sudo docker run --rm -it caddy:2.10-alpine caddy hash-password
+```
+
+Put the result into `.env` as `BETA_PASSWORD_HASH` with every `$` doubled (`$$`), otherwise Compose reads it as a variable. Example: `$2a$14$abc…` becomes `$$2a$$14$$abc…`.
+
+Go live: set `SITE_ACCESS=public` in `.env`, then:
+
+```bash
+sudo docker compose -f compose.prod.yml up -d caddy
+```
+
 Nightly backup at 03:00:
 
 ```bash
