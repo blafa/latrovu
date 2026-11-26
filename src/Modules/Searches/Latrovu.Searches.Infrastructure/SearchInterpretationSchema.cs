@@ -42,7 +42,17 @@ public static class SearchInterpretationSchema
               "required": ["offerType", "places", "roomsMin", "roomsMax", "priceMaxChf", "livingAreaMinM2", "availableFrom", "mustHaves", "notes"]
             },
             "summary": { "type": "string" },
-            "refinements": { "type": "array", "items": { "type": "string" } }
+            "refinements": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "topic": { "enum": ["offerType", "place", "rooms", "budget", "livingArea", "moveIn", "features", "other"] },
+                  "question": { "type": "string" }
+                },
+                "required": ["topic", "question"]
+              }
+            }
           },
           "required": ["language", "action", "appliesToAll", "searchName", "criteria", "summary", "refinements"]
         }

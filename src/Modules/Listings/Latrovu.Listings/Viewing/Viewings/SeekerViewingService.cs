@@ -25,11 +25,13 @@ public sealed class SeekerViewingService(
         }
 
         string tokenHash = AccessTokens.Hash(token);
+        ViewingSlot? previous = (await SlotsAsync(listing.Id, token, ct)).FirstOrDefault(slot => slot.BookedByMe);
         BookingOutcome outcome = await viewings.BookAsync(listing.Id, slotId, tokenHash, timeProvider.GetUtcNow(), ct);
         IReadOnlyList<ViewingSlot> slots = await SlotsAsync(listing.Id, token, ct);
-        if (outcome == BookingOutcome.Booked && slots.FirstOrDefault(slot => slot.Id == slotId) is { } booked)
+        bool changed = previous?.Id != slotId;
+        if (outcome == BookingOutcome.Booked && changed && slots.FirstOrDefault(slot => slot.Id == slotId) is { } booked)
         {
-            await ConfirmAsync(token, listing.Id, booked, tokenHash, ct);
+            await ConfirmAsync(token, listing.Id, booked, previous, tokenHash, ct);
         }
 
         logger.LogInformation("Viewing slot {SlotId} for listing {ListingId}: {Outcome}", slotId, listing.Id, outcome);
@@ -44,18 +46,42 @@ public sealed class SeekerViewingService(
             return ViewingResult.Missing;
         }
 
-        bool cancelled = await viewings.CancelAsync(listing.Id, AccessTokens.Hash(token), ct);
+        string tokenHash = AccessTokens.Hash(token);
+        ViewingSlot? mine = (await SlotsAsync(listing.Id, token, ct)).FirstOrDefault(slot => slot.BookedByMe);
+        bool cancelled = await viewings.CancelAsync(listing.Id, tokenHash, ct);
+        IReadOnlyList<ViewingSlot> slots = await SlotsAsync(listing.Id, token, ct);
+        if (cancelled && mine is not null)
+        {
+            await AnnounceCancellationAsync(token, listing.Id, slots.FirstOrDefault(slot => slot.Id == mine.Id) ?? mine, tokenHash, ct);
+        }
+
         logger.LogInformation("Viewing booking for listing {ListingId} cancelled: {Cancelled}", listing.Id, cancelled);
-        return new ViewingResult(null, await SlotsAsync(listing.Id, token, ct));
+        return new ViewingResult(null, slots);
     }
 
     private Task<IReadOnlyList<ViewingSlot>> SlotsAsync(Guid listingId, string token, CancellationToken ct) =>
         viewings.GetSlotsAsync(listingId, AccessTokens.Hash(token), timeProvider.GetUtcNow(), ct);
 
-    private async Task ConfirmAsync(string token, Guid listingId, ViewingSlot slot, string tokenHash, CancellationToken ct)
+    private async Task ConfirmAsync(string token, Guid listingId, ViewingSlot slot, ViewingSlot? previous, string tokenHash, CancellationToken ct)
     {
-        string text = $"Ihre Besichtigung am {SwissTime.Describe(slot)} ist gebucht. Der Anbieter wurde informiert.";
+        string text = previous is null
+            ? $"Ihre Besichtigung am {SwissTime.Describe(slot)} ist gebucht. Der Anbieter wurde informiert."
+            : $"Ihre Besichtigung ist auf {SwissTime.Describe(slot)} verschoben. Der Anbieter wurde informiert.";
         await chats.AddAsync(token, listingId, new ChatMessage(ChatMessage.AssistantRole, text, ChatMessage.BookingSource, null, timeProvider.GetUtcNow()), ct);
-        await notifier.NotifyAgentOfBookingAsync(listingId, slot, tokenHash, ct);
+        if (previous is null)
+        {
+            await notifier.NotifyAgentOfBookingAsync(listingId, slot, tokenHash, ct);
+        }
+        else
+        {
+            await notifier.NotifyAgentOfRescheduleAsync(listingId, slot, previous, tokenHash, ct);
+        }
+    }
+
+    private async Task AnnounceCancellationAsync(string token, Guid listingId, ViewingSlot slot, string tokenHash, CancellationToken ct)
+    {
+        string text = $"Ihre Besichtigung am {SwissTime.Describe(slot)} ist abgesagt. Der Anbieter wurde informiert.";
+        await chats.AddAsync(token, listingId, new ChatMessage(ChatMessage.AssistantRole, text, ChatMessage.BookingSource, null, timeProvider.GetUtcNow()), ct);
+        await notifier.NotifyAgentOfCancellationAsync(listingId, slot, tokenHash, ct);
     }
 }

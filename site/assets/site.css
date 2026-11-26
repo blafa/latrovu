@@ -70,8 +70,13 @@ a:focus-visible {
     text-decoration: none;
 }
 
+.brand img {
+    width: 36px;
+    height: 40px;
+}
+
 .brand-name {
-    font-size: 1.375rem;
+    font-size: 1.625rem;
     font-weight: 600;
     letter-spacing: -0.02em;
 }

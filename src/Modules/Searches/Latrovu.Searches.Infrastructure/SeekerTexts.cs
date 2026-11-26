@@ -33,4 +33,10 @@ public sealed record SeekerTexts(
     string AccessSubject,
     string AccessIntro,
     string AccessButton,
-    string AccessNote);
+    string AccessNote,
+    string CancelSubject,
+    string CancelIntro,
+    string CancelNote,
+    string RescheduleSubject,
+    string RescheduleIntro,
+    string PreviousLabel);

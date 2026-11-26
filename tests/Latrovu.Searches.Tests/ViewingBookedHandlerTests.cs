@@ -28,6 +28,18 @@ public sealed class ViewingBookedHandlerTests
     }
 
     [Fact]
+    public async Task Handle_MovedBooking_SendsRescheduleWithPreviousTime()
+    {
+        DateTimeOffset previous = StartsAt.AddDays(-1);
+
+        await Handler(search).HandleAsync(Booked(search.Id) with { PreviousStartsAt = previous, PreviousEndsAt = previous.AddMinutes(30) }, CancellationToken.None);
+
+        SeekerViewingConfirmation sent = Assert.Single(notifier.ViewingConfirmations);
+        Assert.True(sent.IsReschedule);
+        Assert.Equal(previous, sent.PreviousStartsAt);
+    }
+
+    [Fact]
     public async Task Handle_UnknownSearch_SendsNothing()
     {
         await Handler().HandleAsync(Booked(Guid.NewGuid()), CancellationToken.None);

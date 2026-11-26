@@ -10,7 +10,7 @@ builder.Services
     .AddPostgres(builder.Configuration)
     .AddObjectStorage(builder.Configuration)
     .AddEmailSending(builder.Configuration)
-    .AddListingsRenewalReminders(builder.Configuration)
+    .AddListingsScheduledJobs(builder.Configuration)
     .AddMessagePublishing(builder.Configuration)
     .AddOutboxCleanup();
 

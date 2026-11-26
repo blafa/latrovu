@@ -17,7 +17,7 @@ builder.Services
     .AddObjectStorage(builder.Configuration)
     .AddEmailSending(builder.Configuration)
     .AddListingsReview()
-    .AddListingsViewing()
+    .AddListingsViewing(builder.Configuration)
     .AddListingsRenewal()
     .AddMessagePublishing(builder.Configuration);
 

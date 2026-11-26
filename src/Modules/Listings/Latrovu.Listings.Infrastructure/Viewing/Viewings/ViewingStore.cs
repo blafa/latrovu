@@ -43,6 +43,16 @@ public sealed class ViewingStore(NpgsqlDataSource dataSource, IOutbox outbox) : 
 
     private const string InsertBookingSql = "INSERT INTO listing_viewing_bookings (slot_id, token_hash, created_at) VALUES ($1, $2, $3)";
 
+    private const string MyBookingSql = """
+        SELECT b.slot_id FROM listing_viewing_bookings b JOIN listing_viewing_slots s ON s.id = b.slot_id
+        WHERE s.listing_id = $1 AND b.token_hash = $2 FOR UPDATE OF b
+        """;
+
+    private const string PreviousBookingSql = """
+        SELECT s.starts_at, s.ends_at FROM listing_viewing_bookings b JOIN listing_viewing_slots s ON s.id = b.slot_id
+        WHERE s.listing_id = $1 AND b.token_hash = $2
+        """;
+
     private const string BookedSql = """
         SELECT v.search_id, s.listing_id, coalesce(l.data->>'title', l.file_name, ''), s.starts_at, s.ends_at
         FROM listing_viewing_slots s
@@ -105,10 +115,25 @@ public sealed class ViewingStore(NpgsqlDataSource dataSource, IOutbox outbox) : 
 
     public async Task<bool> CancelAsync(Guid listingId, string tokenHash, CancellationToken ct)
     {
-        await using NpgsqlCommand command = dataSource.CreateCommand(CancelSql);
-        command.Parameters.Add(new NpgsqlParameter { Value = listingId });
-        command.Parameters.Add(new NpgsqlParameter { Value = tokenHash });
-        return await command.ExecuteNonQueryAsync(ct) > 0;
+        await using NpgsqlConnection connection = await dataSource.OpenConnectionAsync(ct);
+        await using NpgsqlTransaction transaction = await connection.BeginTransactionAsync(ct);
+        await using NpgsqlCommand find = new(MyBookingSql, connection, transaction);
+        find.Parameters.Add(new NpgsqlParameter { Value = listingId });
+        find.Parameters.Add(new NpgsqlParameter { Value = tokenHash });
+        if (await find.ExecuteScalarAsync(ct) is not long slotId)
+        {
+            return false;
+        }
+
+        ViewingBooked? booking = await ReadBookedAsync(connection, transaction, slotId, tokenHash, ct);
+        await ExecuteAsync(connection, transaction, CancelSql, [listingId, tokenHash], ct);
+        if (booking is not null)
+        {
+            await outbox.AddAsync([new ViewingCancelled(booking.SearchId, booking.ListingId, booking.ListingTitle, booking.StartsAt, booking.EndsAt)], transaction, ct);
+        }
+
+        await transaction.CommitAsync(ct);
+        return true;
     }
 
     private async Task<BookingOutcome> TryBookAsync(
@@ -136,18 +161,39 @@ public sealed class ViewingStore(NpgsqlDataSource dataSource, IOutbox outbox) : 
             return BookingOutcome.Full;
         }
 
+        (DateTimeOffset StartsAt, DateTimeOffset EndsAt)? previous = await ReadPreviousAsync(connection, transaction, listingId, tokenHash, ct);
         await ExecuteAsync(connection, transaction, CancelSql, [listingId, tokenHash], ct);
         await ExecuteAsync(connection, transaction, InsertBookingSql, [slotId, tokenHash, now], ct);
-        await PublishBookedAsync(connection, transaction, slotId, tokenHash, ct);
+        await PublishBookedAsync(connection, transaction, slotId, tokenHash, previous, ct);
         return BookingOutcome.Booked;
     }
 
-    private async Task PublishBookedAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, long slotId, string tokenHash, CancellationToken ct)
+    private static async Task<(DateTimeOffset StartsAt, DateTimeOffset EndsAt)?> ReadPreviousAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid listingId,
+        string tokenHash,
+        CancellationToken ct)
+    {
+        await using NpgsqlCommand command = new(PreviousBookingSql, connection, transaction);
+        command.Parameters.Add(new NpgsqlParameter { Value = listingId });
+        command.Parameters.Add(new NpgsqlParameter { Value = tokenHash });
+        await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(ct);
+        return await reader.ReadAsync(ct) ? (reader.GetFieldValue<DateTimeOffset>(0), reader.GetFieldValue<DateTimeOffset>(1)) : null;
+    }
+
+    private async Task PublishBookedAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        long slotId,
+        string tokenHash,
+        (DateTimeOffset StartsAt, DateTimeOffset EndsAt)? previous,
+        CancellationToken ct)
     {
         ViewingBooked? booked = await ReadBookedAsync(connection, transaction, slotId, tokenHash, ct);
         if (booked is not null)
         {
-            await outbox.AddAsync([booked], transaction, ct);
+            await outbox.AddAsync([booked with { PreviousStartsAt = previous?.StartsAt, PreviousEndsAt = previous?.EndsAt }], transaction, ct);
         }
     }
 

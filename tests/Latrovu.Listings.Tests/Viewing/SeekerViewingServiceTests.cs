@@ -78,6 +78,56 @@ public sealed class SeekerViewingServiceTests
     }
 
     [Fact]
+    public async Task Book_OtherSlot_NotifiesAMoveInsteadOfANewBooking()
+    {
+        string token = await ApprovedLinkAsync();
+        long first = await SlotAsync(capacity: 2);
+        long second = await SlotAsync(capacity: 2);
+        await service.BookAsync(token, first, CancellationToken.None);
+
+        await service.BookAsync(token, second, CancellationToken.None);
+
+        Assert.Equal([first], viewings.NotifiedSlots);
+        Assert.Equal([(second, first)], viewings.RescheduledSlots);
+    }
+
+    [Fact]
+    public async Task Book_SameSlotAgain_NotifiesOnlyOnce()
+    {
+        string token = await ApprovedLinkAsync();
+        long slotId = await SlotAsync(capacity: 2);
+        await service.BookAsync(token, slotId, CancellationToken.None);
+
+        await service.BookAsync(token, slotId, CancellationToken.None);
+
+        Assert.Equal([slotId], viewings.NotifiedSlots);
+        Assert.Empty(viewings.RescheduledSlots);
+    }
+
+    [Fact]
+    public async Task Cancel_Booking_NotifiesTheAgent()
+    {
+        string token = await ApprovedLinkAsync();
+        long slotId = await SlotAsync(capacity: 2);
+        await service.BookAsync(token, slotId, CancellationToken.None);
+
+        await service.CancelAsync(token, CancellationToken.None);
+
+        Assert.Equal([slotId], viewings.CancelledSlots);
+    }
+
+    [Fact]
+    public async Task Cancel_WithoutBooking_NotifiesNobody()
+    {
+        string token = await ApprovedLinkAsync();
+        await SlotAsync(capacity: 2);
+
+        await service.CancelAsync(token, CancellationToken.None);
+
+        Assert.Empty(viewings.CancelledSlots);
+    }
+
+    [Fact]
     public async Task Book_UnknownLink_IsNotFound()
     {
         ViewingResult result = await service.BookAsync("unknown", 1, CancellationToken.None);

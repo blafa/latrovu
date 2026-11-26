@@ -6,4 +6,10 @@ public sealed record SeekerViewingConfirmation(
     string Language,
     string ListingTitle,
     DateTimeOffset StartsAt,
-    DateTimeOffset EndsAt);
+    DateTimeOffset EndsAt,
+    bool IsCancellation = false,
+    DateTimeOffset? PreviousStartsAt = null,
+    DateTimeOffset? PreviousEndsAt = null)
+{
+    public bool IsReschedule => !IsCancellation && PreviousStartsAt is not null && PreviousEndsAt is not null;
+}

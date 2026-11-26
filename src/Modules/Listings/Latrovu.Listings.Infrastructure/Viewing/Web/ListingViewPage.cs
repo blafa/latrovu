@@ -96,7 +96,7 @@ internal static class ListingViewPage
 
         StringBuilder html = new();
         html.Append(Head(PreviewTitle(data)))
-            .Append($"<header class=\"site\">{SiteAssets.LogoImage(36)}")
+            .Append($"<header class=\"site\">{SiteAssets.LogoImage(SiteAssets.HeaderLogoHeight)}")
             .Append($"<button type=\"button\" class=\"share\" id=\"share\" data-share=\"/i/{Encode(token)}/share\">{ReviewIcons.Share}<span class=\"share-label\">Teilen</span></button></header>");
         html.Append("<main>");
         AppendGallery(html, token, listing.Images);
@@ -132,7 +132,7 @@ internal static class ListingViewPage
     {
         StringBuilder html = new();
         html.Append(Head("Inserat nicht verfügbar"))
-            .Append($"<header class=\"site\">{SiteAssets.LogoImage(36)}<span class=\"tagline\">Te la trovo.</span></header>");
+            .Append($"<header class=\"site\">{SiteAssets.LogoImage(SiteAssets.HeaderLogoHeight)}<span class=\"tagline\">Te la trovo.</span></header>");
         return html.Append("<div class=\"message\"><h1>Dieser Link ist nicht mehr gültig</h1>")
             .Append("<p>Das Inserat wurde zurückgezogen oder der Link ist abgelaufen. ")
             .Append("Neue passende Wohnungen schicken wir Ihnen weiterhin direkt.</p></div></body></html>")

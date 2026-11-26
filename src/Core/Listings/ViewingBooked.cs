@@ -5,4 +5,6 @@ public sealed record ViewingBooked(
     Guid ListingId,
     string ListingTitle,
     DateTimeOffset StartsAt,
-    DateTimeOffset EndsAt);
+    DateTimeOffset EndsAt,
+    DateTimeOffset? PreviousStartsAt = null,
+    DateTimeOffset? PreviousEndsAt = null);

@@ -5,6 +5,8 @@ namespace Latrovu.Listings.Infrastructure.Review.Web;
 internal static class SiteAssets
 {
     public const string HtmxScript = "/assets/htmx.min.js";
+    public const int HeaderLogoHeight = 44;
+    public const int CompactLogoHeight = 38;
 
     private const double SymbolAspect = 66.0 / 74.0;
     private const double WordmarkScale = 0.74;

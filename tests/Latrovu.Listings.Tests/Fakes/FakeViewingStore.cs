@@ -9,6 +9,10 @@ internal sealed class FakeViewingStore : IViewingStore, IViewingNotifier
 
     public List<long> NotifiedSlots { get; } = [];
 
+    public List<long> CancelledSlots { get; } = [];
+
+    public List<(long SlotId, long PreviousSlotId)> RescheduledSlots { get; } = [];
+
     public Task<IReadOnlyList<ViewingSlot>> GetSlotsAsync(Guid listingId, string? tokenHash, DateTimeOffset from, CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<ViewingSlot>>(slots
             .Where(slot => slot.ListingId == listingId && slot.EndsAt > from)
@@ -63,6 +67,18 @@ internal sealed class FakeViewingStore : IViewingStore, IViewingNotifier
     public Task NotifyAgentOfBookingAsync(Guid listingId, ViewingSlot slot, string tokenHash, CancellationToken ct)
     {
         NotifiedSlots.Add(slot.Id);
+        return Task.CompletedTask;
+    }
+
+    public Task NotifyAgentOfRescheduleAsync(Guid listingId, ViewingSlot slot, ViewingSlot previous, string tokenHash, CancellationToken ct)
+    {
+        RescheduledSlots.Add((slot.Id, previous.Id));
+        return Task.CompletedTask;
+    }
+
+    public Task NotifyAgentOfCancellationAsync(Guid listingId, ViewingSlot slot, string tokenHash, CancellationToken ct)
+    {
+        CancelledSlots.Add(slot.Id);
         return Task.CompletedTask;
     }
 }

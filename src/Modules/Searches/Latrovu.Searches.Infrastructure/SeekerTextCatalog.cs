@@ -39,7 +39,13 @@ public static class SeekerTextCatalog
             "Ihr persönlicher Link: «{0}»",
             "Hier ist Ihr persönlicher Link zu «{0}». Damit stellen Sie Fragen zum Angebot und buchen eine Besichtigung.",
             "Angebot öffnen",
-            "Sie haben diesen Link nicht angefordert? Dann können Sie diese E-Mail einfach löschen."),
+            "Sie haben diesen Link nicht angefordert? Dann können Sie diese E-Mail einfach löschen.",
+            "Besichtigung abgesagt: «{0}»",
+            "Ihre Besichtigung für «{0}» ist abgesagt:",
+            "Der Anbieter wurde informiert. Über Ihren Angebots-Link können Sie jederzeit einen neuen Termin buchen.",
+            "Besichtigung verschoben: «{0}»",
+            "Ihre Besichtigung für «{0}» ist verschoben auf:",
+            "Bisher"),
         ["fr"] = new SeekerTexts(
             "Votre recherche de logement avec Latrovu",
             "Bonjour",
@@ -73,7 +79,13 @@ public static class SeekerTextCatalog
             "Votre lien personnel : « {0} »",
             "Voici votre lien personnel pour « {0} ». Il vous permet de poser vos questions et de réserver une visite.",
             "Ouvrir l’offre",
-            "Vous n’avez pas demandé ce lien ? Supprimez simplement cet e-mail."),
+            "Vous n’avez pas demandé ce lien ? Supprimez simplement cet e-mail.",
+            "Visite annulée : « {0} »",
+            "Votre visite pour « {0} » est annulée :",
+            "Le fournisseur a été informé. Vous pouvez réserver un nouveau rendez-vous à tout moment via votre lien.",
+            "Visite déplacée : « {0} »",
+            "Votre visite pour « {0} » est déplacée au :",
+            "Auparavant"),
         ["it"] = new SeekerTexts(
             "La sua ricerca di casa con Latrovu",
             "Buongiorno",
@@ -107,7 +119,13 @@ public static class SeekerTextCatalog
             "Il suo link personale: «{0}»",
             "Ecco il suo link personale per «{0}». Le permette di porre domande e di prenotare una visita.",
             "Aprire l’offerta",
-            "Non ha richiesto questo link? Può semplicemente cancellare questa e-mail."),
+            "Non ha richiesto questo link? Può semplicemente cancellare questa e-mail.",
+            "Visita annullata: «{0}»",
+            "La sua visita per «{0}» è annullata:",
+            "L’offerente è stato informato. Può prenotare un nuovo appuntamento in qualsiasi momento tramite il suo link.",
+            "Visita spostata: «{0}»",
+            "La sua visita per «{0}» è spostata a:",
+            "Prima"),
         ["en"] = new SeekerTexts(
             "Your home search with Latrovu",
             "Hello",
@@ -141,7 +159,13 @@ public static class SeekerTextCatalog
             "Your personal link: “{0}”",
             "Here is your personal link to “{0}”. Use it to ask questions about the listing and book a viewing.",
             "Open listing",
-            "Didn’t request this link? You can simply delete this email.")
+            "Didn’t request this link? You can simply delete this email.",
+            "Viewing cancelled: “{0}”",
+            "Your viewing of “{0}” is cancelled:",
+            "The provider has been informed. You can book a new appointment on your listing link at any time.",
+            "Viewing moved: “{0}”",
+            "Your viewing of “{0}” is moved to:",
+            "Previously")
     };
 
     public static SeekerTexts For(string language) =>

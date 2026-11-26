@@ -7,16 +7,15 @@ namespace Latrovu.Listings.Infrastructure.Renewal;
 
 public sealed class EmailRenewalNotifier(
     IEmailSender emailSender,
-    IOptions<RenewalOptions> options,
+    IOptions<PublicLinkOptions> links,
     ILogger<EmailRenewalNotifier> logger) : IRenewalNotifier
 {
     public async Task SendReminderAsync(RenewalReminder reminder, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(reminder);
 
-        string baseUrl = options.Value.BaseUrl.TrimEnd('/');
-        string renewUrl = $"{baseUrl}/renew/{reminder.RenewToken}";
-        string reviewUrl = $"{baseUrl}/review/{reminder.ReviewToken}";
+        string renewUrl = links.Value.RenewUrl(reminder.RenewToken);
+        string reviewUrl = links.Value.ReviewUrl(reminder.ReviewToken);
         await emailSender.SendAsync(
             new EmailMessage(
                 reminder.AgentAddress,

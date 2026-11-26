@@ -30,6 +30,7 @@ public static class SearchesSetup
         services.AddMessageHandler<ListingWithdrawn, ListingWithdrawnHandler>();
         services.AddMessageHandler<AgentAnswered, AgentAnsweredHandler>();
         services.AddMessageHandler<ViewingBooked, ViewingBookedHandler>();
+        services.AddMessageHandler<ViewingCancelled, ViewingCancelledHandler>();
         services.AddMessageHandler<ListingAccessRequested, ListingAccessRequestedHandler>();
         return services;
     }

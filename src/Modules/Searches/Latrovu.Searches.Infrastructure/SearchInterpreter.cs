@@ -42,7 +42,9 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
           never ask questions in the summary (questions belong in refinements). Keep rent or sale exactly as said.
           Address the person formally where the language has a formal form (Sie, vous, Lei, usted).
         - refinements: up to three short suggestions in the language of the message for missing details that would
-          improve the search, e.g. budget or moving date, phrased as a polite question in the formal address.
+          improve the search, phrased as a polite question in the formal address. Give each a topic: offerType, place,
+          rooms, budget, livingArea, moveIn, features or other. Only ask about a topic the criteria do not contain yet;
+          never ask about rooms, budget or anything else the person already stated.
           Empty if nothing important is missing.
         Never invent criteria the person did not mention.
         """;
@@ -93,10 +95,15 @@ public sealed class SearchInterpreter(ILlmClient llm, ILogger<SearchInterpreter>
             root["searchName"]?.GetValue<string>(),
             root["criteria"]?.ToJsonString() ?? "{}",
             root["summary"]?.GetValue<string>() ?? string.Empty,
-            root["refinements"]?.AsArray().Select(item => item?.GetValue<string>()).OfType<string>().ToList() ?? [],
+            RefinementFilter.Keep(ParseRefinements(root["refinements"] as JsonArray), root["criteria"]?.ToJsonString() ?? "{}"),
             ParsePlaces(root["criteria"]?["places"] as JsonArray),
             root["appliesToAll"]?.GetValue<bool>() ?? false);
     }
+
+    private static List<Refinement> ParseRefinements(JsonArray? refinements) =>
+        refinements?.OfType<JsonObject>()
+            .Select(item => new Refinement(item["topic"]?.GetValue<string>() ?? string.Empty, item["question"]?.GetValue<string>() ?? string.Empty))
+            .ToList() ?? [];
 
     private static List<PlaceExpression> ParsePlaces(JsonArray? places) =>
         places?.OfType<JsonObject>()

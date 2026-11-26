@@ -234,7 +234,7 @@ public static class ListingReviewPage
     private static void AppendTopBar(StringBuilder html, ReviewModel model)
     {
         string title = ListingValues.Text(model.Data, "title") ?? model.Review.FileName ?? PageTitle;
-        html.Append($"<header class=\"topbar\"><div class=\"topbar-inner\">{SiteAssets.LogoImage(32)}")
+        html.Append($"<header class=\"topbar\"><div class=\"topbar-inner\">{SiteAssets.LogoImage(SiteAssets.CompactLogoHeight)}")
             .Append($"<div class=\"listing-id\"><h1 title=\"{Encode(title)}\">{Encode(title)}</h1>")
             .Append($"<span class=\"listing-address\">{Encode(ListingValues.Address(model.Data))}</span></div>")
             .Append("<div class=\"actions\"><span id=\"approve-status\" class=\"status\" aria-live=\"polite\"></span>")

@@ -20,7 +20,15 @@ public sealed class ViewingBookedHandler(
         }
 
         string? reference = await notifier.SendViewingConfirmationAsync(
-            new SeekerViewingConfirmation(search.SeekerAddress, search.Channel, search.Language, message.ListingTitle, message.StartsAt, message.EndsAt),
+            new SeekerViewingConfirmation(
+                search.SeekerAddress,
+                search.Channel,
+                search.Language,
+                message.ListingTitle,
+                message.StartsAt,
+                message.EndsAt,
+                PreviousStartsAt: message.PreviousStartsAt,
+                PreviousEndsAt: message.PreviousEndsAt),
             ct);
         if (reference is not null)
         {

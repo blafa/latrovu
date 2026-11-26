@@ -47,15 +47,17 @@ public static class ListingsSetup
         return services;
     }
 
-    public static IServiceCollection AddListingsRenewalReminders(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddListingsScheduledJobs(this IServiceCollection services, IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
         AddListingsRenewal(services);
-        services.AddOptions<RenewalOptions>()
-            .Bind(configuration.GetSection(RenewalOptions.SectionName))
+        AddPublicLinks(services, configuration);
+        services.AddOptions<QuestionForwardingOptions>()
+            .Bind(configuration.GetSection(QuestionForwardingOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        services.AddHostedService<QuestionForwardingService>();
         services.TryAddScoped<ListingRemover>();
         services.AddScoped<IRenewalNotifier, EmailRenewalNotifier>();
         services.AddScoped<RenewalReminderService>();
@@ -63,9 +65,12 @@ public static class ListingsSetup
         return services;
     }
 
-    public static IServiceCollection AddListingsViewing(this IServiceCollection services)
+    public static IServiceCollection AddListingsViewing(this IServiceCollection services, IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(configuration);
+
         AddListingsStorage(services);
+        AddPublicLinks(services, configuration);
         services.TryAddSingleton<IListingViewLinkStore, ListingViewLinkStore>();
         services.TryAddSingleton<IListingChatStore, ListingChatStore>();
         services.TryAddSingleton<IListingSourceTextStore, ListingSourceTextStore>();
@@ -90,11 +95,6 @@ public static class ListingsSetup
         ArgumentNullException.ThrowIfNull(configuration);
 
         AddListingsStorage(services);
-        services.AddOptions<QuestionForwardingOptions>()
-            .Bind(configuration.GetSection(QuestionForwardingOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-        services.AddHostedService<QuestionForwardingService>();
         services.AddScoped<IAgentReplyStore, AgentReplyStore>();
         services.AddScoped<IAnswerTranslator, LlmAnswerTranslator>();
         services.AddMessageHandler<AgentReplyReceived, AgentReplyHandler>();
@@ -115,6 +115,12 @@ public static class ListingsSetup
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? UnknownClient,
             _ => new FixedWindowRateLimiterOptions { PermitLimit = permitsPerMinute, Window = TimeSpan.FromMinutes(1) });
+
+    private static void AddPublicLinks(IServiceCollection services, IConfiguration configuration) =>
+        services.AddOptions<PublicLinkOptions>()
+            .Bind(configuration.GetSection(PublicLinkOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
     private static void AddListingsStorage(IServiceCollection services)
     {

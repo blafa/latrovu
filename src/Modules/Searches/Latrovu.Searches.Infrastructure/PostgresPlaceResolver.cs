@@ -16,14 +16,16 @@ public sealed class PostgresPlaceResolver(NpgsqlDataSource dataSource, ILogger<P
     private static readonly string[] SupportedKindHints = ["canton", "region", LakeKind];
 
     private const string LookupSql = """
-        WITH within_area AS (
+        WITH query AS (SELECT lower(unaccent($1)) AS q),
+        within_area AS (
             SELECT ST_Union(geom) AS geom FROM places
             WHERE $2::text IS NOT NULL AND search_name = lower(unaccent($2))
               AND kind IN ('canton', 'region', 'municipality', 'locality', 'settlement'))
-        SELECT p.id, p.kind, p.name, p.context, p.search_name = lower(unaccent($1)) AS exact,
-               similarity(p.search_name, lower(unaccent($1))) AS score
-        FROM places p, within_area w
-        WHERE (p.search_name = lower(unaccent($1)) OR p.search_name % lower(unaccent($1)))
+        SELECT p.id, p.kind, p.name, p.context,
+               (p.search_name = q.q OR p.search_name LIKE q.q || '/%' OR p.search_name LIKE '%/' || q.q) AS exact,
+               similarity(p.search_name, q.q) AS score
+        FROM places p, within_area w, query q
+        WHERE (p.search_name = q.q OR p.search_name LIKE q.q || '/%' OR p.search_name LIKE '%/' || q.q OR p.search_name % q.q)
           AND ($3::text IS NULL OR p.kind = $3)
           AND (w.geom IS NULL OR ST_Intersects(p.geom, w.geom))
         ORDER BY exact DESC, array_position($4::text[], p.kind), score DESC
