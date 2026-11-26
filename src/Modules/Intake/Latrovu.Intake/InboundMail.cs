@@ -9,4 +9,5 @@ public sealed record InboundMail(
     IReadOnlyList<string> Recipients,
     IReadOnlyList<SubmittedFile> Attachments,
     string Body = "",
-    string? InReplyTo = null);
+    string? InReplyTo = null,
+    bool IsAutomatic = false);

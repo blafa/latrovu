@@ -11,6 +11,11 @@ namespace Latrovu.Intake.Infrastructure;
 
 public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> logger) : IMailInbox
 {
+    private const string AutoSubmittedHeader = "Auto-Submitted";
+    private const string PrecedenceHeader = "Precedence";
+    private const string AutoReplyHeader = "X-Autoreply";
+    private const string AutoRespondHeader = "X-Autorespond";
+
     private readonly MailOptions settings = options.Value;
 
     public async Task ProcessPendingAsync(Func<InboundMail, CancellationToken, Task> handleMail, CancellationToken ct)
@@ -83,15 +88,24 @@ public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> 
             .Select(mailbox => mailbox.Address)
             .ToList();
 
+        string sender = message.From.Mailboxes.FirstOrDefault()?.Address ?? string.Empty;
         return new InboundMail(
             message.MessageId ?? string.Empty,
-            message.From.Mailboxes.FirstOrDefault()?.Address ?? string.Empty,
+            sender,
             message.Subject,
             recipients,
             attachments,
             message.TextBody ?? string.Empty,
-            message.InReplyTo);
+            message.InReplyTo,
+            IsAutomatic(message, sender));
     }
+
+    private static bool IsAutomatic(MimeMessage message, string sender) =>
+        AutomaticMail.IsAutomatic(
+            message.Headers[AutoSubmittedHeader],
+            message.Headers[PrecedenceHeader],
+            message.Headers.Contains(AutoReplyHeader) || message.Headers.Contains(AutoRespondHeader),
+            sender);
 
     private static async Task<SubmittedFile> ToReceivedFileAsync(MimePart part, CancellationToken ct)
     {

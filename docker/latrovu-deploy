@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly COMPOSE_DIR=/opt/latrovu
+readonly COMPOSE_FILE=compose.prod.yml
+readonly HEALTH_WAIT_SECONDS=40
+
+sha="${1:-}"
+if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "Event=DeployRejected Reason=InvalidCommitSha" >&2
+    exit 2
+fi
+
+if ! systemctl is-active --quiet docker; then
+    echo "Event=DeployRejected Reason=DockerNotRunning Hint=Run 'sudo latrovu-unlock' after a reboot" >&2
+    exit 3
+fi
+
+cd "$COMPOSE_DIR"
+previous=$(grep -oP '^TAG=\K.*' .env)
+
+compose() {
+    docker compose -f "$COMPOSE_FILE" "$@"
+}
+
+start_tag() {
+    sed -i "s|^TAG=.*|TAG=$1|" .env
+    compose pull --quiet
+    compose up -d --remove-orphans
+}
+
+failed_services() {
+    compose ps --all --format '{{.Service}} {{.State}}' | awk '$2 != "running" {print $1}' | paste -sd, -
+}
+
+logger -t latrovu-deploy "Event=DeployStarted Tag=${sha} Previous=${previous}"
+start_tag "$sha"
+sleep "$HEALTH_WAIT_SECONDS"
+failed=$(failed_services)
+
+if [ -n "$failed" ]; then
+    logger -t latrovu-deploy "Event=DeployFailed Tag=${sha} Services=${failed} RollbackTo=${previous}"
+    echo "Event=DeployFailed Tag=${sha} Services=${failed} RollbackTo=${previous}" >&2
+    compose logs --tail 30 ${failed//,/ } >&2 || true
+    start_tag "$previous"
+    exit 1
+fi
+
+docker image prune -f >/dev/null
+logger -t latrovu-deploy "Event=DeploySucceeded Tag=${sha}"
+echo "Event=DeploySucceeded Tag=${sha}"

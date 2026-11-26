@@ -7,4 +7,5 @@ public sealed record EmailMessage(
     string? HtmlBody = null,
     string? ReplyTo = null,
     IReadOnlyList<EmailInlineImage>? InlineImages = null,
-    string? MessageId = null);
+    string? MessageId = null,
+    bool IsAutoReply = false);

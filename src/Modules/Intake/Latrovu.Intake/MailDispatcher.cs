@@ -11,6 +11,12 @@ public sealed class MailDispatcher(
     {
         ArgumentNullException.ThrowIfNull(mail);
 
+        if (mail.IsAutomatic)
+        {
+            logger.LogInformation("Mail {MessageId} is an automatic message (auto-reply, bounce or bulk) and is ignored", mail.MessageId);
+            return;
+        }
+
         string? reference = AgentReplyReference.Find(mail.Subject);
         if (reference is not null)
         {

@@ -97,6 +97,8 @@ public static class ListingsSetup
         ArgumentNullException.ThrowIfNull(configuration);
 
         AddListingsStorage(services);
+        AddPublicLinks(services, configuration);
+        services.AddScoped<IIntakeReplyNotifier, EmailIntakeReplyNotifier>();
         services.AddScoped<IAgentReplyStore, AgentReplyStore>();
         services.AddScoped<IAnswerTranslator, LlmAnswerTranslator>();
         services.AddMessageHandler<AgentReplyReceived, AgentReplyHandler>();

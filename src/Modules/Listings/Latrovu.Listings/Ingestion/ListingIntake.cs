@@ -11,6 +11,7 @@ public sealed class ListingIntake(
     IListingStore store,
     IListingAccessTokenStore accessTokens,
     IListingImageCollector imageCollector,
+    IIntakeReplyNotifier replies,
     ILogger<ListingIntake> logger) : IListingIntake
 {
     private const char PageSeparator = '\n';
@@ -24,43 +25,41 @@ public sealed class ListingIntake(
         if (pdfs.Count == 0)
         {
             logger.LogWarning("Listing message {MessageId} has no PDF attachment", message.MessageId);
+            await replies.SendAsync(new IntakeReport(message.Sender, message.Subject, []), ct);
             return;
         }
 
-        List<CreatedListing> createdListings = await CreateListingsAsync(message, pdfs, ct);
-        await imageCollector.CollectAsync(message, files, createdListings, ct);
-    }
-
-    private async Task<List<CreatedListing>> CreateListingsAsync(Submission message, List<SubmittedFile> pdfs, CancellationToken ct)
-    {
+        List<IntakeFileOutcome> outcomes = [];
         List<CreatedListing> createdListings = [];
         foreach (SubmittedFile pdf in pdfs)
         {
-            Guid? listingId = await ProcessPdfAsync(message, pdf, ct);
+            (IntakeFileOutcome outcome, Guid? listingId) = await ProcessPdfAsync(message, pdf, ct);
+            outcomes.Add(outcome);
             if (listingId is not null)
             {
                 createdListings.Add(new CreatedListing(listingId.Value, pdf.Content));
             }
         }
 
-        return createdListings;
+        await imageCollector.CollectAsync(message, files, createdListings, ct);
+        await replies.SendAsync(new IntakeReport(message.Sender, message.Subject, outcomes), ct);
     }
 
-    private async Task<Guid?> ProcessPdfAsync(Submission message, SubmittedFile pdf, CancellationToken ct)
+    private async Task<(IntakeFileOutcome Outcome, Guid? ListingId)> ProcessPdfAsync(Submission message, SubmittedFile pdf, CancellationToken ct)
     {
         IReadOnlyList<string> pages = pdfReader.ReadPages(pdf.Content);
         string sourceHash = Convert.ToHexString(SHA256.HashData(pdf.Content));
         if (await store.FindActiveBySourceAsync(message.Sender, sourceHash, ct) is { } existingId)
         {
-            await ReuseExistingAsync(existingId, pdf, pages, ct);
-            return null;
+            string reviewToken = await ReuseExistingAsync(existingId, pdf, pages, ct);
+            return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.AlreadyKnown, reviewToken, ListingId: existingId), null);
         }
 
         DocumentClassification classification = await classifier.ClassifyAsync(string.Join(PageSeparator, pages), ct);
         if (!classification.IsListing)
         {
             logger.LogInformation("Skipped {FileName}, it is a {DocumentType}", pdf.FileName, classification.Type);
-            return null;
+            return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.NotAListing, DocumentType: classification.Type), null);
         }
 
         if (classification.Type == DocumentType.MultiUnitListing)
@@ -68,23 +67,30 @@ public sealed class ListingIntake(
             logger.LogWarning("{FileName} contains several units, extracting it as one listing for now", pdf.FileName);
         }
 
-        return await ExtractAndStoreAsync(message, pdf, pages, sourceHash, ct);
+        (Guid listingId, string token) = await ExtractAndStoreAsync(message, pdf, pages, sourceHash, ct);
+        return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.Created, token, ListingId: listingId), listingId);
     }
 
-    private async Task ReuseExistingAsync(Guid listingId, SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
+    private async Task<string> ReuseExistingAsync(Guid listingId, SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
     {
         await store.FillMissingSourcePagesAsync(listingId, pages, ct);
         string token = await accessTokens.CreateAsync(listingId, ct);
-        logger.LogInformation("{FileName} is already listing {ListingId}, no copy created, review at /review/{Token}", pdf.FileName, listingId, token);
+        logger.LogInformation("{FileName} is already listing {ListingId}, no copy created, new review link issued", pdf.FileName, listingId);
+        return token;
     }
 
-    private async Task<Guid> ExtractAndStoreAsync(Submission message, SubmittedFile pdf, IReadOnlyList<string> pages, string sourceHash, CancellationToken ct)
+    private async Task<(Guid ListingId, string Token)> ExtractAndStoreAsync(
+        Submission message,
+        SubmittedFile pdf,
+        IReadOnlyList<string> pages,
+        string sourceHash,
+        CancellationToken ct)
     {
         ListingExtraction? extraction = await extractor.ExtractAsync(pages, ct);
         NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction, pages, sourceHash);
         Guid listingId = await store.AddAsync(listing, ct);
         string token = await accessTokens.CreateAsync(listingId, ct);
-        logger.LogInformation("Stored listing {ListingId} from {FileName}, review at /review/{Token}", listingId, pdf.FileName, token);
-        return listingId;
+        logger.LogInformation("Stored listing {ListingId} from {FileName}, review link issued", listingId, pdf.FileName);
+        return (listingId, token);
     }
 }

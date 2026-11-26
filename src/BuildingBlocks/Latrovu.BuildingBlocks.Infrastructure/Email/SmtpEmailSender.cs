@@ -10,6 +10,9 @@ namespace Latrovu.BuildingBlocks.Infrastructure.Email;
 
 public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpEmailSender> logger) : IEmailSender
 {
+    private const string AutoSubmittedHeader = "Auto-Submitted";
+    private const string AutoReplied = "auto-replied";
+
     private readonly SmtpOptions settings = options.Value;
 
     public async Task SendAsync(EmailMessage message, CancellationToken ct)
@@ -44,6 +47,11 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
         if (!string.IsNullOrWhiteSpace(message.MessageId))
         {
             mime.MessageId = message.MessageId;
+        }
+
+        if (message.IsAutoReply)
+        {
+            mime.Headers.Add(AutoSubmittedHeader, AutoReplied);
         }
 
         mime.Body = BuildBody(message);

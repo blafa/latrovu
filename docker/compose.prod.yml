@@ -54,7 +54,7 @@ services:
     image: ${IMAGE_PREFIX}-scheduler:${TAG}
 
   db:
-    image: ${IMAGE_PREFIX}-postgres:${TAG}
+    image: ${IMAGE_PREFIX}-postgres:${DB_TAG:-main}
     restart: unless-stopped
     logging: *logging
     environment:

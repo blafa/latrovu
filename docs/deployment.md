@@ -116,6 +116,21 @@ sudo journalctl -t latrovu-web -f
 
 `TAG=main` in `.env` deploys the latest build; `TAG=<commit sha>` pins a version.
 
+## Automatic deployment
+
+Every push to `main` runs tests, builds the images and then the `deploy` job: it connects as user `deploy`, whose key may only run `/usr/local/sbin/latrovu-deploy <sha>` (forced command, `restrict`). The script sets `TAG=<sha>`, pulls, starts, checks after 40 s that every container runs, and rolls back to the previous tag if not. The database image has its own pinned `DB_TAG` in `.env`, so deployments don't restart Postgres; change it by hand when `docker/postgres` changes. GitHub secrets: `DEPLOY_HOST`, `DEPLOY_SSH_KEY` (dedicated key without passphrase), `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan -t ed25519 <host>`).
+
+Server setup (once):
+
+```bash
+sudo adduser --disabled-password --gecos "" deploy
+sudo install -m 755 -o root -g root latrovu-deploy /usr/local/sbin/latrovu-deploy
+echo 'deploy ALL=(root) NOPASSWD: /usr/local/sbin/latrovu-deploy *' | sudo tee /etc/sudoers.d/latrovu-deploy
+sudo chmod 440 /etc/sudoers.d/latrovu-deploy && sudo visudo -cf /etc/sudoers.d/latrovu-deploy
+```
+
+`/home/deploy/.ssh/authorized_keys` holds one line: `restrict,command="sudo /usr/local/sbin/latrovu-deploy \"$SSH_ORIGINAL_COMMAND\"" ssh-ed25519 …`. After a reboot, deployments fail with `DockerNotRunning` until `sudo latrovu-unlock`. History: `sudo journalctl -t latrovu-deploy`.
+
 The local dev Intake and production must not poll the same mailbox folder at the same time: Intake deletes every mail after processing.
 
 ## After a reboot
