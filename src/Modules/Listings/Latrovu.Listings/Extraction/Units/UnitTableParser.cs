@@ -5,30 +5,35 @@ namespace Latrovu.Listings.Extraction.Units;
 
 public static class UnitTableParser
 {
-    public static IReadOnlyList<ListingUnit> Parse(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return [];
-        }
+    private const string RentedMarker = "vermietet";
+    private const string ReservedMarker = "reserviert";
 
-        JsonArray? units;
-        try
-        {
-            units = (JsonNode.Parse(json) as JsonObject)?["units"] as JsonArray;
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
+    public static IReadOnlyList<ListingUnit> Parse(string? json) => Parse(json, null);
 
-        return (units ?? [])
-            .OfType<JsonObject>()
-            .Select(ToUnit)
-            .Where(unit => unit is not null && HasSubstance(unit))
-            .Select(unit => Complete(unit!))
+    public static IReadOnlyList<ListingUnit> Parse(string? json, IReadOnlyList<string>? rows) =>
+        UnitsOf(json)
+            .Select(item => (Unit: ToUnit(item), Row: RowOf(item, rows)))
+            .Where(pair => pair.Unit is not null)
+            .Select(pair => rows is null ? pair.Unit! : VerifyAgainst(pair.Unit!, pair.Row ?? string.Empty))
+            .Where(HasSubstance)
+            .Select(Complete)
             .DistinctBy(unit => unit.Label, StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+    public static ListingUnit VerifyAgainst(ListingUnit unit, string row)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+
+        HashSet<decimal> numbers = [.. FrancAmounts.NumbersIn(row)];
+        return unit with
+        {
+            LivingAreaM2 = KeepIfIn(unit.LivingAreaM2, numbers),
+            NetRentChf = KeepIfIn(unit.NetRentChf, numbers),
+            ChargesChf = KeepIfIn(unit.ChargesChf, numbers),
+            GrossRentChf = KeepIfIn(unit.GrossRentChf, numbers),
+            PriceChf = KeepIfIn(unit.PriceChf, numbers),
+            Status = StatusIn(row)
+        };
     }
 
     public static ListingUnit Complete(ListingUnit unit)
@@ -41,7 +46,29 @@ public static class UnitTableParser
         return unit with { NetRentChf = net, ChargesChf = charges, GrossRentChf = gross };
     }
 
-    private static decimal? Positive(decimal? amount) => amount > 0 ? amount : null;
+    private static IEnumerable<JsonObject> UnitsOf(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        try
+        {
+            return ((JsonNode.Parse(json) as JsonObject)?["units"] as JsonArray ?? []).OfType<JsonObject>();
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    private static string? RowOf(JsonObject item, IReadOnlyList<string>? rows)
+    {
+        decimal? number = NumberOf(item["row"]);
+        int index = number is null ? -1 : (int)number.Value - 1;
+        return rows is not null && index >= 0 && index < rows.Count ? rows[index] : null;
+    }
 
     private static ListingUnit? ToUnit(JsonObject unit)
     {
@@ -64,6 +91,26 @@ public static class UnitTableParser
             TextOf(unit["availableFrom"]),
             StatusOf(TextOf(unit["status"])));
     }
+
+    private static UnitStatus StatusIn(string row)
+    {
+        if (string.IsNullOrWhiteSpace(row))
+        {
+            return UnitStatus.Unknown;
+        }
+
+        if (row.Contains(RentedMarker, StringComparison.OrdinalIgnoreCase))
+        {
+            return UnitStatus.Rented;
+        }
+
+        return row.Contains(ReservedMarker, StringComparison.OrdinalIgnoreCase) ? UnitStatus.Reserved : UnitStatus.Available;
+    }
+
+    private static decimal? KeepIfIn(decimal? value, HashSet<decimal> numbers) =>
+        value is { } number && numbers.Contains(number) ? value : null;
+
+    private static decimal? Positive(decimal? amount) => amount > 0 ? amount : null;
 
     private static bool HasSubstance(ListingUnit unit) =>
         unit.Rooms is not null || unit.LivingAreaM2 is not null || unit.NetRentChf is not null || unit.GrossRentChf is not null || unit.PriceChf is not null;

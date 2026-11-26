@@ -10,17 +10,19 @@ public sealed class UnitTableExtractor(ILlmClient llm, ILogger<UnitTableExtracto
     {
         ArgumentNullException.ThrowIfNull(pages);
 
-        string documentText = string.Join(PageSeparator, UnitTablePages.Select(pages));
-        if (string.IsNullOrWhiteSpace(documentText))
+        UnitTableInput table = UnitTableInput.Find(pages);
+        string content = table.HasRows ? table.ToPrompt() : string.Join(PageSeparator, UnitTablePages.Select(pages));
+        if (string.IsNullOrWhiteSpace(content))
         {
             return [];
         }
 
-        string? answer = await llm.CompleteAsync(UnitTablePrompt.Text, documentText, UnitTableSchema.Value, ct);
-        IReadOnlyList<ListingUnit> units = UnitTableParser.Parse(LlmJsonNormalizer.Normalize(answer));
+        string? answer = await llm.CompleteAsync(UnitTablePrompt.Text, content, UnitTableSchema.Value, ct);
+        IReadOnlyList<ListingUnit> units = UnitTableParser.Parse(LlmJsonNormalizer.Normalize(answer), table.HasRows ? table.Rows : null);
         logger.LogInformation(
-            "Unit table: {UnitCount} units, {AvailableCount} available",
+            "Unit table: {UnitCount} units from {RowCount} table rows, {AvailableCount} available",
             units.Count,
+            table.Rows.Count,
             units.Count(unit => unit.Status is UnitStatus.Available or UnitStatus.Unknown));
         return units;
     }

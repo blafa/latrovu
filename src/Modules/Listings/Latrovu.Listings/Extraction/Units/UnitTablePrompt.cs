@@ -7,6 +7,9 @@ public static class UnitTablePrompt
         (Erstvermietung, Neubau, Gesamtsanierung). Gib jede angebotene Wohnung als eigenen Eintrag in "units" zurück.
 
         Regeln:
+        - Sind die Zeilen nummeriert ("Zeile 3: …"), gib pro Zeile genau eine Wohnung zurück, setze "row" auf die
+          Zeilennummer und nimm alle Werte ausschliesslich aus dieser Zeile. Die Kopfzeile sagt, welche Spalte was bedeutet.
+          Sonst "row" = null.
         - Nur Wohnungen, Studios und Häuser. Parkplätze, Kellerabteile, Gewerbeflächen und Bastelräume weglassen.
         - Jede Wohnung genau einmal, auch wenn sie im Dokument mehrfach vorkommt (Tabelle und Grundriss).
         - "label": die Bezeichnung aus dem Dokument, z.B. "Whg 2.1", "EG links", "1. OG Mitte". Fehlt eine,

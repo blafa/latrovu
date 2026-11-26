@@ -15,6 +15,7 @@ public static class UnitTableSchema
               "items": {
                 "type": "object",
                 "properties": {
+                  "row": { "type": ["number", "null"] },
                   "label": { "type": "string" },
                   "rooms": { "type": ["number", "null"] },
                   "floor": { "type": ["number", "null"] },
@@ -26,7 +27,7 @@ public static class UnitTableSchema
                   "availableFrom": { "type": ["string", "null"] },
                   "status": { "enum": ["available", "reserved", "rented", null] }
                 },
-                "required": ["label", "rooms", "floor", "livingAreaM2", "netRentChf", "chargesChf", "grossRentChf", "priceChf", "availableFrom", "status"]
+                "required": ["row", "label", "rooms", "floor", "livingAreaM2", "netRentChf", "chargesChf", "grossRentChf", "priceChf", "availableFrom", "status"]
               }
             }
           },
