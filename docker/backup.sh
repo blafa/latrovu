@@ -4,29 +4,27 @@ set -euo pipefail
 cd "$(dirname "$0")"
 source ./backup.env
 
-retention_days=30
+readonly retention_days=30
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
-file="/tmp/latrovu-${stamp}.dump.age"
+workdir=$(mktemp -d)
+trap 'rm -rf "$workdir"' EXIT
+file_name="latrovu-${stamp}.dump.age"
 
-aws_s3() {
+run_rclone() {
     docker run --rm \
-        -e AWS_ACCESS_KEY_ID="$BACKUP_ACCESS_KEY" \
-        -e AWS_SECRET_ACCESS_KEY="$BACKUP_SECRET_KEY" \
-        -e AWS_DEFAULT_REGION="$BACKUP_REGION" \
-        -v /tmp:/tmp \
-        amazon/aws-cli:2.22.0 --endpoint-url "$BACKUP_ENDPOINT" "$@"
+        -e RCLONE_CONFIG_BACKUP_TYPE=s3 \
+        -e RCLONE_CONFIG_BACKUP_PROVIDER=Other \
+        -e RCLONE_CONFIG_BACKUP_ENDPOINT="$BACKUP_ENDPOINT" \
+        -e RCLONE_CONFIG_BACKUP_REGION="$BACKUP_REGION" \
+        -e RCLONE_CONFIG_BACKUP_ACCESS_KEY_ID="$BACKUP_ACCESS_KEY" \
+        -e RCLONE_CONFIG_BACKUP_SECRET_ACCESS_KEY="$BACKUP_SECRET_KEY" \
+        -v "$workdir:/work" \
+        rclone/rclone:1.68.2 "$@"
 }
 
 docker compose -f compose.prod.yml exec -T db pg_dump -U latrovu -d latrovu --format=custom \
-    | age -r "$BACKUP_AGE_RECIPIENT" > "$file"
-aws_s3 s3 cp "$file" "s3://${BACKUP_BUCKET}/db/"
-rm -f "$file"
-
-cutoff=$(date -u -d "-${retention_days} days" +%Y-%m-%dT%H:%M:%SZ)
-aws_s3 s3api list-objects-v2 --bucket "$BACKUP_BUCKET" --prefix db/ \
-        --query "Contents[?LastModified<'${cutoff}'].Key" --output text \
-    | tr '\t' '\n' \
-    | grep -v -e '^None$' -e '^$' \
-    | while read -r key; do aws_s3 s3 rm "s3://${BACKUP_BUCKET}/${key}"; done
+    | age -r "$BACKUP_AGE_RECIPIENT" > "${workdir}/${file_name}"
+run_rclone copy "/work/${file_name}" "backup:${BACKUP_BUCKET}/db/"
+run_rclone delete --min-age "${retention_days}d" "backup:${BACKUP_BUCKET}/db/"
 
 logger -t latrovu-backup "Event=BackupUploaded Stamp=${stamp} RetentionDays=${retention_days}"

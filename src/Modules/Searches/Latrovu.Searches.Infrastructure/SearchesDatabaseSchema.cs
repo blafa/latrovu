@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Latrovu.BuildingBlocks.Infrastructure.Persistence;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 
@@ -57,7 +58,7 @@ public sealed class SearchesDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        await using NpgsqlCommand command = dataSource.CreateCommand(CreateSql);
+        await using NpgsqlCommand command = dataSource.CreateCommand(SchemaLock.Wrap(CreateSql));
         await command.ExecuteNonQueryAsync(cancellationToken);
         logger.LogInformation("Searches schema ensured in {ElapsedMs} ms", stopwatch.ElapsedMilliseconds);
     }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Latrovu.BuildingBlocks.Infrastructure.Persistence;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 
@@ -18,7 +19,7 @@ public sealed class LlmCacheSchema(NpgsqlDataSource dataSource, ILogger<LlmCache
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        await using NpgsqlCommand command = dataSource.CreateCommand(CreateSql);
+        await using NpgsqlCommand command = dataSource.CreateCommand(SchemaLock.Wrap(CreateSql));
         await command.ExecuteNonQueryAsync(cancellationToken);
         logger.LogInformation("LLM response cache schema ensured in {ElapsedMs} ms", stopwatch.ElapsedMilliseconds);
     }

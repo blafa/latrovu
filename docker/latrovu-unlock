@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cryptsetup status dockerdata >/dev/null 2>&1 || cryptsetup open /srv/docker-data.img dockerdata
+mountpoint -q /var/lib/docker || mount /dev/mapper/dockerdata /var/lib/docker
+mkdir -p /var/lib/docker/containerd-root
+mountpoint -q /var/lib/containerd || mount --bind /var/lib/docker/containerd-root /var/lib/containerd
+systemctl start containerd docker
+logger -t latrovu-unlock "Event=DataUnlocked"
+echo "Encrypted data unlocked, Docker started"
