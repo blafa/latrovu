@@ -239,6 +239,7 @@ public static class ListingReviewPage
             .Append($"<span class=\"listing-address\">{Encode(ListingValues.Address(model.Data))}</span></div>")
             .Append("<div class=\"actions\"><span id=\"approve-status\" class=\"status\" aria-live=\"polite\"></span>")
             .Append($"<div class=\"approve\">{StatusAction(model)}{StatusChip(model.Review)}</div>")
+            .Append($"<button type=\"button\" class=\"secondary\" hx-post=\"/review/{Encode(model.Token)}/logout\" title=\"Sitzung auf diesem Gerät beenden\">Abmelden</button>")
             .Append("</div></div></header>");
     }
 

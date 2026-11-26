@@ -10,13 +10,15 @@ public sealed class ReviewAccessServiceTests
 
     private readonly FakeTimeProvider time = new(new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero));
     private readonly FakeVerificationCodeSender sender = new();
+    private readonly FakeListingAccessTokenStore tokens = new(Token, Guid.NewGuid());
+    private readonly FakeListingReviewStore reviews = new();
     private readonly ReviewAccessService service;
 
     public ReviewAccessServiceTests()
     {
         service = new ReviewAccessService(
-            new FakeListingAccessTokenStore(Token, Guid.NewGuid()),
-            new FakeListingReviewStore(),
+            tokens,
+            reviews,
             new FakeVerificationCodeStore(time),
             new FakeReviewSessionStore(),
             sender,
@@ -84,6 +86,34 @@ public sealed class ReviewAccessServiceTests
         CodeVerificationResult result = await service.VerifyCodeAsync(Token, sender.LastCode!, CancellationToken.None);
 
         Assert.Equal(CodeVerificationOutcome.Expired, result.Outcome);
+    }
+
+    [Fact]
+    public async Task Session_OpensOtherListingsOfTheSameSenderOnly()
+    {
+        Guid sameSender = Guid.NewGuid();
+        Guid otherSender = Guid.NewGuid();
+        tokens.Add("same-sender-token", sameSender);
+        tokens.Add("other-sender-token", otherSender);
+        reviews.SenderByListing[sameSender] = FakeListingReviewStore.SourceEmail.ToUpperInvariant();
+        reviews.SenderByListing[otherSender] = "someone@else.example";
+        await service.RequestCodeAsync(Token, CancellationToken.None);
+
+        CodeVerificationResult result = await service.VerifyCodeAsync(Token, sender.LastCode!, CancellationToken.None);
+
+        Assert.True(await service.HasValidSessionAsync("same-sender-token", result.SessionToken, CancellationToken.None));
+        Assert.False(await service.HasValidSessionAsync("other-sender-token", result.SessionToken, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Logout_EndsTheSession()
+    {
+        await service.RequestCodeAsync(Token, CancellationToken.None);
+        CodeVerificationResult result = await service.VerifyCodeAsync(Token, sender.LastCode!, CancellationToken.None);
+
+        await service.LogoutAsync(result.SessionToken, CancellationToken.None);
+
+        Assert.False(await service.HasValidSessionAsync(Token, result.SessionToken, CancellationToken.None));
     }
 
     [Fact]

@@ -34,7 +34,7 @@ public sealed class EmailIntakeReplyNotifier(
         logger.LogInformation(
             "Intake reply sent for {FileCount} files, {ListingCount} listings",
             report.Files.Count,
-            report.Files.Count(file => file.Status != IntakeFileStatus.NotAListing));
+            report.Files.Sum(file => file.Project?.Units.Count ?? (file.Status != IntakeFileStatus.NotAListing ? 1 : 0)));
     }
 
     private async Task<Dictionary<Guid, IntakeListingSummary>> LoadSummariesAsync(IntakeReport report, CancellationToken ct)

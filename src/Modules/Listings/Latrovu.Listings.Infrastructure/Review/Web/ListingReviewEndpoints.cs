@@ -11,6 +11,7 @@ namespace Latrovu.Listings.Infrastructure.Review.Web;
 public static class ListingReviewEndpoints
 {
     public const string SessionCookieName = "latrovu_review_session";
+    private const string SessionCookiePath = "/review";
     private const string HtmlContentType = "text/html; charset=utf-8";
     private const string PathFormKey = "path";
     private const string ValueFormKey = "value";
@@ -37,6 +38,7 @@ public static class ListingReviewEndpoints
         review.MapGet(string.Empty, ShowAsync);
         review.MapPost("/code", RequestCodeAsync);
         review.MapPost("/verify", VerifyCodeAsync);
+        review.MapPost("/logout", LogoutAsync);
         review.MapPost("/fields", UpdateFieldAsync);
         review.MapPost("/confirm", ConfirmFieldAsync);
         review.MapPost("/details", AddCustomDetailAsync);
@@ -148,7 +150,15 @@ public static class ListingReviewEndpoints
             return Html(ReviewGatePage.RenderVerificationFailure(result.Outcome));
         }
 
-        context.Response.Cookies.Append(SessionCookieName, result.SessionToken, SessionCookieOptions(token, context.Request));
+        context.Response.Cookies.Append(SessionCookieName, result.SessionToken, SessionCookieOptions(context.Request));
+        context.Response.Headers[HtmxRedirectHeader] = $"/review/{token}";
+        return Html(string.Empty);
+    }
+
+    private static async Task<IResult> LogoutAsync(string token, HttpContext context, IReviewAccessService access, CancellationToken ct)
+    {
+        await access.LogoutAsync(context.Request.Cookies[SessionCookieName], ct);
+        context.Response.Cookies.Delete(SessionCookieName, SessionCookieOptions(context.Request));
         context.Response.Headers[HtmxRedirectHeader] = $"/review/{token}";
         return Html(string.Empty);
     }
@@ -349,12 +359,12 @@ public static class ListingReviewEndpoints
     private static Task<bool> HasSessionAsync(string token, HttpRequest request, IReviewAccessService access, CancellationToken ct) =>
         access.HasValidSessionAsync(token, request.Cookies[SessionCookieName], ct);
 
-    private static CookieOptions SessionCookieOptions(string token, HttpRequest request) => new()
+    private static CookieOptions SessionCookieOptions(HttpRequest request) => new()
     {
         HttpOnly = true,
         Secure = request.IsHttps,
-        SameSite = SameSiteMode.Strict,
-        Path = $"/review/{token}",
+        SameSite = SameSiteMode.Lax,
+        Path = SessionCookiePath,
         MaxAge = ReviewAccessService.SessionValidity
     };
 

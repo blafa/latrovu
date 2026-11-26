@@ -20,7 +20,7 @@ public sealed class ListingsRetentionTask(NpgsqlDataSource dataSource) : IRetent
     [
         "DELETE FROM listing_access_tokens WHERE expires_at < $1",
         "DELETE FROM listing_verification_codes WHERE expires_at < $1",
-        "DELETE FROM listing_review_sessions WHERE expires_at < $1",
+        "DELETE FROM agent_review_sessions WHERE expires_at < $1",
         "DELETE FROM listing_renewal_tokens WHERE expires_at < $1"
     ];
 

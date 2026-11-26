@@ -51,9 +51,10 @@ public sealed class ListingsDatabaseSchema(NpgsqlDataSource dataSource, ILogger<
             expires_at   timestamptz NOT NULL
         );
         CREATE INDEX IF NOT EXISTS ix_listing_verification_codes_listing ON listing_verification_codes (listing_id, created_at);
-        CREATE TABLE IF NOT EXISTS listing_review_sessions (
+        DROP TABLE IF EXISTS listing_review_sessions;
+        CREATE TABLE IF NOT EXISTS agent_review_sessions (
             session_hash char(64) PRIMARY KEY,
-            listing_id   uuid NOT NULL REFERENCES listings (id) ON DELETE CASCADE,
+            source_email varchar(320) NOT NULL,
             expires_at   timestamptz NOT NULL
         );
         CREATE TABLE IF NOT EXISTS processed_submissions (

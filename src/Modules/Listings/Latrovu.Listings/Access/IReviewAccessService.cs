@@ -7,4 +7,6 @@ public interface IReviewAccessService
     Task<CodeVerificationResult> VerifyCodeAsync(string token, string code, CancellationToken ct);
 
     Task<bool> HasValidSessionAsync(string token, string? sessionToken, CancellationToken ct);
+
+    Task LogoutAsync(string? sessionToken, CancellationToken ct);
 }

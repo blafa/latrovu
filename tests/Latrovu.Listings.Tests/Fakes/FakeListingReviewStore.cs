@@ -16,9 +16,11 @@ internal sealed class FakeListingReviewStore : IListingReviewStore
 
     public List<string> ImageKeys { get; } = [];
 
+    public Dictionary<Guid, string> SenderByListing { get; } = [];
+
     public Task<ListingReview?> GetAsync(Guid listingId, CancellationToken ct) =>
         Task.FromResult<ListingReview?>(
-            new ListingReview(listingId, Status, SourceEmail, null, DataJson, ScoresJson, EmptyJson, PublishContact, []));
+            new ListingReview(listingId, Status, SenderByListing.GetValueOrDefault(listingId, SourceEmail), null, DataJson, ScoresJson, EmptyJson, PublishContact, []));
 
     public Task SaveAsync(Guid listingId, string dataJson, string fieldScoresJson, CancellationToken ct)
     {
