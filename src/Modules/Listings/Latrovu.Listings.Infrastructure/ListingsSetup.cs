@@ -3,6 +3,7 @@ using Latrovu.BuildingBlocks.Infrastructure.Messaging;
 using Latrovu.BuildingBlocks.Retention;
 using Latrovu.Core.Listings;
 using Latrovu.Core.Submissions;
+using Latrovu.Listings.Extraction.Units;
 using Latrovu.Listings.Infrastructure.Matching;
 using Latrovu.Listings.Infrastructure.Renewal;
 using Latrovu.Listings.Infrastructure.Viewing.Access;
@@ -104,6 +105,7 @@ public static class ListingsSetup
         services.AddMessageHandler<AgentReplyReceived, AgentReplyHandler>();
         services.AddScoped<IDocumentClassifier, DocumentClassifier>();
         services.AddScoped<IListingExtractor, ListingExtractor>();
+        services.AddScoped<IUnitTableExtractor, UnitTableExtractor>();
         services.AddScoped<IListingImageService, ListingImageService>();
         services.AddScoped<IListingImageCollector, ListingImageCollector>();
         services.AddScoped<IListingIntake, ListingIntake>();

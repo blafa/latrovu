@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Latrovu.BuildingBlocks.Pdf;
 using Latrovu.Core.Submissions;
+using Latrovu.Listings.Extraction.Units;
 
 namespace Latrovu.Listings.Ingestion;
 
@@ -8,6 +9,7 @@ public sealed class ListingIntake(
     IPdfTextReader pdfReader,
     IDocumentClassifier classifier,
     IListingExtractor extractor,
+    IUnitTableExtractor unitExtractor,
     IListingStore store,
     IListingAccessTokenStore accessTokens,
     IListingImageCollector imageCollector,
@@ -64,11 +66,23 @@ public sealed class ListingIntake(
 
         if (classification.Type == DocumentType.MultiUnitListing)
         {
-            logger.LogWarning("{FileName} contains several units, extracting it as one listing for now", pdf.FileName);
+            await LogUnitsAsync(pdf, pages, ct);
         }
 
         (Guid listingId, string token) = await ExtractAndStoreAsync(message, pdf, pages, sourceHash, ct);
         return (new IntakeFileOutcome(pdf.FileName, IntakeFileStatus.Created, token, ListingId: listingId), listingId);
+    }
+
+    private async Task LogUnitsAsync(SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
+    {
+        IReadOnlyList<ListingUnit> units = await unitExtractor.ExtractAsync(pages, ct);
+        logger.LogWarning("{FileName} contains {UnitCount} units, still stored as one listing until projects exist", pdf.FileName, units.Count);
+        foreach (ListingUnit unit in units)
+        {
+            logger.LogInformation(
+                "Unit {Label}: {Rooms} rooms, floor {Floor}, {Area} m2, net {Net}, charges {Charges}, gross {Gross}, from {From}, {Status}",
+                unit.Label, unit.Rooms, unit.Floor, unit.LivingAreaM2, unit.NetRentChf, unit.ChargesChf, unit.GrossRentChf, unit.AvailableFrom, unit.Status);
+        }
     }
 
     private async Task<string> ReuseExistingAsync(Guid listingId, SubmittedFile pdf, IReadOnlyList<string> pages, CancellationToken ct)
