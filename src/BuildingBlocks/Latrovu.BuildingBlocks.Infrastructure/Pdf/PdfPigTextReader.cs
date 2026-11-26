@@ -17,7 +17,8 @@ public sealed class PdfPigTextReader : IPdfTextReader
         int remaining = MaxCharacters;
         foreach (Page page in document.GetPages())
         {
-            string text = page.Text.Length > remaining ? page.Text[..remaining] : page.Text;
+            string pageText = TextOf(page);
+            string text = pageText.Length > remaining ? pageText[..remaining] : pageText;
             pages.Add(text);
             remaining -= text.Length;
             if (remaining <= 0)
@@ -27,5 +28,13 @@ public sealed class PdfPigTextReader : IPdfTextReader
         }
 
         return pages;
+    }
+
+    private static string TextOf(Page page)
+    {
+        List<PositionedWord> words = page.GetWords()
+            .Select(word => new PositionedWord(word.Text, word.BoundingBox.Left, word.BoundingBox.Bottom, word.BoundingBox.Height))
+            .ToList();
+        return words.Count == 0 ? page.Text : LineAssembler.Assemble(words);
     }
 }

@@ -26,10 +26,22 @@ public static class UnitTableParser
             .OfType<JsonObject>()
             .Select(ToUnit)
             .Where(unit => unit is not null && HasSubstance(unit))
-            .Select(unit => unit!)
+            .Select(unit => Complete(unit!))
             .DistinctBy(unit => unit.Label, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
+
+    public static ListingUnit Complete(ListingUnit unit)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+
+        decimal? net = unit.NetRentChf ?? Positive(unit.GrossRentChf - unit.ChargesChf);
+        decimal? charges = unit.ChargesChf ?? Positive(unit.GrossRentChf - unit.NetRentChf);
+        decimal? gross = unit.GrossRentChf ?? net + charges;
+        return unit with { NetRentChf = net, ChargesChf = charges, GrossRentChf = gross };
+    }
+
+    private static decimal? Positive(decimal? amount) => amount > 0 ? amount : null;
 
     private static ListingUnit? ToUnit(JsonObject unit)
     {

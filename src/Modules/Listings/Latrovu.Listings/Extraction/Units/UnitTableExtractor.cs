@@ -10,7 +10,7 @@ public sealed class UnitTableExtractor(ILlmClient llm, ILogger<UnitTableExtracto
     {
         ArgumentNullException.ThrowIfNull(pages);
 
-        string documentText = string.Join(PageSeparator, pages);
+        string documentText = string.Join(PageSeparator, UnitTablePages.Select(pages));
         if (string.IsNullOrWhiteSpace(documentText))
         {
             return [];
