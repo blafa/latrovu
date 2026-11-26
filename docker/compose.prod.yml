@@ -1,0 +1,89 @@
+x-logging: &logging
+  driver: journald
+  options:
+    tag: "latrovu-{{.Name}}"
+
+x-app: &app
+  env_file: app.env
+  restart: unless-stopped
+  logging: *logging
+  depends_on:
+    db:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+
+services:
+  caddy:
+    image: ${IMAGE_PREFIX}-caddy:${TAG}
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+  web:
+    <<: *app
+    image: ${IMAGE_PREFIX}-web:${TAG}
+    environment:
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+
+  intake:
+    <<: *app
+    image: ${IMAGE_PREFIX}-intake:${TAG}
+
+  extraction:
+    <<: *app
+    image: ${IMAGE_PREFIX}-extraction:${TAG}
+
+  scheduler:
+    <<: *app
+    image: ${IMAGE_PREFIX}-scheduler:${TAG}
+
+  db:
+    image: ${IMAGE_PREFIX}-postgres:${TAG}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_USER: latrovu
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: latrovu
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U latrovu -d latrovu"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4.1-alpine
+    restart: unless-stopped
+    logging: *logging
+    hostname: latrovu-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: latrovu
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pgdata:
+  rabbitmqdata:

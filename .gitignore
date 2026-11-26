@@ -430,3 +430,8 @@ tests/exposes/
 
 # Saved app pages used as templates for the site demos contain real listing data
 site/beispiel/*-raw.html
+
+# Production configuration with secrets, only the .example files are committed
+docker/.env
+docker/app.env
+docker/backup.env

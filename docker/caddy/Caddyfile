@@ -1,0 +1,32 @@
+{
+	email {$ACME_EMAIL}
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+}
+
+{$SITE_DOMAIN} {
+	import security_headers
+	header Referrer-Policy "strict-origin-when-cross-origin"
+	encode zstd gzip
+	root * /srv/site
+	file_server
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+{$APP_DOMAIN} {
+	import security_headers
+	header Referrer-Policy "no-referrer"
+	encode zstd gzip
+	reverse_proxy web:8080
+}

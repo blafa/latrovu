@@ -273,12 +273,14 @@ h1 {
 }
 
 .legal {
-    max-width: 46rem;
+    max-width: 52rem;
+    font-size: 1.125rem;
+    line-height: 1.65;
 }
 
 .legal h2 {
-    margin: 24px 0 4px;
-    font-size: 1.25rem;
+    margin: 32px 0 6px;
+    font-size: 1.375rem;
 }
 
 .legal p {
@@ -286,14 +288,14 @@ h1 {
 }
 
 .legal p + p {
-    margin-top: 10px;
+    margin-top: 14px;
 }
 
 .legal ul {
     margin: 0;
-    padding-left: 1.2rem;
+    padding-left: 1.3rem;
     display: grid;
-    gap: 6px;
+    gap: 8px;
 }
 
 .draft-note {

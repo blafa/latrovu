@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.github/
+tests/exposes/
+site/beispiel/*-raw.html
+*.user
