@@ -284,3 +284,24 @@ h1 {
 .legal p {
     margin: 0;
 }
+
+.legal p + p {
+    margin-top: 10px;
+}
+
+.legal ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: grid;
+    gap: 6px;
+}
+
+.draft-note {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #FCF1DE;
+    color: #7A4A07;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
