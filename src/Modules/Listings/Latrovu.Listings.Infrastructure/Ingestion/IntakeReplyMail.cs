@@ -30,7 +30,7 @@ internal static class IntakeReplyMail
         ArgumentNullException.ThrowIfNull(content);
 
         IEnumerable<string> blocks = content.Report.Files.Select(file => FileText(file, content));
-        return $"{Headline(content.Report)}\n\n{string.Join("\n\n", blocks)}\n\n{Footer(content.Report)}\n\nIhr Latrovu-Team\n";
+        return $"{Headline(content.Report)}\n\n{string.Join("\n\n", blocks)}\n\n{Footer(content.Report)}\n\nIhr latrovu-Team\n";
     }
 
     public static string Html(IntakeReplyContent content)

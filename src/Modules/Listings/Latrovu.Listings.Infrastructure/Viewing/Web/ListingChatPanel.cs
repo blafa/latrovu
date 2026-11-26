@@ -260,7 +260,7 @@ internal static class ListingChatPanel
         { Source: ChatMessage.ExposeSource, Page: { } page } => $"{ReviewIcons.Document}Aus dem Exposé, Seite {page}",
         { Source: ChatMessage.ExposeSource } => $"{ReviewIcons.Document}Aus dem Exposé",
         { Source: ChatMessage.DataSource } => $"{ReviewIcons.Document}Aus den Angaben zum Inserat",
-        { Source: ChatMessage.LatrovuSource } => "Hinweis von Latrovu",
+        { Source: ChatMessage.LatrovuSource } => "Hinweis von latrovu",
         _ => "Nicht im Exposé"
     };
 

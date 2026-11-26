@@ -191,7 +191,7 @@ internal static class ReviewLayout
     {
         html.Append("<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">")
             .Append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
-            .Append($"<title>{WebUtility.HtmlEncode(title)} – Latrovu</title>")
+            .Append($"<title>{WebUtility.HtmlEncode(title)} – latrovu</title>")
             .Append(SiteAssets.HeadLinks)
             .Append($"<script src=\"{SiteAssets.HtmxScript}\"></script>")
             .Append($"<style>{SiteAssets.FontFaces}{Styles}</style></head><body>");

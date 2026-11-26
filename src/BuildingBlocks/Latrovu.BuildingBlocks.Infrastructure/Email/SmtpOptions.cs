@@ -6,7 +6,7 @@ public sealed class SmtpOptions
 {
     public const string SectionName = "Smtp";
     public const int ImplicitTlsPort = 465;
-    public const string DefaultFromName = "Latrovu";
+    public const string DefaultFromName = "latrovu";
 
     [Required]
     public string Host { get; init; } = string.Empty;

@@ -30,7 +30,7 @@ public static class AgentQuestionMail
         }
 
         return text.Append("\nAntworten Sie einfach auf diese E-Mail. Wir leiten Ihre Antwort weiter; ")
-            .Append("Ihre Kontaktdaten bleiben dabei verborgen.\n\nFreundliche Grüsse\nIhr Latrovu-Team")
+            .Append("Ihre Kontaktdaten bleiben dabei verborgen.\n\nFreundliche Grüsse\nIhr latrovu-Team")
             .ToString();
     }
 
@@ -45,7 +45,7 @@ public static class AgentQuestionMail
             + Row($"<p style=\"margin:0;\">Guten Tag</p><p style=\"margin:12px 0 0;\">{WebUtility.HtmlEncode(Intro(batch))}</p>")
             + Row($"<ul style=\"margin:0;padding:14px 16px 8px 34px;background:#F6F7F4;border-radius:4px;\">{questions}</ul>")
             + Row("<p style=\"margin:0;\">Antworten Sie einfach auf diese E-Mail. Wir leiten Ihre Antwort weiter; Ihre Kontaktdaten bleiben dabei verborgen.</p>")
-            + Row("<p style=\"margin:0 0 8px;\">Freundliche Grüsse<br>Ihr Latrovu-Team</p>")
+            + Row("<p style=\"margin:0 0 8px;\">Freundliche Grüsse<br>Ihr latrovu-Team</p>")
             + "</table></td></tr></table></body></html>";
     }
 

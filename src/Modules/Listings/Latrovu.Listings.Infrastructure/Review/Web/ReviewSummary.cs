@@ -167,7 +167,7 @@ internal static class ReviewSummary
             .Append($"<span class=\"switch-icon on\">{ReviewIcons.Eye}</span><span class=\"switch-icon off\">{ReviewIcons.EyeOff}</span>")
             .Append("<span>Kontaktdaten im öffentlichen Inserat anzeigen</span></label>")
             .Append("<span id=\"publish-contact-status\" class=\"status\" aria-live=\"polite\"></span>")
-            .Append("<p class=\"toggle-hint\">Standardmässig aus: Interessierte erreichen Sie über Latrovu, ")
+            .Append("<p class=\"toggle-hint\">Standardmässig aus: Interessierte erreichen Sie über latrovu, ")
             .Append("Ihre E-Mail-Adresse und Telefonnummer bleiben verborgen.</p></div>");
     }
 

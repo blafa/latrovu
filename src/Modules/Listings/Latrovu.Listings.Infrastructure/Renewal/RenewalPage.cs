@@ -28,7 +28,7 @@ internal static class RenewalPage
     private static string Page(string title, string body) =>
         new StringBuilder("<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">")
             .Append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"robots\" content=\"noindex, nofollow\">")
-            .Append($"<title>{title} – Latrovu</title>{SiteAssets.HeadLinks}<style>{SiteAssets.FontFaces}{Styles}</style></head><body><main>")
+            .Append($"<title>{title} – latrovu</title>{SiteAssets.HeadLinks}<style>{SiteAssets.FontFaces}{Styles}</style></head><body><main>")
             .Append(SiteAssets.LogoImage(SiteAssets.HeaderLogoHeight))
             .Append($"<h1>{title}</h1>{body}</main></body></html>")
             .ToString();

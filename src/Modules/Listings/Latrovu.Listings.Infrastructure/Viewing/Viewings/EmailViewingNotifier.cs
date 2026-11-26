@@ -57,7 +57,7 @@ public sealed class EmailViewingNotifier(
         string when = SwissTime.Describe(slot);
         string reviewUrl = links.Value.ReviewUrl(await accessTokens.CreateAsync(listingId, ct));
         string text = $"Guten Tag\n\nFür Ihr Inserat «{found.Title}» {notice.Sentence}:\n\n{when}\n{PreviousLine(notice)}{found.Seeker}\n\n"
-            + $"Angemeldet: {slot.Booked} von {slot.Capacity} Plätzen.\nAlle Anmeldungen: {reviewUrl}\n\nFreundliche Grüsse\nIhr Latrovu-Team";
+            + $"Angemeldet: {slot.Booked} von {slot.Capacity} Plätzen.\nAlle Anmeldungen: {reviewUrl}\n\nFreundliche Grüsse\nIhr latrovu-Team";
         await emailSender.SendAsync(
             new EmailMessage(found.Agent, $"{notice.Subject}: {when}", text, Html(found, when, slot, notice, reviewUrl), null, EmailBranding.InlineImages),
             ct);
@@ -89,7 +89,7 @@ public sealed class EmailViewingNotifier(
             + $"<p style=\"margin:4px 0 0;\">{Encode(found.Seeker)}</p></div>")
         + Row($"<p style=\"margin:0;color:#5E6660;font-size:13px;\">Angemeldet: {slot.Booked} von {slot.Capacity} Plätzen.</p>")
         + Row($"<a href=\"{Encode(reviewUrl)}\" style=\"display:inline-block;background:#B8E62E;color:#111418;font-weight:600;text-decoration:none;padding:12px 20px;border-radius:6px;\">Alle Anmeldungen ansehen</a>")
-        + Row("<p style=\"margin:0 0 8px;\">Freundliche Grüsse<br>Ihr Latrovu-Team</p>")
+        + Row("<p style=\"margin:0 0 8px;\">Freundliche Grüsse<br>Ihr latrovu-Team</p>")
         + "</table></td></tr></table></body></html>";
 
     private static string PreviousLine(AgentViewingNotice notice) =>

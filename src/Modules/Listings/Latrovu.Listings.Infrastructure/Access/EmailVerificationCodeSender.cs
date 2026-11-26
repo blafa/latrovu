@@ -6,19 +6,19 @@ namespace Latrovu.Listings.Infrastructure.Access;
 
 public sealed class EmailVerificationCodeSender(IEmailSender emailSender) : IVerificationCodeSender
 {
-    private const string SubjectTemplate = "{0} ist Ihr Bestätigungscode für Latrovu";
+    private const string SubjectTemplate = "{0} ist Ihr Bestätigungscode für latrovu";
 
     private const string TextTemplate = """
         Guten Tag
 
-        Ihr Code zum Öffnen Ihres Inserats bei Latrovu lautet:
+        Ihr Code zum Öffnen Ihres Inserats bei latrovu lautet:
 
             {0}
 
         Der Code ist {1} Minuten gültig. Falls Sie ihn nicht angefordert haben, können Sie diese E-Mail ignorieren.
 
         Freundliche Grüsse
-        Latrovu
+        latrovu
         """;
 
     private const string HtmlTemplate = """
@@ -35,7 +35,7 @@ public sealed class EmailVerificationCodeSender(IEmailSender emailSender) : IVer
         </td></tr>
         <tr><td style="padding:0 32px 28px;font-size:13px;line-height:1.5;color:#5E6660;">Der Code ist {1} Minuten gültig. Falls Sie ihn nicht angefordert haben, können Sie diese E-Mail ignorieren.</td></tr>
         </table>
-        <p style="margin:16px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#5E6660;">Latrovu – Te la trovo.</p>
+        <p style="margin:16px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#5E6660;">latrovu – Te la trovo.</p>
         </td></tr>
         </table>
         </body>

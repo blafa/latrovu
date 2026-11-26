@@ -28,7 +28,7 @@ public static class RenewalMail
         ArgumentNullException.ThrowIfNull(reminder);
 
         return $"Guten Tag\n\n{Intro(reminder)}\n\n{Deletion(reminder)}Ja, weiterhin aktiv: {renewUrl}\nInserat zurückziehen: {reviewUrl}\n\n"
-            + "Freundliche Grüsse\nIhr Latrovu-Team\n";
+            + "Freundliche Grüsse\nIhr latrovu-Team\n";
     }
 
     public static string Html(RenewalReminder reminder, string renewUrl, string reviewUrl)
@@ -44,7 +44,7 @@ public static class RenewalMail
                 : Row($"<div style=\"background:#FCF1DE;color:#7A4A07;border-radius:4px;padding:12px 16px;\">{Encode(Deletion(reminder).Trim())}</div>"))
             + Row($"<a href=\"{Encode(renewUrl)}\" style=\"display:inline-block;background:#B8E62E;color:#111418;font-weight:600;text-decoration:none;padding:12px 20px;border-radius:6px;margin:0 8px 8px 0;\">Ja, weiterhin aktiv</a>"
                 + $"<a href=\"{Encode(reviewUrl)}\" style=\"display:inline-block;color:#111418;font-weight:600;text-decoration:none;padding:10px 18px;border:2px solid #111418;border-radius:6px;\">Inserat zurückziehen</a>")
-            + Row("<p style=\"margin:0 0 8px;\">Freundliche Grüsse<br>Ihr Latrovu-Team</p>")
+            + Row("<p style=\"margin:0 0 8px;\">Freundliche Grüsse<br>Ihr latrovu-Team</p>")
             + "</table></td></tr></table></body></html>";
     }
 

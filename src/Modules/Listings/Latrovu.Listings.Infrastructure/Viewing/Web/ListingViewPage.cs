@@ -145,7 +145,7 @@ internal static class ListingViewPage
     private static string Head(string title) =>
         "<!doctype html><html lang=\"de-CH\"><head><meta charset=\"utf-8\">"
         + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"robots\" content=\"noindex, nofollow\">"
-        + $"<title>{Encode(title)} – Latrovu</title><meta property=\"og:title\" content=\"{Encode(title)} auf Latrovu\">"
+        + $"<title>{Encode(title)} – latrovu</title><meta property=\"og:title\" content=\"{Encode(title)} auf latrovu\">"
         + "<meta property=\"og:description\" content=\"Persönlich vermittelt, ohne öffentliches Inserat.\">"
         + $"{SiteAssets.HeadLinks}<script src=\"{SiteAssets.HtmxScript}\"></script>"
         + $"<style>{SiteAssets.FontFaces}{Styles}{ListingChatPanel.Styles}{SeekerViewingPanel.Styles}{UnlockDialog.Styles}</style></head><body>";
