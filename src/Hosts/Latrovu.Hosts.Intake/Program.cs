@@ -1,11 +1,8 @@
 using Latrovu.BuildingBlocks.Infrastructure.Messaging;
 using Latrovu.BuildingBlocks.Infrastructure.Persistence;
 using Latrovu.BuildingBlocks.Infrastructure.Storage;
-using Latrovu.Core.Listings;
 using Latrovu.Hosts.Intake.Dev;
 using Latrovu.Intake.Infrastructure;
-
-const string InputQueue = "latrovu-intake";
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +10,7 @@ builder.Services
     .AddPostgres(builder.Configuration)
     .AddObjectStorage(builder.Configuration)
     .AddIntakeModule(builder.Configuration)
-    .AddMessageConsuming(builder.Configuration, InputQueue, [typeof(ListingWithdrawn)]);
+    .AddMessagePublishing(builder.Configuration);
 
 WebApplication app = builder.Build();
 

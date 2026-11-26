@@ -9,7 +9,6 @@ public sealed class ListingIntake(
     IDocumentClassifier classifier,
     IListingExtractor extractor,
     IListingStore store,
-    IListingSourceMailStore sourceMails,
     IListingAccessTokenStore accessTokens,
     IListingImageCollector imageCollector,
     ILogger<ListingIntake> logger) : IListingIntake
@@ -53,7 +52,6 @@ public sealed class ListingIntake(
         string sourceHash = Convert.ToHexString(SHA256.HashData(pdf.Content));
         if (await store.FindActiveBySourceAsync(message.Sender, sourceHash, ct) is { } existingId)
         {
-            await RecordSourceMailAsync(existingId, message, ct);
             await ReuseExistingAsync(existingId, pdf, pages, ct);
             return null;
         }
@@ -85,20 +83,8 @@ public sealed class ListingIntake(
         ListingExtraction? extraction = await extractor.ExtractAsync(pages, ct);
         NewListing listing = new(message.Sender, message.Subject, pdf.FileName, extraction, pages, sourceHash);
         Guid listingId = await store.AddAsync(listing, ct);
-        await RecordSourceMailAsync(listingId, message, ct);
         string token = await accessTokens.CreateAsync(listingId, ct);
         logger.LogInformation("Stored listing {ListingId} from {FileName}, review at /review/{Token}", listingId, pdf.FileName, token);
         return listingId;
-    }
-
-    private async Task RecordSourceMailAsync(Guid listingId, Submission message, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(message.MessageId))
-        {
-            logger.LogWarning("Listing {ListingId} came from a mail without Message-Id, it cannot be removed from the mailbox later", listingId);
-            return;
-        }
-
-        await sourceMails.RecordAsync(listingId, message.MessageId, ct);
     }
 }

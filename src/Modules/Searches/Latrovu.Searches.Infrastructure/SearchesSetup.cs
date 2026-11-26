@@ -1,4 +1,5 @@
 using Latrovu.BuildingBlocks.Infrastructure.Messaging;
+using Latrovu.BuildingBlocks.Retention;
 using Latrovu.Core.Listings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,12 @@ public static class SearchesSetup
         services.AddMessageHandler<ViewingBooked, ViewingBookedHandler>();
         services.AddMessageHandler<ViewingCancelled, ViewingCancelledHandler>();
         services.AddMessageHandler<ListingAccessRequested, ListingAccessRequestedHandler>();
+        return services;
+    }
+
+    public static IServiceCollection AddSearchesRetention(this IServiceCollection services)
+    {
+        services.AddScoped<IRetentionTask, SearchesRetentionTask>();
         return services;
     }
 }

@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\BuildingBlocks\Latrovu.BuildingBlocks.Infrastructure\Latrovu.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Listings\Latrovu.Listings.Infrastructure\Latrovu.Listings.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Searches\Latrovu.Searches.Infrastructure\Latrovu.Searches.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

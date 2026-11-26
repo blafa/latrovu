@@ -1,5 +1,3 @@
-using Latrovu.BuildingBlocks.Infrastructure.Messaging;
-using Latrovu.Core.Listings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,7 +20,6 @@ public static class IntakeSetup
         services.AddScoped<ISearchRequestForwarder, SearchRequestForwarder>();
         services.AddScoped<IAgentReplyForwarder, AgentReplyForwarder>();
         services.AddHostedService<MailPollingService>();
-        services.AddMessageHandler<ListingWithdrawn, ListingMailCleanupHandler>();
         return services;
     }
 }

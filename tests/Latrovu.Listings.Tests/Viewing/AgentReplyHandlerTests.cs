@@ -11,21 +11,12 @@ public sealed class AgentReplyHandlerTests
     private const string Reference = "Q-1a2b3c4d5e";
 
     private readonly FakeAgentReplyStore store = new();
-    private readonly FakeListingSourceMailStore mails = new();
     private readonly AgentReplyHandler handler;
 
     public AgentReplyHandlerTests()
     {
-        handler = new AgentReplyHandler(store, store, mails, TimeProvider.System, NullLogger<AgentReplyHandler>.Instance);
+        handler = new AgentReplyHandler(store, store, TimeProvider.System, NullLogger<AgentReplyHandler>.Instance);
         store.Target = new AgentReplyTarget(Guid.NewGuid(), Guid.NewGuid(), "hash", AgentAddress, "Haus in Thun", Guid.NewGuid(), ["Haustiere?"], "{}", SeekerAddress);
-    }
-
-    [Fact]
-    public async Task Handle_KnownReference_RecordsTheMailForDeletionWithTheListing()
-    {
-        await handler.HandleAsync(Reply(AgentAddress), CancellationToken.None);
-
-        Assert.Equal(store.Target!.ListingId, Assert.Single(mails.Recorded).ListingId);
     }
 
     [Fact]

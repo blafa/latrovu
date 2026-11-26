@@ -1,13 +1,11 @@
 using Latrovu.BuildingBlocks.Messaging;
 using Latrovu.Core.Listings;
-using Latrovu.Listings.Ingestion;
 
 namespace Latrovu.Listings.Viewing.Chat;
 
 public sealed class AgentReplyHandler(
     IAgentReplyStore replies,
     IAnswerTranslator translator,
-    IListingSourceMailStore sourceMails,
     TimeProvider timeProvider,
     ILogger<AgentReplyHandler> logger) : IMessageHandler<AgentReplyReceived>
 {
@@ -20,11 +18,6 @@ public sealed class AgentReplyHandler(
         {
             logger.LogWarning("Reply {ReplyId} references unknown {Reference}, ignored", message.ReplyId, message.Reference);
             return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(message.SourceMessageId))
-        {
-            await sourceMails.RecordAsync(target.ListingId, message.SourceMessageId, ct);
         }
 
         if (IsFrom(message, target.AgentAddress))

@@ -30,8 +30,6 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource, IOutbox outb
 
     private const string ImageKeysSql = "SELECT storage_key FROM listing_images WHERE listing_id = $1";
 
-    private const string SourceMailsSql = "SELECT message_id FROM listing_source_mails WHERE listing_id = $1";
-
     private const string DeleteSql = "DELETE FROM listings WHERE id = $1";
 
     public async Task<ListingReview?> GetAsync(Guid listingId, CancellationToken ct)
@@ -87,11 +85,10 @@ public sealed class ListingReviewStore(NpgsqlDataSource dataSource, IOutbox outb
         }
 
         List<string> imageKeys = await ReadStringsAsync(connection, transaction, ImageKeysSql, listingId, ct);
-        List<string> sourceMails = await ReadStringsAsync(connection, transaction, SourceMailsSql, listingId, ct);
         await using NpgsqlCommand delete = new(DeleteSql, connection, transaction);
         delete.Parameters.Add(new NpgsqlParameter { Value = listingId });
         await delete.ExecuteNonQueryAsync(ct);
-        await outbox.AddAsync([new ListingWithdrawn(listingId, sourceMails)], transaction, ct);
+        await outbox.AddAsync([new ListingWithdrawn(listingId)], transaction, ct);
         await transaction.CommitAsync(ct);
         return new WithdrawnListing(imageKeys);
     }

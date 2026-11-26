@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Latrovu.BuildingBlocks.Infrastructure.Messaging;
+using Latrovu.BuildingBlocks.Retention;
 using Latrovu.Core.Listings;
 using Latrovu.Core.Submissions;
 using Latrovu.Listings.Infrastructure.Matching;
@@ -62,6 +63,7 @@ public static class ListingsSetup
         services.AddScoped<IRenewalNotifier, EmailRenewalNotifier>();
         services.AddScoped<RenewalReminderService>();
         services.AddHostedService<ListingRenewalWorker>();
+        services.AddScoped<IRetentionTask, ListingsRetentionTask>();
         return services;
     }
 
@@ -129,7 +131,6 @@ public static class ListingsSetup
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ListingsDatabaseSchema>());
         services.TryAddSingleton<IListingStore, ListingStore>();
-        services.TryAddSingleton<IListingSourceMailStore, ListingSourceMailStore>();
         services.TryAddSingleton<IListingImageStore, ListingImageStore>();
         services.TryAddSingleton<IListingReviewStore, ListingReviewStore>();
         services.TryAddSingleton<IListingAccessTokenStore, ListingAccessTokenStore>();

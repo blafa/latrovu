@@ -11,8 +11,6 @@ namespace Latrovu.Intake.Infrastructure;
 
 public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> logger) : IMailInbox
 {
-    private const string MessageIdHeader = "Message-ID";
-
     private readonly MailOptions settings = options.Value;
 
     public async Task ProcessPendingAsync(Func<InboundMail, CancellationToken, Task> handleMail, CancellationToken ct)
@@ -21,56 +19,19 @@ public sealed class ImapInbox(IOptions<MailOptions> options, ILogger<ImapInbox> 
 
         using ImapClient client = await ConnectAsync(ct);
         IMailFolder folder = await OpenFolderAsync(client, ct);
-        IMailFolder processed = await ProcessedFolderAsync(folder, ct);
-        IList<UniqueId> pending = await folder.SearchAsync(SearchQuery.All, ct);
+        IList<UniqueId> pending = await folder.SearchAsync(SearchQuery.NotDeleted, ct);
         logger.LogDebug("Found {PendingCount} pending mails in {Folder}", pending.Count, settings.Folder);
 
         foreach (UniqueId uid in pending)
         {
             MimeMessage message = await folder.GetMessageAsync(uid, ct);
-            InboundMail mail = await ToInboundMailAsync(message, ct);
-            await handleMail(mail, ct);
-            await folder.MoveToAsync(uid, processed, ct);
+            await handleMail(await ToInboundMailAsync(message, ct), ct);
+            await folder.AddFlagsAsync(uid, MessageFlags.Deleted, true, ct);
+            await folder.ExpungeAsync([uid], ct);
+            logger.LogDebug("Processed mail deleted from {Folder}", settings.Folder);
         }
 
         await client.DisconnectAsync(true, ct);
-    }
-
-    public async Task<int> DeleteProcessedAsync(IReadOnlyCollection<string> messageIds, CancellationToken ct)
-    {
-        ArgumentNullException.ThrowIfNull(messageIds);
-
-        using ImapClient client = await ConnectAsync(ct);
-        IMailFolder processed = await ProcessedFolderAsync(await OpenFolderAsync(client, ct), ct);
-        await processed.OpenAsync(FolderAccess.ReadWrite, ct);
-        List<UniqueId> matches = [];
-        foreach (string messageId in messageIds)
-        {
-            matches.AddRange(await processed.SearchAsync(SearchQuery.HeaderContains(MessageIdHeader, messageId), ct));
-        }
-
-        if (matches.Count > 0)
-        {
-            await processed.AddFlagsAsync(matches, MessageFlags.Deleted, true, ct);
-            await processed.ExpungeAsync(matches, ct);
-        }
-
-        await client.DisconnectAsync(true, ct);
-        logger.LogInformation("Deleted {DeletedCount} of {RequestedCount} processed mails", matches.Count, messageIds.Count);
-        return matches.Count;
-    }
-
-    private async Task<IMailFolder> ProcessedFolderAsync(IMailFolder folder, CancellationToken ct)
-    {
-        try
-        {
-            return await folder.GetSubfolderAsync(settings.ProcessedFolder, ct);
-        }
-        catch (FolderNotFoundException)
-        {
-            logger.LogInformation("Creating folder {Folder}/{ProcessedFolder}", settings.Folder, settings.ProcessedFolder);
-            return await folder.CreateAsync(settings.ProcessedFolder, true, ct);
-        }
     }
 
     private async Task<ImapClient> ConnectAsync(CancellationToken ct)
