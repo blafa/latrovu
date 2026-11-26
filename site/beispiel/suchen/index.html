@@ -8,102 +8,17 @@
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/favicon-180.png">
     <link rel="preload" href="/assets/fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-    <style>
-@font-face { font-family:Outfit; font-style:normal; font-weight:100 900; font-display:swap; src:url(/assets/fonts/outfit-latin-wght-normal.woff2) format("woff2"); }
-:root { --ink:#111418; --paper:#FFFFFF; --canvas:#F3F4F1; --well:#F6F7F4; --line:#E1E4DD; --muted:#5E6660;
-        --lime:#B8E62E; --green:#4E8A1E; --green-soft:#E3F1D2; color-scheme:light; }
-* { box-sizing:border-box; }
-body { margin:0; background:var(--canvas); color:var(--ink); font:15px/1.55 Outfit, system-ui, sans-serif; }
-a { color:inherit; }
-a:focus-visible { outline:3px solid var(--ink); outline-offset:3px; border-radius:6px; }
-.demo-banner { background:var(--lime); }
-.demo-banner div { max-width:1360px; margin:0 auto; padding:10px 32px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 16px; font-size:14px; font-weight:500; }
-.demo-banner a { font-weight:600; }
-.site { max-width:1360px; margin:0 auto; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; }
-.brand { display:inline-flex; align-items:center; gap:9px; text-decoration:none; }
-.brand-name { font-weight:600; font-size:26px; letter-spacing:-0.035em; line-height:1; }
-.brand-dot { color:#9CC41F; }
-.tagline { font-size:13px; color:var(--muted); }
-main { max-width:1360px; margin:0 auto; padding:0 32px 48px; }
-.gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:190px 190px; gap:4px; border-radius:8px; overflow:hidden; }
-.tile { position:relative; display:flex; align-items:flex-end; padding:12px 14px; font-size:13px; color:var(--muted); background:#E7EAE2; }
-.tile:first-child { grid-row:span 2; background:#DCE3D3; }
-.tile:nth-child(3), .tile:nth-child(4) { background:#EEF0EA; }
-.tile .more { position:absolute; right:8px; bottom:8px; font-size:12px; padding:3px 9px; border-radius:4px; background:var(--paper); color:var(--ink); }
-.content { display:grid; grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr); gap:32px; margin-top:24px; align-items:start; }
-.address { margin:0; font-size:14px; color:var(--muted); }
-.price-line { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin:4px 0 2px; }
-.price { font-size:26px; font-weight:700; letter-spacing:-0.01em; margin:0; color:#3B6D11; }
-.price-label { font-size:13px; color:var(--muted); }
-h1 { margin:2px 0 14px; font-size:26px; line-height:1.2; letter-spacing:-0.01em; }
-h2 { margin:28px 0 10px; font-size:15px; }
-.chips { display:flex; flex-wrap:wrap; gap:6px; }
-.chip { padding:5px 10px; border-radius:4px; background:var(--paper); font-size:14px; }
-.chip.feature { background:var(--green-soft); color:#2E5410; }
-.description { margin:0; color:#333A35; }
-.details { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0 24px; margin:0; }
-.details div { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); }
-.details dt { color:var(--muted); } .details dd { margin:0; font-weight:500; text-align:right; }
-.icon { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-.chat { position:sticky; top:20px; display:flex; flex-direction:column; height:min(660px, calc(100vh - 40px)); background:var(--paper); border-radius:8px; overflow:hidden; }
-.chat-header { padding:16px 18px 12px; border-bottom:1px solid var(--line); }
-.chat-title { margin:0; font-size:16px; font-weight:600; }
-.chat-sub { margin:2px 0 0; font-size:12px; color:var(--muted); }
-.chat-messages { flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:8px; border-bottom:1px solid var(--line); }
-.bubble { max-width:85%; padding:8px 12px; border-radius:14px; font-size:14px; line-height:1.45; }
-.bubble.seeker { align-self:flex-end; background:#EEF8D2; border-bottom-right-radius:4px; }
-.bubble.answer { align-self:flex-start; background:var(--well); border-bottom-left-radius:4px; }
-.bubble-source { display:flex; align-items:center; gap:4px; margin-top:4px; font-size:11px; color:var(--muted); }
-.bubble-source .icon { width:12px; height:12px; }
-.forward-note { margin:4px 0 0; font-size:11px; color:var(--muted); }
-.slot-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-.slot-chip { font-size:13px; padding:6px 11px; border-radius:16px; border:1px solid var(--ink); background:var(--paper); }
-.slot-chip.mine { border-color:#EEF8D2; background:#EEF8D2; color:#27500A; }
-.chat-form { display:flex; flex-direction:column; gap:6px; margin:10px 12px 12px; padding:10px 8px 8px 14px; border:1px solid var(--line); border-radius:16px; background:var(--well); }
-.chat-form textarea { width:100%; font:inherit; font-size:15px; line-height:1.45; padding:0; border:none; outline:none; background:transparent; resize:none; min-height:calc(1.45em * 2); color:var(--muted); }
-.composer-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.composer-hint { font-size:11px; color:var(--muted); }
-.chat-form button { flex:none; width:34px; height:34px; display:grid; place-items:center; border:none; border-radius:10px; background:var(--lime); color:var(--ink); opacity:0.5; }
-.viewings { margin:18px 0 4px; border-radius:10px; background:#EEF8D2; color:#27500A; }
-.viewings-head { display:flex; align-items:center; gap:10px; padding:12px 14px; }
-.viewings-text { flex:1; display:grid; line-height:1.3; }
-.viewings-text strong { font-weight:600; }
-.viewings-text small { font-size:13px; color:#3B6D11; }
-.viewings-action { flex:none; padding:7px 4px; font-size:13px; font-weight:500; text-decoration:underline; color:#27500A; }
-footer { max-width:1120px; margin:0 auto; padding:24px; font-size:12px; color:var(--muted); }
-@media (max-width: 860px) {
-    .demo-banner div, .site { padding-left:20px; padding-right:20px; }
-    main { padding:0 20px 40px; }
-    .gallery { grid-template-columns:1fr 1fr; grid-template-rows:200px 110px; }
-    .tile:first-child { grid-column:span 2; grid-row:auto; }
-    .tile:nth-child(n+4) { display:none; }
-    .content { grid-template-columns:1fr; }
-    .details { grid-template-columns:1fr; }
-    .chat { position:static; height:auto; }
-    .chat-messages { max-height:480px; }
-}
-    </style>
+    <link rel="stylesheet" href="/beispiel/suchen/demo.css">
 </head>
 <body>
-<div class="demo-banner">
-    <div>
-        <span>Beispiel mit erfundenen Angaben. So sieht Ihr persönlicher Link aus.</span>
-        <a href="/">Zurück zur Startseite</a>
-    </div>
-</div>
+<div class="demo-banner"><div><span>Beispiel mit erfundenen Angaben. So sieht Ihr persönlicher Link aus.</span><a href="/">Zurück zur Startseite</a></div></div>
 <header class="site">
-    <a class="brand" href="/" aria-label="Latrovu Startseite">
-        <img src="/assets/latrovu-symbol.svg" alt="" width="32" height="36">
-        <span class="brand-name">latrovu<span class="brand-dot">.</span></span>
-    </a>
+    <a class="brand" href="/" aria-label="Latrovu Startseite"><img src="/assets/latrovu-symbol.svg" alt=""><span class="brand-name">latrovu<span class="brand-dot">.</span></span></a>
     <span class="tagline">Te la trovo.</span>
 </header>
 <main>
     <section class="gallery" aria-label="Bilder (Platzhalter)">
-        <div class="tile">Wohnzimmer mit Balkon</div>
-        <div class="tile">Küche</div>
-        <div class="tile">Schlafzimmer</div>
-        <div class="tile">Bad</div>
+        <div class="tile">Wohnzimmer mit Balkon</div><div class="tile">Küche</div><div class="tile">Schlafzimmer</div><div class="tile">Bad</div>
         <div class="tile">Aussicht<span class="more">Alle 12 Bilder</span></div>
     </section>
     <div class="content">
@@ -112,7 +27,6 @@ footer { max-width:1120px; margin:0 auto; padding:24px; font-size:12px; color:va
             <div class="price-line"><p class="price">CHF 2’350</p><span class="price-label">Miete pro Monat, inkl. Nebenkosten</span></div>
             <h1>3½-Zimmer-Wohnung mit Balkon</h1>
             <div class="chips"><span class="chip">3.5 Zimmer</span><span class="chip">78 m²</span><span class="chip">3. Obergeschoss</span><span class="chip">Bezug 1. März</span></div>
-
             <section class="viewings" aria-label="Besichtigung">
                 <div class="viewings-head">
                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M9 12l2 2l4 -4"/></svg>
@@ -120,42 +34,31 @@ footer { max-width:1120px; margin:0 auto; padding:24px; font-size:12px; color:va
                     <span class="viewings-action">ändern</span>
                 </div>
             </section>
-
             <h2>Beschreibung</h2>
             <p class="description">Helle 3½-Zimmer-Wohnung im 3. Obergeschoss, ruhig gelegen in Albisrieden. Offene Küche mit Geschirrspüler, Parkett in allen Zimmern, Balkon gegen Südwesten. Tram und Bus in wenigen Gehminuten, Waschturm in der Wohnung.</p>
             <h2>Ausstattung</h2>
             <div class="chips"><span class="chip feature">✓ Balkon</span><span class="chip feature">✓ Lift</span><span class="chip feature">✓ Geschirrspüler</span><span class="chip feature">✓ Waschturm</span><span class="chip feature">✓ Keller</span></div>
             <h2>Details</h2>
             <dl class="details">
-                <div><dt>Gemeinde</dt><dd>Zürich</dd></div>
-                <div><dt>Kanton</dt><dd>ZH</dd></div>
-                <div><dt>Nebenkosten</dt><dd>CHF 220</dd></div>
-                <div><dt>Heizung</dt><dd>Fernwärme</dd></div>
-                <div><dt>Haustiere</dt><dd>Katzen erlaubt</dd></div>
-                <div><dt>Verfügbar</dt><dd>1. März</dd></div>
+                <div><dt>Gemeinde</dt><dd>Zürich</dd></div><div><dt>Kanton</dt><dd>ZH</dd></div>
+                <div><dt>Nebenkosten</dt><dd>CHF 220</dd></div><div><dt>Heizung</dt><dd>Fernwärme</dd></div>
+                <div><dt>Haustiere</dt><dd>Katzen erlaubt</dd></div><div><dt>Verfügbar</dt><dd>1. März</dd></div>
             </dl>
         </div>
-
         <section class="chat" aria-label="Fragen zum Angebot">
-            <header class="chat-header">
-                <h2 class="chat-title">Fragen zu diesem Angebot?</h2>
-                <p class="chat-sub">Antworten aus dem Exposé, in Ihrer Sprache.</p>
-            </header>
+            <header class="chat-header"><h2 class="chat-title">Fragen zu diesem Angebot?</h2><p class="chat-sub">Antworten aus dem Exposé, in Ihrer Sprache.</p></header>
             <div class="chat-messages">
                 <div class="bubble seeker">Sind Haustiere erlaubt?</div>
                 <div class="bubble answer">Katzen sind erlaubt. Für Hunde braucht es die Zustimmung der Verwaltung.<span class="bubble-source"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/></svg>Aus dem Exposé</span></div>
-                <div class="bubble seeker">Gibt es einen Parkplatz?</div>
-                <div class="bubble answer">Dazu steht nichts im Exposé. Ich habe Ihre Frage an den Anbieter weitergeleitet.<p class="forward-note">Die Antwort kommt hierhin und per E-Mail.</p></div>
-                <div class="bubble answer">Ja, ein Einstellhallenplatz ist für CHF 140 pro Monat verfügbar.<span class="bubble-source">Antwort des Anbieters</span></div>
+                <div class="bubble seeker">Is there a parking space?</div>
+                <div class="bubble answer">The listing doesn’t say. We have forwarded your question to the provider.<p class="forward-note">The answer will appear here and by email.</p></div>
+                <div class="bubble answer">Yes, an underground parking space is available for CHF 140 per month.<span class="bubble-source">Answer from the provider</span></div>
                 <div class="bubble seeker">Wann kann ich besichtigen?</div>
                 <div class="bubble answer">Diese Termine sind noch frei:<div class="slot-chips"><span class="slot-chip mine">Sa 12. Dez. · 10:00 ✓</span><span class="slot-chip">Mo 14. Dez. · 18:00</span></div></div>
             </div>
             <div class="chat-form" aria-hidden="true">
                 <textarea rows="2" disabled placeholder="Im Beispiel nicht aktiv"></textarea>
-                <div class="composer-row">
-                    <span class="composer-hint">Fragen in jeder Sprache</span>
-                    <button type="button" disabled tabindex="-1"><svg class="icon" viewBox="0 0 24 24"><path d="M10 14l11 -11"/><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"/></svg></button>
-                </div>
+                <div class="composer-row"><span class="composer-hint">Fragen in jeder Sprache</span><button type="button" disabled tabindex="-1"><svg class="icon" viewBox="0 0 24 24"><path d="M10 14l11 -11"/><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"/></svg></button></div>
             </div>
         </section>
     </div>

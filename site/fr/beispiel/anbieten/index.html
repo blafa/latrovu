@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fr-CH">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Exemple : votre page d’annonce – Latrovu</title>
+    <meta name="description" content="Voici la page d’annonce pour les fournisseurs : vérifier les données avec leur source dans le dossier, proposer des visites, gérer les réponses aux intéressés.">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/favicon-180.png">
+    <link rel="preload" href="/assets/fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/beispiel/anbieten/demo.css">
+</head>
+<body>
+<div class="demo-banner"><div><span>Exemple avec des données inventées. Voici à quoi ressemble votre page d’annonce.</span><a href="/fr/">Retour à l’accueil</a></div></div>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/fr/" aria-label="Latrovu accueil"><img src="/assets/latrovu-symbol.svg" alt=""><span class="brand-name">latrovu<span class="brand-dot">.</span></span></a>
+        <div class="listing-id"><h1>Appartement de 3½ pièces avec balcon</h1><span class="listing-address">Musterstrasse 12, 8047 Zurich</span></div>
+        <span class="state"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M9 12l2 2l4 -4"/></svg>Publiée</span>
+    </div>
+</header>
+<nav class="tabs" aria-label="Sections">
+    <div class="tabs-inner">
+        <a class="tab" href="#donnees"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/></svg>Données</a>
+        <a class="tab" href="#visites"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>Visites<span class="tab-count">6</span></a>
+        <a class="tab" href="#reponses"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"/></svg>Questions &amp; réponses<span class="tab-count">2</span></a>
+    </div>
+</nav>
+<main>
+    <div class="workspace" id="donnees">
+        <section class="panel" aria-label="Données reprises">
+            <header class="summary-header">
+                <h2>34 données reprises de votre dossier</h2>
+                <ul class="legend">
+                    <li><span class="mark found"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.1 6.2 5 8.1l3.9-4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>26 trouvées dans le dossier</li>
+                    <li><span class="mark derived"></span>6 déduites</li>
+                    <li><span class="mark ai"></span>1 rédigée par l’IA</li>
+                    <li><span class="mark open"></span>1 à vérifier</li>
+                </ul>
+            </header>
+            <section class="group open-group" aria-label="Données à vérifier">
+                <h3><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>À vérifier</h3>
+                <div class="specs"><div class="spec open-spec"><span class="spec-label">Garantie<span class="mark open"></span></span><span class="spec-value">3 mois de loyer</span><span class="spec-note">Pas trouvée dans le dossier</span><div class="spec-actions"><span class="ghost">Correct</span><span class="ghost">Modifier</span></div></div></div>
+            </section>
+            <section class="group">
+                <h3>Objet</h3>
+                <div class="specs">
+                    <div class="spec wide"><span class="spec-label">Titre</span><span class="spec-value">Appartement de 3½ pièces avec balcon</span></div>
+                    <div class="spec"><span class="spec-label">Offre</span><span class="spec-value">Location</span></div>
+                    <div class="spec"><span class="spec-label">Type</span><span class="spec-value">Appartement</span></div>
+                    <div class="spec"><span class="spec-label">Pièces</span><span class="spec-value">3.5</span></div>
+                    <div class="spec"><span class="spec-label">Surface</span><span class="spec-value">78 m²</span></div>
+                    <div class="spec"><span class="spec-label">Étage</span><span class="spec-value">3e étage</span></div>
+                    <div class="spec"><span class="spec-label">Libre dès</span><span class="spec-value">1er mars</span></div>
+                </div>
+            </section>
+            <section class="group">
+                <h3>Prix</h3>
+                <div class="specs">
+                    <div class="spec selected"><span class="spec-label">Loyer net</span><span class="spec-value">CHF 2’130</span></div>
+                    <div class="spec"><span class="spec-label">Charges</span><span class="spec-value">CHF 220</span></div>
+                    <div class="spec"><span class="spec-label">Loyer brut</span><span class="spec-value">CHF 2’350</span></div>
+                </div>
+            </section>
+            <section class="group">
+                <h3>Équipement</h3>
+                <div class="chips"><span class="chip">✓ Balcon</span><span class="chip">✓ Ascenseur</span><span class="chip">✓ Lave-vaisselle</span><span class="chip">✓ Colonne de lavage</span><span class="chip">✓ Cave</span></div>
+            </section>
+            <section class="group">
+                <h3>Contact</h3>
+                <div class="publish-toggle"><span class="switch"><span class="switch-track" aria-hidden="true"></span>Afficher les coordonnées dans l’annonce</span><p class="toggle-hint">Désactivé par défaut : les intéressés vous contactent via Latrovu, votre e-mail et votre téléphone restent cachés.</p></div>
+                <div class="specs">
+                    <div class="spec"><span class="spec-label">Entreprise</span><span class="spec-value">Muster Immobilien SA</span></div>
+                    <div class="spec"><span class="spec-label">Nom</span><span class="spec-value">Selin Kaya</span></div>
+                    <div class="spec"><span class="spec-label">Téléphone</span><span class="spec-value">044 000 00 00</span></div>
+                </div>
+            </section>
+        </section>
+        <aside class="panel context" aria-label="Source">
+            <p class="pane-kicker">Prix</p>
+            <h2>Loyer net</h2>
+            <div class="control"><input type="text" value="2130" disabled aria-label="Loyer net"><span class="unit">CHF</span></div>
+            <figure class="evidence"><figcaption>Votre dossier, page 2</figcaption><blockquote>… loyer net <mark>CHF 2’130.–</mark> par mois, acompte chauffage et charges CHF 220.–, entrée le 1er mars ou à convenir …</blockquote></figure>
+            <p class="context-note">Chaque donnée montre où elle figure dans votre dossier. Si quelque chose ne va pas, corrigez-le ici.</p>
+        </aside>
+    </div>
+    <section class="section" id="visites" aria-labelledby="visites-titre">
+        <div class="card">
+            <h2 id="visites-titre">Créneaux de visite</h2>
+            <p class="hint">Les intéressés réservent directement. Vous recevez un e-mail à chaque inscription.</p>
+            <div class="slot-form" aria-hidden="true"><label>Date<input value="16.12.2026" disabled></label><label>De<input value="18:00" disabled></label><label>À<input value="18:30" disabled></label><span class="add">Ajouter un créneau</span></div>
+            <div class="slot-grid">
+                <div class="slot-card"><span class="slot-day">je 10 déc.</span><span class="slot-hours">18:00–18:30</span><div class="slot-bar" aria-hidden="true"><span style="width:100%"></span></div><span class="slot-count">4 inscrits sur 4</span><span class="slot-names">a.yilmaz@example.com, p.nguyen@example.com, +2</span></div>
+                <div class="slot-card"><span class="slot-day">sa 12 déc.</span><span class="slot-hours">10:00–10:30</span><div class="slot-bar" aria-hidden="true"><span style="width:50%"></span></div><span class="slot-count">2 inscrits sur 4</span><span class="slot-names">m.silva@example.com, d.okafor@example.com</span></div>
+                <div class="slot-card"><span class="slot-day">lu 14 déc.</span><span class="slot-hours">18:00–18:30</span><div class="slot-bar" aria-hidden="true"><span style="width:0%"></span></div><span class="slot-count">0 inscrit sur 6</span></div>
+            </div>
+        </div>
+    </section>
+    <section class="section" id="reponses" aria-labelledby="reponses-titre">
+        <div class="card">
+            <h2 id="reponses-titre">Réponses aux intéressés</h2>
+            <p class="hint">Ce que le dossier ne dit pas, nous vous l’envoyons par e-mail. Votre réponse vaut ensuite pour tous les intéressés, dans leur langue.</p>
+            <ul class="knowledge">
+                <li><span class="knowledge-question">Y a-t-il une place de parc ?</span><span class="knowledge-answer">Oui, une place dans le parking souterrain est disponible pour CHF 140 par mois.</span><span class="knowledge-meta">Répondu le 24 novembre 2026</span></li>
+                <li><span class="knowledge-question">Y a-t-il un local à vélos ?</span><span class="knowledge-answer">Oui, au sous-sol, avec accès direct depuis l’extérieur.</span><span class="knowledge-meta">Répondu le 23 novembre 2026</span></li>
+            </ul>
+        </div>
+    </section>
+</main>
+<footer>Exemple avec des données inventées. Votre vraie page d’annonce n’est accessible que par votre lien personnel.</footer>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="it-CH">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Esempio: la sua pagina dell’annuncio – Latrovu</title>
+    <meta name="description" content="Ecco la pagina dell’annuncio per gli offerenti: verificare i dati con la loro fonte nella scheda, proporre visite, gestire le risposte agli interessati.">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/favicon-180.png">
+    <link rel="preload" href="/assets/fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/beispiel/anbieten/demo.css">
+</head>
+<body>
+<div class="demo-banner"><div><span>Esempio con dati inventati. Ecco come appare la sua pagina dell’annuncio.</span><a href="/it/">Torna alla pagina iniziale</a></div></div>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/it/" aria-label="Latrovu pagina iniziale"><img src="/assets/latrovu-symbol.svg" alt=""><span class="brand-name">latrovu<span class="brand-dot">.</span></span></a>
+        <div class="listing-id"><h1>Appartamento di 3½ locali con balcone</h1><span class="listing-address">Musterstrasse 12, 8047 Zurigo</span></div>
+        <span class="state"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M9 12l2 2l4 -4"/></svg>Pubblicato</span>
+    </div>
+</header>
+<nav class="tabs" aria-label="Sezioni">
+    <div class="tabs-inner">
+        <a class="tab" href="#dati"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/></svg>Dati</a>
+        <a class="tab" href="#visite"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>Visite<span class="tab-count">6</span></a>
+        <a class="tab" href="#risposte"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"/></svg>Domande e risposte<span class="tab-count">2</span></a>
+    </div>
+</nav>
+<main>
+    <div class="workspace" id="dati">
+        <section class="panel" aria-label="Dati ripresi">
+            <header class="summary-header">
+                <h2>34 dati ripresi dalla sua scheda</h2>
+                <ul class="legend">
+                    <li><span class="mark found"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.1 6.2 5 8.1l3.9-4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>26 trovati nella scheda</li>
+                    <li><span class="mark derived"></span>6 dedotti</li>
+                    <li><span class="mark ai"></span>1 formulato dall’IA</li>
+                    <li><span class="mark open"></span>1 da verificare</li>
+                </ul>
+            </header>
+            <section class="group open-group" aria-label="Dati da verificare">
+                <h3><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Da verificare</h3>
+                <div class="specs"><div class="spec open-spec"><span class="spec-label">Deposito<span class="mark open"></span></span><span class="spec-value">3 mesi di affitto</span><span class="spec-note">Non trovato nella scheda</span><div class="spec-actions"><span class="ghost">Corretto</span><span class="ghost">Modificare</span></div></div></div>
+            </section>
+            <section class="group">
+                <h3>Oggetto</h3>
+                <div class="specs">
+                    <div class="spec wide"><span class="spec-label">Titolo</span><span class="spec-value">Appartamento di 3½ locali con balcone</span></div>
+                    <div class="spec"><span class="spec-label">Offerta</span><span class="spec-value">Affitto</span></div>
+                    <div class="spec"><span class="spec-label">Tipo</span><span class="spec-value">Appartamento</span></div>
+                    <div class="spec"><span class="spec-label">Locali</span><span class="spec-value">3.5</span></div>
+                    <div class="spec"><span class="spec-label">Superficie</span><span class="spec-value">78 m²</span></div>
+                    <div class="spec"><span class="spec-label">Piano</span><span class="spec-value">3° piano</span></div>
+                    <div class="spec"><span class="spec-label">Libero dal</span><span class="spec-value">1° marzo</span></div>
+                </div>
+            </section>
+            <section class="group">
+                <h3>Prezzo</h3>
+                <div class="specs">
+                    <div class="spec selected"><span class="spec-label">Affitto netto</span><span class="spec-value">CHF 2’130</span></div>
+                    <div class="spec"><span class="spec-label">Spese</span><span class="spec-value">CHF 220</span></div>
+                    <div class="spec"><span class="spec-label">Affitto lordo</span><span class="spec-value">CHF 2’350</span></div>
+                </div>
+            </section>
+            <section class="group">
+                <h3>Dotazioni</h3>
+                <div class="chips"><span class="chip">✓ Balcone</span><span class="chip">✓ Ascensore</span><span class="chip">✓ Lavastoviglie</span><span class="chip">✓ Lavatrice</span><span class="chip">✓ Cantina</span></div>
+            </section>
+            <section class="group">
+                <h3>Contatto</h3>
+                <div class="publish-toggle"><span class="switch"><span class="switch-track" aria-hidden="true"></span>Mostrare i contatti nell’annuncio</span><p class="toggle-hint">Disattivato di default: gli interessati la contattano tramite Latrovu, la sua e-mail e il suo telefono restano nascosti.</p></div>
+                <div class="specs">
+                    <div class="spec"><span class="spec-label">Ditta</span><span class="spec-value">Muster Immobilien SA</span></div>
+                    <div class="spec"><span class="spec-label">Nome</span><span class="spec-value">Selin Kaya</span></div>
+                    <div class="spec"><span class="spec-label">Telefono</span><span class="spec-value">044 000 00 00</span></div>
+                </div>
+            </section>
+        </section>
+        <aside class="panel context" aria-label="Fonte">
+            <p class="pane-kicker">Prezzo</p>
+            <h2>Affitto netto</h2>
+            <div class="control"><input type="text" value="2130" disabled aria-label="Affitto netto"><span class="unit">CHF</span></div>
+            <figure class="evidence"><figcaption>La sua scheda, pagina 2</figcaption><blockquote>… affitto netto <mark>CHF 2’130.–</mark> al mese, acconto riscaldamento e spese CHF 220.–, entrata il 1° marzo o da convenire …</blockquote></figure>
+            <p class="context-note">Ogni dato mostra dove si trova nella sua scheda. Se qualcosa non va, lo corregga qui.</p>
+        </aside>
+    </div>
+    <section class="section" id="visite" aria-labelledby="visite-titolo">
+        <div class="card">
+            <h2 id="visite-titolo">Orari di visita</h2>
+            <p class="hint">Gli interessati prenotano direttamente. Lei riceve un’e-mail a ogni iscrizione.</p>
+            <div class="slot-form" aria-hidden="true"><label>Data<input value="16.12.2026" disabled></label><label>Dalle<input value="18:00" disabled></label><label>Alle<input value="18:30" disabled></label><span class="add">Aggiungere un orario</span></div>
+            <div class="slot-grid">
+                <div class="slot-card"><span class="slot-day">gi 10 dic.</span><span class="slot-hours">18:00–18:30</span><div class="slot-bar" aria-hidden="true"><span style="width:100%"></span></div><span class="slot-count">4 iscritti su 4</span><span class="slot-names">a.yilmaz@example.com, p.nguyen@example.com, +2</span></div>
+                <div class="slot-card"><span class="slot-day">sa 12 dic.</span><span class="slot-hours">10:00–10:30</span><div class="slot-bar" aria-hidden="true"><span style="width:50%"></span></div><span class="slot-count">2 iscritti su 4</span><span class="slot-names">m.silva@example.com, d.okafor@example.com</span></div>
+                <div class="slot-card"><span class="slot-day">lu 14 dic.</span><span class="slot-hours">18:00–18:30</span><div class="slot-bar" aria-hidden="true"><span style="width:0%"></span></div><span class="slot-count">0 iscritti su 6</span></div>
+            </div>
+        </div>
+    </section>
+    <section class="section" id="risposte" aria-labelledby="risposte-titolo">
+        <div class="card">
+            <h2 id="risposte-titolo">Risposte agli interessati</h2>
+            <p class="hint">Ciò a cui la scheda non risponde glielo inviamo per e-mail. La sua risposta vale poi per tutti gli interessati, nella loro lingua.</p>
+            <ul class="knowledge">
+                <li><span class="knowledge-question">C’è un posteggio?</span><span class="knowledge-answer">Sì, un posto nell’autorimessa è disponibile per CHF 140 al mese.</span><span class="knowledge-meta">Risposto il 24 novembre 2026</span></li>
+                <li><span class="knowledge-question">C’è un deposito per biciclette?</span><span class="knowledge-answer">Sì, nel seminterrato, con accesso diretto dall’esterno.</span><span class="knowledge-meta">Risposto il 23 novembre 2026</span></li>
+            </ul>
+        </div>
+    </section>
+</main>
+<footer>Esempio con dati inventati. La sua vera pagina dell’annuncio è accessibile solo tramite il suo link personale.</footer>
+</body>
+</html>

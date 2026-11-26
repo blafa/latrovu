@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Example: your listing page – Latrovu</title>
+    <meta name="description" content="This is the listing page for providers: check each detail against its source in the listing, offer viewing times, manage answers to interested people.">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/favicon-180.png">
+    <link rel="preload" href="/assets/fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/beispiel/anbieten/demo.css">
+</head>
+<body>
+<div class="demo-banner"><div><span>Example with invented details. This is what your listing page looks like.</span><a href="/en/">Back to the start page</a></div></div>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/en/" aria-label="Latrovu home"><img src="/assets/latrovu-symbol.svg" alt=""><span class="brand-name">latrovu<span class="brand-dot">.</span></span></a>
+        <div class="listing-id"><h1>3.5-room flat with balcony</h1><span class="listing-address">Musterstrasse 12, 8047 Zurich</span></div>
+        <span class="state"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M9 12l2 2l4 -4"/></svg>Published</span>
+    </div>
+</header>
+<nav class="tabs" aria-label="Sections">
+    <div class="tabs-inner">
+        <a class="tab" href="#details"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/></svg>Details</a>
+        <a class="tab" href="#viewings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>Viewings<span class="tab-count">6</span></a>
+        <a class="tab" href="#answers"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"/></svg>Questions &amp; answers<span class="tab-count">2</span></a>
+    </div>
+</nav>
+<main>
+    <div class="workspace" id="details">
+        <section class="panel" aria-label="Details taken over">
+            <header class="summary-header">
+                <h2>34 details taken from your listing</h2>
+                <ul class="legend">
+                    <li><span class="mark found"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.1 6.2 5 8.1l3.9-4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>26 found in the listing</li>
+                    <li><span class="mark derived"></span>6 derived</li>
+                    <li><span class="mark ai"></span>1 written by the AI</li>
+                    <li><span class="mark open"></span>1 to check</li>
+                </ul>
+            </header>
+            <section class="group open-group" aria-label="Details to check">
+                <h3><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>To check</h3>
+                <div class="specs"><div class="spec open-spec"><span class="spec-label">Deposit<span class="mark open"></span></span><span class="spec-value">3 months’ rent</span><span class="spec-note">Not found in the listing</span><div class="spec-actions"><span class="ghost">Correct</span><span class="ghost">Change</span></div></div></div>
+            </section>
+            <section class="group">
+                <h3>Property</h3>
+                <div class="specs">
+                    <div class="spec wide"><span class="spec-label">Title</span><span class="spec-value">3.5-room flat with balcony</span></div>
+                    <div class="spec"><span class="spec-label">Offer</span><span class="spec-value">Rent</span></div>
+                    <div class="spec"><span class="spec-label">Type</span><span class="spec-value">Flat</span></div>
+                    <div class="spec"><span class="spec-label">Rooms</span><span class="spec-value">3.5</span></div>
+                    <div class="spec"><span class="spec-label">Living area</span><span class="spec-value">78 m²</span></div>
+                    <div class="spec"><span class="spec-label">Floor</span><span class="spec-value">3rd floor</span></div>
+                    <div class="spec"><span class="spec-label">Available from</span><span class="spec-value">1 March</span></div>
+                </div>
+            </section>
+            <section class="group">
+                <h3>Price</h3>
+                <div class="specs">
+                    <div class="spec selected"><span class="spec-label">Net rent</span><span class="spec-value">CHF 2,130</span></div>
+                    <div class="spec"><span class="spec-label">Service charges</span><span class="spec-value">CHF 220</span></div>
+                    <div class="spec"><span class="spec-label">Gross rent</span><span class="spec-value">CHF 2,350</span></div>
+                </div>
+            </section>
+            <section class="group">
+                <h3>Features</h3>
+                <div class="chips"><span class="chip">✓ Balcony</span><span class="chip">✓ Lift</span><span class="chip">✓ Dishwasher</span><span class="chip">✓ Washer and dryer</span><span class="chip">✓ Cellar</span></div>
+            </section>
+            <section class="group">
+                <h3>Contact</h3>
+                <div class="publish-toggle"><span class="switch"><span class="switch-track" aria-hidden="true"></span>Show contact details in the listing</span><p class="toggle-hint">Off by default: interested people reach you through Latrovu, your email address and phone number stay hidden.</p></div>
+                <div class="specs">
+                    <div class="spec"><span class="spec-label">Company</span><span class="spec-value">Muster Immobilien AG</span></div>
+                    <div class="spec"><span class="spec-label">Name</span><span class="spec-value">Selin Kaya</span></div>
+                    <div class="spec"><span class="spec-label">Phone</span><span class="spec-value">044 000 00 00</span></div>
+                </div>
+            </section>
+        </section>
+        <aside class="panel context" aria-label="Source">
+            <p class="pane-kicker">Price</p>
+            <h2>Net rent</h2>
+            <div class="control"><input type="text" value="2130" disabled aria-label="Net rent"><span class="unit">CHF</span></div>
+            <figure class="evidence"><figcaption>Your listing, page 2</figcaption><blockquote>… net rent <mark>CHF 2,130</mark> per month, advance payment for heating and service charges CHF 220, available from 1 March or by arrangement …</blockquote></figure>
+            <p class="context-note">Every detail shows where it appears in your listing. If something is wrong, change it here.</p>
+        </aside>
+    </div>
+    <section class="section" id="viewings" aria-labelledby="viewings-title">
+        <div class="card">
+            <h2 id="viewings-title">Viewing times</h2>
+            <p class="hint">Interested people book these times directly. You get an email for every booking.</p>
+            <div class="slot-form" aria-hidden="true"><label>Date<input value="16.12.2026" disabled></label><label>From<input value="18:00" disabled></label><label>To<input value="18:30" disabled></label><span class="add">Add a time</span></div>
+            <div class="slot-grid">
+                <div class="slot-card"><span class="slot-day">Thu 10 Dec</span><span class="slot-hours">18:00–18:30</span><div class="slot-bar" aria-hidden="true"><span style="width:100%"></span></div><span class="slot-count">4 of 4 booked</span><span class="slot-names">a.yilmaz@example.com, p.nguyen@example.com, +2</span></div>
+                <div class="slot-card"><span class="slot-day">Sat 12 Dec</span><span class="slot-hours">10:00–10:30</span><div class="slot-bar" aria-hidden="true"><span style="width:50%"></span></div><span class="slot-count">2 of 4 booked</span><span class="slot-names">m.silva@example.com, d.okafor@example.com</span></div>
+                <div class="slot-card"><span class="slot-day">Mon 14 Dec</span><span class="slot-hours">18:00–18:30</span><div class="slot-bar" aria-hidden="true"><span style="width:0%"></span></div><span class="slot-count">0 of 6 booked</span></div>
+            </div>
+        </div>
+    </section>
+    <section class="section" id="answers" aria-labelledby="answers-title">
+        <div class="card">
+            <h2 id="answers-title">Answers to interested people</h2>
+            <p class="hint">Whatever the listing doesn’t answer, we send you by email. Your answer then applies to everyone interested, in their language.</p>
+            <ul class="knowledge">
+                <li><span class="knowledge-question">Is there a parking space?</span><span class="knowledge-answer">Yes, an underground parking space is available for CHF 140 per month.</span><span class="knowledge-meta">Answered on 24 November 2026</span></li>
+                <li><span class="knowledge-question">Is there a bike room?</span><span class="knowledge-answer">Yes, in the basement, with direct access from outside.</span><span class="knowledge-meta">Answered on 23 November 2026</span></li>
+            </ul>
+        </div>
+    </section>
+</main>
+<footer>Example with invented details. Your real listing page can only be reached through your personal link.</footer>
+</body>
+</html>
